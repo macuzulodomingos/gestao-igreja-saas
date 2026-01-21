@@ -1,0 +1,120 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// 1. A ENTIDADE PAI (TENANT)
+// Por que? Tudo no SaaS deve pertencer a uma Igreja. 
+// Se amanhã você quiser deletar os dados de uma igreja que cancelou a assinatura, 
+// o banco de dados limpa tudo em cascata.
+
+model Church {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique // ex: "igreja-central-luanda"
+  plan        Plan     @default(FREE)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relações
+  users       User[]
+  members     Member[]
+  departments Department[]
+  finances    FinanceTransaction[]
+}
+
+enum Plan {
+  FREE
+  PRO
+  ENTERPRISE
+}
+
+// 2. UTILIZADORES DO SISTEMA (STAFF)
+// Por que? Diferenciamos 'User' (quem faz login) de 'Member' (quem frequenta a igreja).
+// Nem todo membro tem acesso ao painel administrativo.
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  role      UserRole @default(OPERATOR)
+  churchId  String
+  church    Church   @relation(fields: [churchId], references: [id], onDelete: Cascade)
+}
+
+enum UserRole {
+  ADMIN    // Acesso total
+  TREASURER // Acesso apenas a finanças
+  SECRETARY // Acesso a membros e eventos
+  OPERATOR  // Acesso apenas leitura
+}
+
+// 3. MEMBROS
+// Por que? Usamos IDs únicos (cuid) para facilitar a sincronização com Apps Mobile no futuro.
+
+model Member {
+  id          String   @id @default(cuid())
+  name        String
+  email       String?
+  phone       String?
+  role        String?   // Pastor, Diácono, etc.
+  status      String   @default("Ativo")
+  joinDate    DateTime @default(now())
+  
+  churchId    String
+  church      Church   @relation(fields: [churchId], references: [id], onDelete: Cascade)
+
+  // Um membro pode liderar departamentos
+  ledDepartments Department[] @relation("DepartmentLeader")
+}
+
+// 4. FINANÇAS
+// Por que? Usamos 'Decimal' em vez de 'Float' para evitar erros de arredondamento 
+// centesimal em dízimos e ofertas de grande valor em Kwanza (AOA).
+
+model FinanceTransaction {
+  id          String          @id @default(cuid())
+  description String
+  amount      Decimal         @db.Decimal(15, 2) // Suporta valores até 999 trilhões
+  type        TransactionType
+  category    String          // Dízimo, Oferta, Aluguel, etc.
+  date        DateTime        @default(now())
+  
+  churchId    String
+  church      Church          @relation(fields: [churchId], references: [id], onDelete: Cascade)
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
+
+// 5. DEPARTAMENTOS
+model Department {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  
+  leaderId    String?
+  leader      Member?  @relation("DepartmentLeader", fields: [leaderId], references: [id])
+  
+  churchId    String
+  church      Church   @relation(fields: [churchId], references: [id], onDelete: Cascade)
+}
+
+// 6. AUDITORIA
+model AuditLog {
+  id        String   @id @default(cuid())
+  action    String
+  entity    String
+  entityId  String
+  userId    String?
+  churchId  String
+  createdAt DateTime @default(now())
+
+  church    Church   @relation(fields: [churchId], references: [id], onDelete: Cascade)
+}

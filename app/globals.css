@@ -1,26 +1,118 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  /* Configuração de Cores - Tema Purple & White */
+  --color-background: hsl(0 0% 100%);
+  --color-foreground: hsl(260 10% 10%);
+
+  --color-card: hsl(0 0% 100%);
+  --color-card-foreground: hsl(260 10% 10%);
+
+  --color-popover: hsl(0 0% 100%);
+  --color-popover-foreground: hsl(260 10% 10%);
+
+  --color-primary: hsl(262 83% 58%);
+  --color-primary-foreground: hsl(0 0% 100%);
+
+  --color-secondary: hsl(262 30% 96%);
+  --color-secondary-foreground: hsl(262 83% 45%);
+
+  --color-muted: hsl(260 20% 96%);
+  --color-muted-foreground: hsl(260 10% 45%);
+
+  --color-accent: hsl(262 83% 96%);
+  --color-accent-foreground: hsl(262 83% 45%);
+
+  --color-destructive: hsl(0 84% 60%);
+  --color-destructive-foreground: hsl(0 0% 100%);
+
+  --color-border: hsl(260 20% 90%);
+  --color-input: hsl(260 20% 90%);
+  --color-ring: hsl(262 83% 58%);
+
+  /* Sidebar - Vinculado ao sistema do Shadcn */
+  --color-sidebar: hsl(262 30% 98%);
+  --color-sidebar-foreground: hsl(260 10% 30%);
+  --color-sidebar-primary: hsl(262 83% 58%);
+  --color-sidebar-primary-foreground: hsl(0 0% 100%);
+  --color-sidebar-accent: hsl(262 40% 95%);
+  --color-sidebar-accent-foreground: hsl(262 83% 45%);
+  --color-sidebar-border: hsl(260 20% 92%);
+  --color-sidebar-ring: hsl(262 83% 58%);
+
+  /* Gráficos */
+  --color-chart-1: hsl(262 83% 58%);
+  --color-chart-2: hsl(280 70% 55%);
+  --color-chart-3: hsl(200 80% 50%);
+  --color-chart-4: hsl(150 60% 45%);
+  --color-chart-5: hsl(340 75% 55%);
+
+  /* Status */
+  --color-success: hsl(150 60% 45%);
+  --color-warning: hsl(38 92% 50%);
+
+  /* Raio da Borda */
+  --radius-lg: 1rem;
+  --radius-md: calc(1rem - 2px);
+  --radius-sm: calc(1rem - 4px);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+/* Overrides para Dark Mode */
+@layer base {
+  .dark {
+    --color-background: hsl(260 20% 8%);
+    --color-foreground: hsl(260 10% 95%);
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --color-card: hsl(260 20% 12%);
+    --color-card-foreground: hsl(260 10% 95%);
+
+    --color-popover: hsl(260 20% 10%);
+    --color-popover-foreground: hsl(260 10% 95%);
+
+    --color-primary: hsl(262 83% 65%);
+    --color-primary-foreground: hsl(260 20% 8%);
+
+    --color-secondary: hsl(260 20% 18%);
+    --color-secondary-foreground: hsl(262 70% 80%);
+
+    --color-muted: hsl(260 15% 18%);
+    --color-muted-foreground: hsl(260 10% 60%);
+
+    --color-accent: hsl(262 40% 20%);
+    --color-accent-foreground: hsl(262 70% 80%);
+
+    --color-border: hsl(260 15% 20%);
+    --color-input: hsl(260 15% 20%);
+
+    --color-sidebar: hsl(260 20% 10%);
+    --color-sidebar-foreground: hsl(260 10% 80%);
+    --color-sidebar-accent: hsl(262 30% 18%);
+    --color-sidebar-accent-foreground: hsl(262 70% 80%);
+    --color-sidebar-border: hsl(260 15% 18%);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Estilos Globais e Resets */
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+}
+
+/* Utilidades Customizadas */
+@layer utilities {
+  .card-shadow {
+    box-shadow: 0 1px 3px 0 hsl(260 20% 20% / 0.04), 
+                0 4px 6px -1px hsl(260 20% 20% / 0.06);
+  }
+  
+  .card-shadow-lg {
+    box-shadow: 0 4px 6px -1px hsl(260 20% 20% / 0.06),
+                0 10px 15px -3px hsl(260 20% 20% / 0.08);
+  }
 }
