@@ -44,4 +44,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-/lib/generated/prisma
+# ✅ IMPORTANTE: O caminho customizado do seu Prisma Client
+app/generated/prisma
+

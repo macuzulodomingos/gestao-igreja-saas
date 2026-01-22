@@ -1,10 +1,10 @@
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "../app/generated/prisma" 
 }
 
 // 1. A ENTIDADE PAI (TENANT)
@@ -13,18 +13,19 @@ generator client {
 // o banco de dados limpa tudo em cascata.
 
 model Church {
-  id          String   @id @default(cuid())
-  name        String
-  slug        String   @unique // ex: "igreja-central-luanda"
-  plan        Plan     @default(FREE)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique // ex: "igreja-central-luanda"
+  plan      Plan     @default(FREE)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relações
   users       User[]
   members     Member[]
   departments Department[]
   finances    FinanceTransaction[]
+  auditLogs   AuditLog[]
 }
 
 enum Plan {
@@ -38,35 +39,35 @@ enum Plan {
 // Nem todo membro tem acesso ao painel administrativo.
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  role      UserRole @default(OPERATOR)
-  churchId  String
-  church    Church   @relation(fields: [churchId], references: [id], onDelete: Cascade)
+  id       String   @id @default(cuid())
+  email    String   @unique
+  name     String?
+  role     UserRole @default(OPERATOR)
+  churchId String
+  church   Church   @relation(fields: [churchId], references: [id], onDelete: Cascade)
 }
 
 enum UserRole {
-  ADMIN    // Acesso total
+  ADMIN // Acesso total
   TREASURER // Acesso apenas a finanças
   SECRETARY // Acesso a membros e eventos
-  OPERATOR  // Acesso apenas leitura
+  OPERATOR // Acesso apenas leitura
 }
 
 // 3. MEMBROS
 // Por que? Usamos IDs únicos (cuid) para facilitar a sincronização com Apps Mobile no futuro.
 
 model Member {
-  id          String   @id @default(cuid())
-  name        String
-  email       String?
-  phone       String?
-  role        String?   // Pastor, Diácono, etc.
-  status      String   @default("Ativo")
-  joinDate    DateTime @default(now())
-  
-  churchId    String
-  church      Church   @relation(fields: [churchId], references: [id], onDelete: Cascade)
+  id       String   @id @default(cuid())
+  name     String
+  email    String?
+  phone    String?
+  role     String? // Pastor, Diácono, etc.
+  status   String   @default("Ativo")
+  joinDate DateTime @default(now())
+
+  churchId String
+  church   Church @relation(fields: [churchId], references: [id], onDelete: Cascade)
 
   // Um membro pode liderar departamentos
   ledDepartments Department[] @relation("DepartmentLeader")
@@ -79,13 +80,13 @@ model Member {
 model FinanceTransaction {
   id          String          @id @default(cuid())
   description String
-  amount      Decimal         @db.Decimal(15, 2) // Suporta valores até 999 trilhões
+  amount      Int      // Mudamos de Decimal para Int (Cêntimos)
   type        TransactionType
-  category    String          // Dízimo, Oferta, Aluguel, etc.
+  category    String // Dízimo, Oferta, Aluguel, etc.
   date        DateTime        @default(now())
-  
-  churchId    String
-  church      Church          @relation(fields: [churchId], references: [id], onDelete: Cascade)
+
+  churchId String
+  church   Church @relation(fields: [churchId], references: [id], onDelete: Cascade)
 }
 
 enum TransactionType {
@@ -95,15 +96,15 @@ enum TransactionType {
 
 // 5. DEPARTAMENTOS
 model Department {
-  id          String   @id @default(cuid())
+  id          String  @id @default(cuid())
   name        String
   description String?
-  
-  leaderId    String?
-  leader      Member?  @relation("DepartmentLeader", fields: [leaderId], references: [id])
-  
-  churchId    String
-  church      Church   @relation(fields: [churchId], references: [id], onDelete: Cascade)
+
+  leaderId String?
+  leader   Member? @relation("DepartmentLeader", fields: [leaderId], references: [id])
+
+  churchId String
+  church   Church @relation(fields: [churchId], references: [id], onDelete: Cascade)
 }
 
 // 6. AUDITORIA
@@ -116,5 +117,5 @@ model AuditLog {
   churchId  String
   createdAt DateTime @default(now())
 
-  church    Church   @relation(fields: [churchId], references: [id], onDelete: Cascade)
+  church Church @relation(fields: [churchId], references: [id], onDelete: Cascade)
 }
