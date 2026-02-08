@@ -1,4 +1,4 @@
-// app/components/members/MemberHistorySheet.tsx
+// app/components/Member/MemberHistorySheet.tsx
 "use client";
 
 import { useState } from "react";
@@ -7,9 +7,10 @@ import {
   SheetContent, 
   SheetHeader, 
   SheetTitle, 
-  SheetDescription 
+  SheetDescription,
+  SheetTrigger // Adicione este import
 } from "@/components/ui/sheet";
-import { getMemberHistoryAction } from "@/app/actions/audit"; // Certifique-se de criar esta action
+import { getMemberHistoryAction } from "@/app/actions/audit";
 import { AuditHistory } from "@/components/audit/AuditHistory";
 import { Loader2, History } from "lucide-react";
 
@@ -25,22 +26,33 @@ export function MemberHistorySheet({ member, trigger }: MemberHistorySheetProps)
 
   async function loadHistory() {
     setLoading(true);
+    // Este log TEM que aparecer no console do NAVEGADOR (F12)
+    console.log("Iniciando busca de logs para ID:", member.id); 
+    
     const result = await getMemberHistoryAction(member.id);
+    
     if (result.success) {
-      setLogs(result.data);
+      setLogs(result.data || []);
     }
     setLoading(false);
   }
 
   return (
-    <Sheet open={open} onOpenChange={(val) => {
-      setOpen(val);
-      if (val) loadHistory();
-    }}>
-      {/* O gatilho será o item do Dropdown que você já tem */}
-      <div onClick={() => setOpen(true)} className="w-full cursor-pointer">
+    <Sheet 
+      open={open} 
+      onOpenChange={(val) => {
+        setOpen(val);
+        if (val) {
+          loadHistory();
+        }
+      }}
+    >
+      {/* MUDANÇA AQUI: Usamos o SheetTrigger asChild. 
+         Isso faz com que o seu DropdownMenuItem funcione como o botão da Sheet.
+      */}
+      <SheetTrigger asChild>
         {trigger}
-      </div>
+      </SheetTrigger>
       
       <SheetContent className="w-full sm:max-w-[500px] overflow-y-auto">
         <SheetHeader className="mb-6">

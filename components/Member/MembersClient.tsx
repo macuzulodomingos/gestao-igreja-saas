@@ -427,15 +427,16 @@ export default function MemberClient({
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem>Ver Perfil</DropdownMenuItem>
                           {/* ADICIONE ISSO AQUI: */}
-                          <MemberHistorySheet
-                            member={member}
-                            trigger={
-                              <div className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent focus:bg-accent focus:text-accent-foreground">
-                                <History className="mr-2 h-4 w-4" />
-                                <span>Ver Histórico</span>
-                              </div>
-                            }
-                          />
+                          <DropdownMenuItem asChild>
+                            <MemberHistorySheet
+                              member={member}
+                              trigger={
+                                <div className="flex w-full cursor-pointer items-center">
+                                  <span>Ver Histórico</span>
+                                </div>
+                              }
+                            />
+                          </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => {
                               setEditingMember(member);

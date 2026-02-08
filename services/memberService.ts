@@ -142,12 +142,16 @@ export const MemberService = {
         data: {
           churchId,
           userId: actor.userId || null,
-          userEmail: actor.email, 
+          userEmail: actor.email,
           action: "UPDATE_MEMBER",
           entityName: "Member",
           entityId: id,
-          oldData: sanitizeForLog(currentMember) as unknown as Prisma.InputJsonValue,
-          newData: sanitizeForLog(updatedMember) as unknown as Prisma.InputJsonValue,
+          oldData: sanitizeForLog(
+            currentMember,
+          ) as unknown as Prisma.InputJsonValue,
+          newData: sanitizeForLog(
+            updatedMember,
+          ) as unknown as Prisma.InputJsonValue,
         },
       });
 
@@ -184,22 +188,18 @@ export const MemberService = {
     });
   },
 
-
-
   // NOVA FUNÇÃO: Buscar histórico de um membro específico
-  async getMemberHistory(memberId: string, churchId: string) {
+  async getMemberHistory(memberId: string, churchId?: string) {
     return await prisma.auditLog.findMany({
       where: {
         entityId: memberId,
-        churchId: churchId,
-        entityName: "Member"
+        entityName: "Member",
+        // Se o churchId for passado (usuário comum), filtra.
+        // Se for undefined (SuperAdmin), ignora o filtro de igreja.
+        ...(churchId && { churchId }),
       },
-      orderBy: { createdAt: 'desc' },
-      take: 10 // Mostra apenas as últimas 10 alterações
+      orderBy: { createdAt: "desc" },
+      take: 15,
     });
-  }
-
-
+  },
 };
-
-
