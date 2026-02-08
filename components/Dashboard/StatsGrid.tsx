@@ -2,7 +2,11 @@ import { Users, Calendar, Wallet, Church } from "lucide-react";
 import { StatsCard } from "./StatsCard";
 import { statsData, churchInfo } from "@/lib/mock-data";
 
-export function StatsGrid() {
+interface StatsGridProps {
+  churchId: string;
+}
+
+export function StatsGrid({ churchId }: StatsGridProps) {
   const formattedBalance = new Intl.NumberFormat("pt-PT", {
     style: "currency",
     currency: "AOA",

@@ -1,5 +1,14 @@
 "use client";
-import { Church, LayoutDashboard, Users, Calendar, Wallet, Building2 } from "lucide-react";
+
+import { 
+  Church, 
+  LayoutDashboard, 
+  Users, 
+  Calendar, 
+  Wallet, 
+  Building2,
+  ShieldCheck 
+} from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import {
   Sidebar,
@@ -13,38 +22,64 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { useSession } from "next-auth/react";
 
-const navigationItems = [
-  {
-    title: "Painel",
-    url: "/",
-    icon: LayoutDashboard,
-  },
-  {
-    title: "Membros",
-    url: "/membros",
-    icon: Users,
-  },
-  {
-    title: "Eventos",
-    url: "/eventos",
-    icon: Calendar,
-  },
-  {
-    title: "Finanças",
-    url: "/financas",
-    icon: Wallet,
-  },
-  {
-    title: "Departamentos",
-    url: "/departamentos",
-    icon: Building2,
-  },
-];
+interface AppSidebarProps {
+  slug: string;
+  initialRole?: string; // ✅ Adicionado para evitar o sumiço
+}
 
-export function AppSidebar() {
+export function AppSidebar({ slug, initialRole }: AppSidebarProps) {
   const { state } = useSidebar();
+  const { data: session } = useSession();
   const isCollapsed = state === "collapsed";
+
+  // ✅ Se o session ainda não carregou, usamos o initialRole que veio do servidor
+  const userRole = session?.user?.role || initialRole;
+
+  const navigationItems = [
+    {
+      title: "Painel",
+      url: `/${slug}/painel`,
+      roles: ["SUPER_ADMIN", "ADMIN", "TREASURER", "SECRETARY", "OPERATOR"],
+      icon: LayoutDashboard,
+    },
+    {
+      title: "Membros",
+      url: `/${slug}/membros`,
+      roles: ["SUPER_ADMIN", "ADMIN", "SECRETARY"],
+      icon: Users,
+    },
+    {
+      title: "Eventos",
+      url: `/${slug}/eventos`,
+      roles: ["SUPER_ADMIN", "ADMIN", "SECRETARY", "OPERATOR"],
+      icon: Calendar,
+    },
+    {
+      title: "Finanças",
+      url: `/${slug}/financas`,
+      roles: ["SUPER_ADMIN", "ADMIN", "TREASURER"],
+      icon: Wallet,
+    },
+    {
+      title: "Departamentos",
+      url: `/${slug}/departamentos`,
+      roles: ["SUPER_ADMIN", "ADMIN", "SECRETARY"],
+      icon: Building2,
+    },
+    {
+      title: "Configurações SaaS",
+      url: `/admin`,
+      roles: ["SUPER_ADMIN"],
+      icon: ShieldCheck,
+    },
+  ];
+
+  const filteredItems = navigationItems.filter((item) => {
+    if (!item.roles) return true;
+    return item.roles.includes(userRole as string);
+  });
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
@@ -55,8 +90,10 @@ export function AppSidebar() {
           </div>
           {!isCollapsed && (
             <div className="flex flex-col">
-              <span className="font-semibold text-sidebar-foreground">ChurchOS</span>
-              <span className="text-xs text-muted-foreground">Management</span>
+              <span className="font-semibold text-sidebar-foreground leading-none">ChurchOS</span>
+              <span className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">
+                {userRole === "SUPER_ADMIN" ? "SaaS Admin" : "Gestão Igreja"}
+              </span>
             </div>
           )}
         </div>
@@ -67,7 +104,7 @@ export function AppSidebar() {
           <SidebarGroupLabel>Navegação</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navigationItems.map((item) => (
+              {filteredItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild tooltip={item.title}>
                     <NavLink

@@ -19,7 +19,8 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@prisma/client": ["./app/generated/prisma"] // Isso faz a mágica!
     }
   },
   "include": [

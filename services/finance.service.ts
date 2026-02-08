@@ -1,22 +1,18 @@
+// services/finance.service.ts
 import prisma from "@/lib/prisma";
 
+// FUNÇÃO 1: Para os Cards (Resumo do Mês)
 export async function getFinanceSummary(churchId: string, month: number, year: number) {
-  // Calculamos o primeiro e último dia do mês para o filtro
   const startDate = new Date(year, month, 1);
   const endDate = new Date(year, month + 1, 0);
 
-  // Buscamos todas as transações do mês em uma única query
   const transactions = await prisma.financeTransaction.findMany({
     where: {
       churchId,
-      date: {
-        gte: startDate,
-        lte: endDate,
-      },
+      date: { gte: startDate, lte: endDate },
     },
   });
 
-  // Agregamos os valores para o Dashboard
   const totals = transactions.reduce(
     (acc, curr) => {
       if (curr.type === "INCOME") acc.income += curr.amount;
@@ -27,8 +23,17 @@ export async function getFinanceSummary(churchId: string, month: number, year: n
   );
 
   return {
-    ...totals,
+    income: totals.income,
+    expense: totals.expense,
     balance: totals.income - totals.expense,
-    transactions, // Retornamos a lista para preencher a tabela
   };
+}
+
+// FUNÇÃO 2: Para a Tabela (Lista Simples)
+export async function getRecentTransactions(churchId: string, limit = 10) {
+  return await prisma.financeTransaction.findMany({
+    where: { churchId },
+    orderBy: { date: 'desc' },
+    take: limit,
+  });
 }

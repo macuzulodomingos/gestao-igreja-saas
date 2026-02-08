@@ -1,4 +1,6 @@
-import { Menu, ChevronDown } from "lucide-react";
+"use client";
+
+import { Menu, ChevronDown, LogOut, Settings, CreditCard, User as UserIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -12,15 +14,35 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { churchInfo, currentUser } from "@/lib/mock-data";
+import { Plan } from "@prisma/client";
+import { RoleBadge } from "./RoleBadge";
+import { signOut } from "next-auth/react"; // ✅ Importe para o Logout
 
-const planColors = {
-  Basic: "bg-muted text-muted-foreground",
-  Standard: "bg-primary/10 text-primary",
-  Premium: "bg-accent text-accent-foreground",
+const planStyles: Record<Plan, string> = {
+  FREE: "bg-slate-100 text-slate-600 border-slate-200",
+  PRO: "bg-blue-100 text-blue-700 border-blue-200",
+  ENTERPRISE: "bg-amber-100 text-amber-700 border-amber-200",
 };
 
-export function DashboardHeader() {
+interface DashboardHeaderProps {
+  church: {
+    name: string;
+    plan: Plan;
+  };
+  user: {
+    name?: string | null;
+    email?: string | null;
+    role: string;
+    image?: string | null;
+  };
+}
+
+export function DashboardHeader({ church, user }: DashboardHeaderProps) {
+  // Iniciais baseadas no usuário real da sessão
+  const userInitials = user.name
+    ? user.name.split(" ").map((n) => n[0]).join("").toUpperCase()
+    : "U";
+
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex h-16 items-center justify-between px-4 md:px-6">
@@ -29,43 +51,69 @@ export function DashboardHeader() {
             <Menu className="h-5 w-5" />
           </SidebarTrigger>
           
-          <div className="hidden md:flex items-center gap-3">
-            <h1 className="text-lg font-semibold text-foreground">
-              {churchInfo.name}
+          <div className="hidden md:flex items-center gap-3 border-l pl-4 border-border">
+            <h1 className="text-sm font-bold text-foreground tracking-tight">
+              {church.name}
             </h1>
-            <Badge className={planColors[churchInfo.plan]} variant="secondary">
-              {churchInfo.plan} Plan
+            <Badge 
+              variant="outline" 
+              className={`text-[10px] uppercase font-bold px-2 py-0 ${planStyles[church.plan]}`}
+            >
+              {church.plan}
             </Badge>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <ThemeToggle />
           
+          <div className="h-6 w-[1px] bg-border mx-1 hidden md:block" />
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="flex items-center gap-2 px-2">
-                <Avatar className="h-8 w-8">
-                  <AvatarFallback className="bg-primary/10 text-primary text-sm">
-                    {currentUser.name.split(" ").map(n => n[0]).join("")}
+              <Button variant="ghost" className="relative flex items-center gap-3 px-2 hover:bg-accent transition-all">
+                <Avatar className="h-8 w-8 border border-border">
+                  <AvatarFallback className="bg-primary/5 text-primary text-xs font-bold">
+                    {userInitials}
                   </AvatarFallback>
                 </Avatar>
-                <div className="hidden md:flex flex-col items-start">
-                  <span className="text-sm font-medium">{currentUser.name}</span>
-                  <span className="text-xs text-muted-foreground">{currentUser.role}</span>
+                
+                <div className="hidden md:flex flex-col items-start leading-tight">
+                  <span className="text-sm font-semibold">{user.name}</span>
+                  {/* ✅ Badge de função dinâmica */}
+                  <RoleBadge role={user.role} />
                 </div>
-                <ChevronDown className="h-4 w-4 text-muted-foreground hidden md:block" />
+                <ChevronDown className="h-3 w-3 text-muted-foreground hidden md:block" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
+            
+            <DropdownMenuContent align="end" className="w-60 mt-2">
+              <DropdownMenuLabel className="font-normal">
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-medium leading-none">{user.name}</p>
+                  <p className="text-xs leading-none text-muted-foreground">
+                    {user.email}
+                  </p>
+                </div>
+              </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Configurações do Perfil</DropdownMenuItem>
-              <DropdownMenuItem>Configurações da Igreja</DropdownMenuItem>
-              <DropdownMenuItem>Faturamento</DropdownMenuItem>
+              <DropdownMenuItem className="cursor-pointer gap-2">
+                <UserIcon className="h-4 w-4" /> Configurações do Perfil
+              </DropdownMenuItem>
+              <DropdownMenuItem className="cursor-pointer gap-2">
+                <Settings className="h-4 w-4" /> Configurações da Igreja
+              </DropdownMenuItem>
+              <DropdownMenuItem className="cursor-pointer gap-2">
+                <CreditCard className="h-4 w-4" /> Faturamento
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-destructive">
-                Sair
+              
+              {/* ✅ LOGOUT REAL */}
+              <DropdownMenuItem 
+                onClick={() => signOut({ callbackUrl: "/login" })}
+                className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer font-medium gap-2"
+              >
+                <LogOut className="h-4 w-4" /> Sair da conta
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

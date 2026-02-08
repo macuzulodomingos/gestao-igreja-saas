@@ -42,16 +42,58 @@ model User {
   id       String   @id @default(cuid())
   email    String   @unique
   name     String?
+  password      String?   // ADICIONADO: Essencial para o seu Credentials com bcrypt
+  emailVerified DateTime? // ADICIONADO: Exigido pelo Auth.js
+  image         String?   // ADICIONADO: Exigido pelo Auth.js
   role     UserRole @default(OPERATOR)
-  churchId String
-  church   Church   @relation(fields: [churchId], references: [id], onDelete: Cascade)
+  churchId String? // 👈 Transformamos em OPCIONAL
+  church   Church?   @relation(fields: [churchId], references: [id], onDelete: Cascade)
+
+  // Relações exigidas pelo Auth.js Adapter
+  accounts      Account[]
+  sessions      Session[]
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([churchId])
 }
 
 enum UserRole {
-  ADMIN // Acesso total
+  SUPER_ADMIN // O dono do SaaS (Você)
+  ADMIN // O Pastor/Líder da Igreja
   TREASURER // Acesso apenas a finanças
   SECRETARY // Acesso a membros e eventos
   OPERATOR // Acesso apenas leitura
+}
+
+// ADICIONADO: Necessário para o Auth.js gerenciar logins (Google, Facebook, etc no futuro)
+model Account {
+  id                 String  @id @default(cuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?  @db.Text
+  access_token       String?  @db.Text
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?  @db.Text
+  session_state      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+// ADICIONADO: Se você usar sessões em banco de dados (estamos usando JWT, mas o Adapter pede)
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 // 3. MEMBROS
@@ -66,11 +108,18 @@ model Member {
   status   String   @default("Ativo")
   joinDate DateTime @default(now())
 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   churchId String
   church   Church @relation(fields: [churchId], references: [id], onDelete: Cascade)
 
   // Um membro pode liderar departamentos
   ledDepartments Department[] @relation("DepartmentLeader")
+
+  // ÍNDICES COMPOSTOS PARA PERFORMANCE NO SAAS
+  @@index([churchId, name])
+  @@index([churchId, email])
 }
 
 // 4. FINANÇAS
@@ -85,8 +134,13 @@ model FinanceTransaction {
   category    String // Dízimo, Oferta, Aluguel, etc.
   date        DateTime        @default(now())
 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   churchId String
   church   Church @relation(fields: [churchId], references: [id], onDelete: Cascade)
+
+  @@index([churchId, date])
 }
 
 enum TransactionType {
@@ -99,23 +153,35 @@ model Department {
   id          String  @id @default(cuid())
   name        String
   description String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   leaderId String?
   leader   Member? @relation("DepartmentLeader", fields: [leaderId], references: [id])
 
   churchId String
   church   Church @relation(fields: [churchId], references: [id], onDelete: Cascade)
+
+  @@index([churchId])
 }
 
 // 6. AUDITORIA
 model AuditLog {
-  id        String   @id @default(cuid())
-  action    String
-  entity    String
-  entityId  String
-  userId    String?
-  churchId  String
-  createdAt DateTime @default(now())
+  id            String   @id @default(cuid())
+  churchId      String
+  userId        String?  // Quem realizou a ação
+  userEmail     String?  // E-mail para consulta rápida no painel
+  action        String   // Ex: "CREATE", "UPDATE", "DELETE"
+  entityName    String   // Ex: "Member", "Finance"
+  entityId      String   // ID do registro afetado
+  oldData       Json?    // Snapshot antes da alteração
+  newData       Json?    // Snapshot depois da alteração
+  ipAddress     String?
+  createdAt     DateTime @default(now())
 
-  church Church @relation(fields: [churchId], references: [id], onDelete: Cascade)
+  church        Church   @relation(fields: [churchId], references: [id], onDelete: Cascade)
+
+  // Índices otimizados para consultas de suporte e painéis de admin
+  @@index([churchId, createdAt(sort: Desc)])
+  @@index([entityName, entityId])
 }
