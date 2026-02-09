@@ -15,7 +15,6 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -44,6 +43,16 @@ import {
   DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 import {
   createMemberAction,
@@ -52,7 +61,7 @@ import {
 } from "@/app/actions/member-actions";
 import { useDebounce } from "@/hooks/use-debounce";
 import { MemberHistorySheet } from "@/components/Member/MemberHistorySheet";
-import { History } from "lucide-react";
+import { Member } from "@/types/member";
 
 const roleColors: Record<string, string> = {
   Pastor: "bg-primary/10 text-primary",
@@ -74,7 +83,7 @@ const statusColors: Record<string, string> = {
 };
 
 interface MemberClientProps {
-  initialMembers: any[];
+  initialMembers: Member[];
   slug: string;
   metadata: {
     currentPage: number;
@@ -82,6 +91,26 @@ interface MemberClientProps {
     totalMembers: number;
   };
 }
+
+
+// Esta função extrai o dia, mês e ano "puros" (UTC)
+const formatarDataSemFuso = (
+  dataInput: string | Date,
+  formato: "input" | "exibicao" = "exibicao",
+) => {
+  if (!dataInput) return "";
+  const d = new Date(dataInput);
+
+  const dia = String(d.getUTCDate()).padStart(2, "0");
+  const mes = String(d.getUTCMonth() + 1).padStart(2, "0"); // +1 porque janeiro é 0
+  const ano = d.getUTCFullYear();
+
+  // O <input type="date"> exige o formato AAAA-MM-DD
+  if (formato === "input") return `${ano}-${mes}-${dia}`;
+
+  // Na tabela queremos DD/MM/AAAA
+  return `${dia}/${mes}/${ano}`;
+};
 
 export default function MemberClient({
   initialMembers,
@@ -92,7 +121,8 @@ export default function MemberClient({
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingMember, setEditingMember] = useState<any | null>(null);
+  const [editingMember, setEditingMember] = useState<Member | null>(null);
+  const [memberToDelete, setMemberToDelete] = useState<Member | null>(null);
 
   // Estado para erros de validação do Zod
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
@@ -104,15 +134,24 @@ export default function MemberClient({
   const debouncedSearch = useDebounce(searchQuery, 500);
 
   useEffect(() => {
-    const params = new URLSearchParams(searchParams.toString());
+    const currentQuery = searchParams.toString();
+    const params = new URLSearchParams(currentQuery);
+
     if (debouncedSearch) {
       params.set("search", debouncedSearch);
       params.set("page", "1");
     } else {
       params.delete("search");
     }
-    router.push(`/${slug}/membros?${params.toString()}`);
-  }, [debouncedSearch, slug, router]);
+
+    const newQuery = params.toString();
+
+    // Se a URL pretendida for igual à atual, não faz nada
+    if (newQuery === currentQuery) return;
+
+    // Use replace para a busca não poluir o histórico do navegador
+    router.replace(`/${slug}/membros?${newQuery}`);
+  }, [debouncedSearch, searchParams, slug, router]);
 
   const handlePageChange = (newPage: number) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -125,38 +164,40 @@ export default function MemberClient({
     setFieldErrors({});
     const formData = new FormData(event.currentTarget);
 
-    startTransition(async () => {
-      let result;
+    // 1. Chamada de rede FORA do startTransition
+    // (Aqui você usaria um setState manual de loading se não quiser o useTransition)
+    let result;
+    if (editingMember) {
+      result = await updateMemberAction(editingMember.id, formData, slug);
+    } else {
+      result = await createMemberAction(formData);
+    }
 
-      if (editingMember) {
-        // Lógica de Edição
-        result = await updateMemberAction(editingMember.id, formData, slug);
-      } else {
-        // Lógica de Criação
-        result = await createMemberAction(formData);
-      }
-
-      if (result.success) {
-        toast.success(
-          editingMember ? "Membro atualizado!" : "Membro adicionado!",
-        );
+    // 2. Tratamento do resultado
+    if (result.success) {
+      // Transição de UI: O que acontece APÓS o sucesso
+      startTransition(() => {
         setIsModalOpen(false);
-        setEditingMember(null); // Limpa o estado após fechar
-        (event.target as HTMLFormElement).reset();
-      } else {
-        if (result.fieldErrors) {
-          setFieldErrors(result.fieldErrors);
-          toast.error("Verifique os erros no formulário.");
-        } else {
-          // Ajuste aqui: Mensagem dinâmica baseada no modo (Edição ou Criação)
-          const fallbackError = editingMember
-            ? "Erro ao atualizar os dados do membro."
-            : "Erro ao realizar o cadastro do membro.";
+        setEditingMember(null);
+      });
 
-          toast.error(result.error || fallbackError);
-        }
+      toast.success(
+        editingMember ? "Membro atualizado!" : "Membro adicionado!",
+      );
+      (event.target as HTMLFormElement).reset();
+    } else {
+      if (result.fieldErrors) {
+        setFieldErrors(result.fieldErrors);
+        toast.error("Verifique os erros no formulário.");
+      } else {
+        // Ajuste aqui: Mensagem dinâmica baseada no modo (Edição ou Criação)
+        const fallbackError = editingMember
+          ? "Erro ao atualizar os dados do membro."
+          : "Erro ao realizar o cadastro do membro.";
+
+        toast.error(result.error || fallbackError);
       }
-    });
+    }
   }
 
   return (
@@ -297,9 +338,7 @@ export default function MemberClient({
                     className={fieldErrors.joinDate ? "border-destructive" : ""}
                     defaultValue={
                       editingMember?.joinDate
-                        ? new Date(editingMember.joinDate)
-                            .toISOString()
-                            .split("T")[0]
+                        ? formatarDataSemFuso(editingMember.joinDate, "input")
                         : new Date().toISOString().split("T")[0]
                     }
                   />
@@ -402,11 +441,7 @@ export default function MemberClient({
                     <TableCell className="hidden lg:table-cell text-xs text-muted-foreground">
                       <div className="flex items-center gap-2">
                         <Calendar className="h-3 w-3" />
-                        {format(
-                          new Date(member.joinDate),
-                          "dd 'de' MMM, yyyy",
-                          { locale: ptBR },
-                        )}
+                        {formatarDataSemFuso(member.joinDate)}
                       </div>
                     </TableCell>
                     <TableCell className="hidden sm:table-cell">
@@ -447,20 +482,9 @@ export default function MemberClient({
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             className="text-destructive"
-                            onClick={async () => {
-                              const confirmed = confirm(
-                                "Tem certeza que deseja remover este membro?",
-                              );
-                              if (confirmed) {
-                                const result = await deleteMemberAction(
-                                  member.id,
-                                );
-                                if (result.success) {
-                                  toast.success("Membro removido com sucesso!");
-                                } else {
-                                  toast.error(result.error);
-                                }
-                              }
+                            onSelect={(e) => {
+                              e.preventDefault(); // Impede o dropdown de fechar e "matar" o modal
+                              setMemberToDelete(member);
                             }}
                           >
                             Excluir
@@ -473,6 +497,41 @@ export default function MemberClient({
               )}
             </TableBody>
           </Table>
+
+          <AlertDialog
+            open={!!memberToDelete}
+            onOpenChange={(open) => !open && setMemberToDelete(null)}
+          >
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Deseja realmente remover{" "}
+                  <strong>{memberToDelete?.name}</strong>? Esta ação é
+                  irreversível e removerá todos os dados deste membro.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-destructive text-white hover:bg-destructive/90"
+                  onClick={async () => {
+                    if (!memberToDelete) return;
+
+                    const result = await deleteMemberAction(memberToDelete.id);
+                    if (result.success) {
+                      toast.success("Membro removido com sucesso!");
+                    } else {
+                      toast.error(result.error);
+                    }
+                    setMemberToDelete(null);
+                  }}
+                >
+                  Confirmar Exclusão
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
 
           <div className="flex items-center justify-between mt-6">
             <p className="text-sm text-muted-foreground">

@@ -29,7 +29,5 @@ export const memberSchema = z.object({
     .or(z.literal(""))
     .default("Membro"),
 
-  joinDate: z.coerce.date({
-    errorMap: () => ({ message: "Data de adesão inválida" }),
-  }),
+  joinDate: z.string().min(1, "Data é obrigatória"), // Aceita a string "YYYY-MM-DD" do navegador
 });

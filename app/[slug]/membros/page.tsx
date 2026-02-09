@@ -35,7 +35,8 @@ export default async function MembersPage({ params, searchParams }: MembersPageP
   const { members, metadata } = await MemberService.getMembersByChurch(
     churchId,
     currentPage,
-    10 // Itens por página
+    10, // Itens por página
+    searchTerm  // 👈 Faltava passar esta variável aqui!
   );
 
   // 3. Renderização

@@ -3,6 +3,7 @@
 
 import { auth } from "@/lib/auth";
 import { MemberService } from "@/services/memberService";
+import { AuditLog } from "@prisma/client";
 
 export async function getMemberHistoryAction(memberId: string) {
   const session = await auth();
@@ -23,7 +24,7 @@ export async function getMemberHistoryAction(memberId: string) {
       userRole === "SUPER_ADMIN" ? undefined : userChurchId 
     );
 
-    return { success: true, data: history };
+    return { success: true, data: history as AuditLog[] };
   } catch (error) {
     console.error("Erro ao buscar histórico:", error);
     return { success: false, error: "Falha ao carregar histórico" };

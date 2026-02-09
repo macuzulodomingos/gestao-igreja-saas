@@ -13,14 +13,17 @@ import {
 import { getMemberHistoryAction } from "@/app/actions/audit";
 import { AuditHistory } from "@/components/audit/AuditHistory";
 import { Loader2, History } from "lucide-react";
+import { AuditLog, Member } from "@/types/member";
+
 
 interface MemberHistorySheetProps {
-  member: any;
+  member: Member;
   trigger: React.ReactNode;
 }
 
+
 export function MemberHistorySheet({ member, trigger }: MemberHistorySheetProps) {
-  const [logs, setLogs] = useState([]);
+  const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
 
