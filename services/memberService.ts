@@ -5,18 +5,18 @@ type UpdateMemberDTO = {
   name?: string;
   email?: string | null;
   phone?: string | null;
-  role?: string | null;
+  role?: string | null; // 👈 Mudamos para receber o TEXTO do input
   joinDate?: Date | string;
-  status?: string;
+  status?: "ATIVO" | "INATIVO" | "TRANSFERIDO" | "FALECIDO"; // 👈 Use o Enum do Prisma
 };
 
 type CreateMemberDTO = {
   name: string;
   email?: string | null;
   phone?: string | null;
-  role?: string | null;
+  role?: string | null; // 👈 Mudamos para receber o TEXTO do input
   joinDate?: Date | string;
-  status?: string;
+  status?: "ATIVO" | "INATIVO" | "TRANSFERIDO" | "FALECIDO"; // 👈 Use o Enum do Prisma
 };
 
 interface Actor {
@@ -51,7 +51,7 @@ export const MemberService = {
         OR: [
           { name: { contains: searchTerm, mode: "insensitive" as const } },
           { email: { contains: searchTerm, mode: "insensitive" as const } },
-          { role: { contains: searchTerm, mode: "insensitive" as const } },
+          { role: { name: { contains: searchTerm, mode: "insensitive" as const } } },
         ],
       }),
     };
@@ -59,6 +59,7 @@ export const MemberService = {
     const [members, total] = await Promise.all([
       prisma.member.findMany({
         where: whereClause,
+        include: { role: true }, // 👈 Traz o nome do cargo (ex: "Pastor")
         orderBy: { name: "asc" },
         skip: (safePage - 1) * safeLimit,
         take: safeLimit,
@@ -81,16 +82,33 @@ export const MemberService = {
   // 2. Criar membro + Auditoria (Mapeamento explícito para segurança)
   async createMember(churchId: string, actor: Actor, data: CreateMemberDTO) {
     return await prisma.$transaction(async (tx) => {
+      let finalRoleId = null;
+
+      // Se o utilizador escreveu algo no campo "Função"
+      if (data.role && data.role.trim() !== "") {
+        const roleName = data.role.trim();
+
+        // 🛡️ Verifica se existe ou cria o cargo na hora para esta igreja
+        const roleRecord = await tx.memberRole.upsert({
+          where: {
+            churchId_name: { churchId, name: roleName },
+          },
+          update: {},
+          create: { name: roleName, churchId },
+        });
+        finalRoleId = roleRecord.id;
+      }
       const newMember = await tx.member.create({
         data: {
           name: data.name,
           email: data.email ?? undefined,
           phone: data.phone ?? undefined,
-          role: data.role ?? "Membro",
+          roleId: finalRoleId ?? undefined, // 👈 Agora usamos o ID gerado
           joinDate: data.joinDate ? new Date(data.joinDate) : new Date(),
-          status: data.status ?? "Ativo",
+          status: data.status ?? "ATIVO",
           churchId, // 🔒 Injetado via servidor
         },
+        include: { role: true }
       });
 
       await tx.auditLog.create({
@@ -127,16 +145,36 @@ export const MemberService = {
     if (!currentMember) throw new Error("MEMBER_NOT_FOUND_OR_ACCESS_DENIED");
 
     return await prisma.$transaction(async (tx) => {
+      let finalRoleId = null;
+
+      // 🛡️ Lógica de Upsert para o Cargo
+      if (data.role && data.role.trim() !== "") {
+        const roleName = data.role.trim();
+        const roleRecord = await tx.memberRole.upsert({
+          where: {
+            churchId_name: { churchId, name: roleName },
+          },
+          update: {},
+          create: { name: roleName, churchId },
+        });
+        finalRoleId = roleRecord.id;
+      }
+
       // 🛡️ updateMany com churchId é a sua garantia multi-tenant
       await tx.member.updateMany({
         where: { id, churchId },
         data: {
-          ...data,
+          name: data.name,
+          email: data.email,
+          phone: data.phone,
+          // 🛡️ A SOLUÇÃO: Se o roleId for uma string vazia ou inválida, enviamos null
+          roleId: finalRoleId, // 👈 Salva o ID (seja novo ou existente)
+          status: data.status,
           joinDate: validJoinDate,
         },
       });
 
-      const updatedMember = await tx.member.findUnique({ where: { id } });
+      const updatedMember = await tx.member.findUnique({ where: { id }, include: { role: true } });
 
       await tx.auditLog.create({
         data: {

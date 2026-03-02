@@ -21,13 +21,11 @@ export const memberSchema = z.object({
     .optional()
     .or(z.literal("")),
 
-  // Alterado de enum para string para aceitar qualquer cargo (Pastor, Diácono, etc)
-    role: z
+  // Alteramos de 'role' para 'roleId' para bater com o banco
+  role: z
     .string()
-    .max(50, "Cargo muito longo")
     .optional()
-    .or(z.literal(""))
-    .default("Membro"),
+    .or(z.literal("")),
 
   joinDate: z.string().min(1, "Data é obrigatória"), // Aceita a string "YYYY-MM-DD" do navegador
 });

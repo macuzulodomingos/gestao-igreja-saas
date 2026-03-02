@@ -26,6 +26,9 @@ model Church {
   departments Department[]
   finances    FinanceTransaction[]
   auditLogs   AuditLog[]
+  categories   FinanceCategory[] // 👈 ADICIONADO
+  subscription Subscription?     // 👈 ADICIONADO
+  memberRoles  MemberRole[]
 }
 
 enum Plan {
@@ -104,9 +107,12 @@ model Member {
   name     String
   email    String?
   phone    String?
-  role     String? // Pastor, Diácono, etc.
-  status   String   @default("Ativo")
+  status   MemberStatus @default(ATIVO) // 👈 Mudou para Enum
   joinDate DateTime @default(now())
+
+  // Relação com o cargo (FK)
+  roleId    String?
+  role      MemberRole?  @relation(fields: [roleId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -122,8 +128,27 @@ model Member {
   @@index([churchId, email])
 }
 
-// 4. FINANÇAS
-// Por que? Usamos 'Decimal' em vez de 'Float' para evitar erros de arredondamento 
+enum MemberStatus {
+  ATIVO
+  INATIVO
+  TRANSFERIDO
+  FALECIDO
+}
+
+//  Cargos Flexíveis por Igreja
+model MemberRole {
+  id       String @id @default(cuid())
+  name     String // "Catequista", "Presbítero", "Diácono"
+  churchId String
+  church   Church @relation(fields: [churchId], references: [id], onDelete: Cascade)
+  
+  members  Member[]
+
+  @@unique([churchId, name]) 
+  @@index([churchId])
+}
+
+// 4. FINANÇAS 
 // centesimal em dízimos e ofertas de grande valor em Kwanza (AOA).
 
 model FinanceTransaction {
@@ -131,8 +156,11 @@ model FinanceTransaction {
   description String
   amount      Int      // Mudamos de Decimal para Int (Cêntimos)
   type        TransactionType
-  category    String // Dízimo, Oferta, Aluguel, etc.
   date        DateTime        @default(now())
+
+  // RELAÇÃO COM A CATEGORIA (Mudou de String para isso aqui 👇)
+  categoryId  String
+  category    FinanceCategory @relation(fields: [categoryId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -148,7 +176,51 @@ enum TransactionType {
   EXPENSE
 }
 
-// 5. DEPARTAMENTOS
+// 5. NOVA TABELA DE CATEGORIAS
+// Em vez de uma String solta, agora a categoria é um registro real.
+model FinanceCategory {
+  id        String          @id @default(cuid())
+  name      String          // Ex: "Dízimo", "Construção", "Luz"
+  type      TransactionType // INCOME ou EXPENSE
+  
+  churchId  String
+  church    Church          @relation(fields: [churchId], references: [id], onDelete: Cascade)
+  
+  transactions FinanceTransaction[]
+
+  @@unique([churchId, name, type]) // Uma igreja não pode ter dois "Dízimos" de entrada
+  @@index([churchId])
+}
+
+// 6. NOVA TABELA DE ASSINATURA
+// Para controlar quem pagou e até quando pode usar o sistema.
+model Subscription {
+  id           String             @id @default(cuid())
+  churchId     String             @unique
+  church       Church             @relation(fields: [churchId], references: [id], onDelete: Cascade)
+  
+  status       SubscriptionStatus @default(TRIALING)
+  startDate    DateTime           @default(now())
+  endDate      DateTime?          
+  
+  // Controle financeiro do SaaS
+  currentPeriodEnd DateTime       // 👈 Útil para saber quando vence a mensalidade
+  
+  paymentProvider  String?        // "Stripe", "Multicaixa", "Transferencia"
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt // 👈 Importante para saber quando o plano mudou
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  TRIALING
+}
+
+
+// 7. DEPARTAMENTOS
 model Department {
   id          String  @id @default(cuid())
   name        String
@@ -165,7 +237,7 @@ model Department {
   @@index([churchId])
 }
 
-// 6. AUDITORIA
+// 8. AUDITORIA
 model AuditLog {
   id            String   @id @default(cuid())
   churchId      String

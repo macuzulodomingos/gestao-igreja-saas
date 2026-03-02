@@ -5,7 +5,12 @@ export interface Member {
   name: string;
   email: string | null;
   phone: string | null;
-  role: string;
+  // Alteração aqui: role agora é um objeto vindo do include: { role: true }
+  role?: {
+    id: string;
+    name: string;
+  } | null; 
+  roleId: string | null; // O ID puro para o banco
   status: string;
   joinDate: string | Date; 
   churchId: string;

@@ -58,6 +58,7 @@ export async function createMemberAction(
 
     await MemberService.createMember(churchId, actor, {
       ...result.data,
+      role: result.data.role, // Passamos o texto que o utilizador digitou
       joinDate: joinDateUTC, // Use a data tratada aqui também
       phone: sanitizedPhone,
     });
@@ -94,6 +95,7 @@ export async function updateMemberAction(
 
     const sanitizedPhone = result.data.phone?.replace(/[^\d+]/g, "");
 
+
     // AJUSTE DE DATA: Forçamos a string YYYY-MM-DD a ser interpretada como UTC Meio-dia
     // Isso evita que oscilações de fuso horário mudem o dia ao salvar.
     const joinDateUTC = result.data.joinDate
@@ -102,6 +104,7 @@ export async function updateMemberAction(
 
     await MemberService.updateMember(memberId, churchId, actor, {
       ...result.data,
+      role: result.data.role, // O texto do formulário (ex: "Secretário")
       joinDate: joinDateUTC, // Passamos a data tratada
       phone: sanitizedPhone,
     });

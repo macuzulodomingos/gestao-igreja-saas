@@ -313,7 +313,7 @@ export default function MemberClient({
                   <Input
                     id="role"
                     name="role"
-                    defaultValue={editingMember?.role || ""}
+                    defaultValue={editingMember?.role?.name || ""}
                     placeholder="Ex: Diácono"
                     className={fieldErrors.role ? "border-destructive" : ""}
                   />
@@ -432,10 +432,10 @@ export default function MemberClient({
                     </TableCell>
                     <TableCell>
                       <Badge
-                        className={roleColors[member.role] || roleColors.Membro}
+                        className={roleColors[member.role?.name || "Membro"] || roleColors.Membro}
                         variant="secondary"
                       >
-                        {member.role || "Membro"}
+                        {member.role?.name || "Membro"}
                       </Badge>
                     </TableCell>
                     <TableCell className="hidden lg:table-cell text-xs text-muted-foreground">
