@@ -1,99 +1,87 @@
 "use client";
-import { useEffect } from "react";
+
+import { useEffect, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { IncomeEntry } from "@/lib/mock-data";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { toast } from "sonner";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Loader2 } from "lucide-react";
+import { saveTransactionAction } from "@/app/actions/finance";
 
-const incomeFormSchema = z.object({
-  date: z.string().min(1, "A data é obrigatória"),
-  type: z.enum(["Dízimo", "Oferta", "Doação", "Outro"]),
-  amount: z
-    .string()
-    .min(1, "O valor é obrigatório")
-    .refine(
-      (val) => !isNaN(Number(val)) && Number(val) > 0,
-      "O valor deve ser um número positivo.",
-    ),
+const schema = z.object({
+  date: z.string().min(1, "Data obrigatória"),
+  categoryId: z.string().min(1, "Categoria obrigatória"),
+  amount: z.string().min(1, "Valor obrigatório").refine(
+    (val) => !isNaN(Number(val)) && Number(val) > 0,
+    "Valor deve ser positivo"
+  ),
   description: z.string().max(200).optional(),
 });
 
-type IncomeFormData = z.infer<typeof incomeFormSchema>;
+type FormData = z.infer<typeof schema>;
 
-interface IncomeFormDialogProps {
+type Category = { id: string; name: string };
+type Transaction = { id: string; description: string; amount: number; category: string; date: Date };
+
+interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  entry: IncomeEntry | null;
-  onSave: (data: Omit<IncomeEntry, "id">) => void;
+  entry: Transaction | null;
+  categories: Category[];
 }
 
-export function IncomeFormDialog({
-  open,
-  onOpenChange,
-  entry,
-  onSave,
-}: IncomeFormDialogProps) {
-  const form = useForm<IncomeFormData>({
-    resolver: zodResolver(incomeFormSchema),
-    defaultValues: {
-      date: "",
-      type: "Dízimo",
-      amount: "",
-      description: "",
-    },
+export function IncomeFormDialog({ open, onOpenChange, entry, categories }: Props) {
+  const [isPending, startTransition] = useTransition();
+
+  const form = useForm<FormData>({
+    resolver: zodResolver(schema),
+    defaultValues: { date: "", categoryId: "", amount: "", description: "" },
   });
 
   useEffect(() => {
     if (open) {
       if (entry) {
+        const cat = categories.find(c => c.name === entry.category);
         form.reset({
-          date: entry.date,
-          type: entry.type as any, // Garantindo compatibilidade de tipo
+          date: new Date(entry.date).toISOString().split("T")[0],
+          categoryId: cat?.id || "",
           amount: entry.amount.toString(),
           description: entry.description || "",
         });
       } else {
         form.reset({
-          // 3. Corrigido: Pegar a data local correta (YYYY-MM-DD) sem problemas de fuso horário
-          date: new Date().toLocaleDateString("pt-AO"),
-          type: "Dízimo",
+          date: new Date().toISOString().split("T")[0],
+          categoryId: categories[0]?.id || "",
           amount: "",
           description: "",
         });
       }
     }
-  }, [entry, open, form]);
+  }, [entry, open, categories, form]);
 
-  const handleSubmit = (data: IncomeFormData) => {
-    onSave({
-      date: data.date,
-      type: data.type,
-      amount: Number(data.amount),
-      description: data.description || undefined,
+  const handleSubmit = (data: FormData) => {
+    startTransition(async () => {
+      const formData = new FormData();
+      formData.append("description", data.description || "Receita");
+      formData.append("amount", data.amount);
+      formData.append("type", "INCOME");
+      formData.append("categoryId", data.categoryId);
+      formData.append("date", data.date);
+
+      const result = await saveTransactionAction(formData);
+
+      if (result.success) {
+        toast.success("Receita registada!");
+        onOpenChange(false);
+      } else {
+        toast.error(result.error || "Erro ao registar receita.");
+      }
     });
   };
 
@@ -101,102 +89,55 @@ export function IncomeFormDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>
-            {entry ? "Editar entrada de receita" : "Adicionar Receita"}
-          </DialogTitle>
+          <DialogTitle>{entry ? "Editar Receita" : "Adicionar Receita"}</DialogTitle>
         </DialogHeader>
         <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(handleSubmit)}
-            className="space-y-4"
-          >
-            <FormField
-              control={form.control}
-              name="date"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Data</FormLabel>
-                  <FormControl>
-                    <Input type="date" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+            <FormField control={form.control} name="date" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Data</FormLabel>
+                <FormControl><Input type="date" {...field} /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
 
-            <FormField
-              control={form.control}
-              name="type"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Tipo</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o tipo de receita" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="Dízimo">Dízimo</SelectItem>
-                      <SelectItem value="Oferta">Oferta</SelectItem>
-                      <SelectItem value="Doação">Doação</SelectItem>
-                      <SelectItem value="Outro">Outro</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="amount"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Quantia (kz)</FormLabel>
+            <FormField control={form.control} name="categoryId" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Categoria</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
-                    <Input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      placeholder="0.00"
-                      {...field}
-                    />
+                    <SelectTrigger><SelectValue placeholder="Selecione a categoria" /></SelectTrigger>
                   </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                  <SelectContent>
+                    {categories.map(cat => (
+                      <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )} />
 
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Descrição (Opcional)</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Breve descrição..."
-                      className="resize-none"
-                      rows={2}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <FormField control={form.control} name="amount" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Valor (Kz)</FormLabel>
+                <FormControl><Input type="number" min="0" step="0.01" placeholder="0.00" {...field} /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
+
+            <FormField control={form.control} name="description" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Descrição (Opcional)</FormLabel>
+                <FormControl><Textarea placeholder="Breve descrição..." className="resize-none" rows={2} {...field} /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
 
             <div className="flex justify-end gap-3 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-              >
-                Cancelar
-              </Button>
-              <Button type="submit">
-                {entry ? "Salvar Alterações" : "Adicionar Receita"}
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+              <Button type="submit" disabled={isPending}>
+                {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : entry ? "Salvar" : "Adicionar"}
               </Button>
             </div>
           </form>

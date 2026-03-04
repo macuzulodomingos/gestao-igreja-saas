@@ -1,51 +1,52 @@
-import { IncomeEntry } from "@/lib/mock-data";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale"; // Importado para formatar data em português
+import { ptBR } from "date-fns/locale";
+
+type Transaction = {
+  id: string;
+  description: string;
+  amount: number;
+  category: string;
+  date: Date;
+  type: "INCOME" | "EXPENSE";
+  churchId: string;
+};
 
 interface IncomeListProps {
-  entries: IncomeEntry[];
-  onEdit: (entry: IncomeEntry) => void;
+  entries: Transaction[];
+  onEdit: (entry: Transaction) => void;
   onDelete: (id: string) => void;
 }
 
-const incomeTypeColors: Record<IncomeEntry["type"], string> = {
-  Dízimo: "bg-primary/10 text-primary",
-  Oferta: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-  Doação: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
-  Outro: "bg-muted text-muted-foreground",
+const formatCurrency = (amount: number) =>
+  new Intl.NumberFormat("pt-AO", {
+    style: "currency",
+    currency: "AOA",
+    minimumFractionDigits: 2,
+  }).format(amount).replace("AOA", "Kz");
+
+// Cor baseada no nome da categoria — igual ao getRoleColor dos membros
+const getCategoryColor = (name: string) => {
+  const colors = [
+    "bg-primary/10 text-primary",
+    "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+    "bg-blue-500/10 text-blue-600 dark:text-blue-400",
+    "bg-purple-500/10 text-purple-600 dark:text-purple-400",
+    "bg-orange-500/10 text-orange-600 dark:text-orange-400",
+  ];
+  const index = name.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0) % colors.length;
+  return colors[index];
 };
 
 export function IncomeList({ entries, onEdit, onDelete }: IncomeListProps) {
   const sortedEntries = [...entries].sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
   );
-
-  const formatCurrency = (amount: number) => {
-    // Adaptado para Kwanza (AOA)
-    return new Intl.NumberFormat("pt-AO", {
-      style: "currency",
-      currency: "AOA",
-      minimumFractionDigits: 2,
-    }).format(amount).replace("AOA", "Kz"); // Substitui o código ISO pelo símbolo comum
-  };
 
   return (
     <Card>
@@ -61,7 +62,7 @@ export function IncomeList({ entries, onEdit, onDelete }: IncomeListProps) {
               <TableHeader>
                 <TableRow>
                   <TableHead>Data</TableHead>
-                  <TableHead>Tipo</TableHead>
+                  <TableHead>Categoria</TableHead>
                   <TableHead>Descrição</TableHead>
                   <TableHead className="text-right">Valor</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
@@ -74,8 +75,8 @@ export function IncomeList({ entries, onEdit, onDelete }: IncomeListProps) {
                       {format(new Date(entry.date), "dd 'de' MMM, yyyy", { locale: ptBR })}
                     </TableCell>
                     <TableCell>
-                      <Badge variant="secondary" className={incomeTypeColors[entry.type]}>
-                        {entry.type}
+                      <Badge variant="secondary" className={getCategoryColor(entry.category)}>
+                        {entry.category}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
@@ -93,15 +94,13 @@ export function IncomeList({ entries, onEdit, onDelete }: IncomeListProps) {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={() => onEdit(entry)}>
-                            <Pencil className="h-4 w-4 mr-2" />
-                            Editar
+                            <Pencil className="h-4 w-4 mr-2" /> Editar
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => onDelete(entry.id)}
                             className="text-destructive focus:text-destructive"
                           >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Eliminar
+                            <Trash2 className="h-4 w-4 mr-2" /> Eliminar
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>

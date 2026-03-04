@@ -1,53 +1,30 @@
-import { IncomeEntry, ExpenseEntry } from "@/lib/mock-data";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, TrendingDown, Wallet, DollarSign } from "lucide-react";
 
 interface FinanceSummaryProps {
-  incomeEntries: IncomeEntry[];
-  expenseEntries: ExpenseEntry[];
+  stats: {
+    totalIncomes: number;
+    totalExpenses: number;
+    netBalance: number;
+    monthlyIncomes: number;
+    monthlyExpenses: number;
+    monthlyBalance: number;
+  };
 }
 
-export function FinanceSummary({ incomeEntries, expenseEntries }: FinanceSummaryProps) {
-  const now = new Date();
-  const currentMonth = now.getMonth();
-  const currentYear = now.getFullYear();
+const formatCurrency = (amount: number) =>
+  new Intl.NumberFormat("pt-AO", {
+    style: "currency",
+    currency: "AOA",
+    minimumFractionDigits: 2,
+  }).format(amount).replace("AOA", "Kz");
 
-  const monthlyIncome = incomeEntries
-    .filter((entry) => {
-      const entryDate = new Date(entry.date);
-      return entryDate.getMonth() === currentMonth && entryDate.getFullYear() === currentYear;
-    })
-    .reduce((sum, entry) => sum + entry.amount, 0);
-
-  const monthlyExpenses = expenseEntries
-    .filter((entry) => {
-      const entryDate = new Date(entry.date);
-      return entryDate.getMonth() === currentMonth && entryDate.getFullYear() === currentYear;
-    })
-    .reduce((sum, entry) => sum + entry.amount, 0);
-
-  const balance = monthlyIncome - monthlyExpenses;
-
-  const totalIncome = incomeEntries.reduce((sum, entry) => sum + entry.amount, 0);
-  const totalExpenses = expenseEntries.reduce((sum, entry) => sum + entry.amount, 0);
-  const overallBalance = totalIncome - totalExpenses;
-
-  const formatCurrency = (amount: number) => {
-    // Formatação para Kwanza angolano (AOA)
-    return new Intl.NumberFormat("pt-AO", {
-      style: "currency",
-      currency: "AOA",
-      minimumFractionDigits: 2,
-    }).format(amount).replace("AOA", "Kz");
-  };
-
-  // Nome do mês em português
-  const monthName = now.toLocaleString("pt-BR", { month: "long" });
+export function FinanceSummary({ stats }: FinanceSummaryProps) {
+  const monthName = new Date().toLocaleString("pt-AO", { month: "long" });
   const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
 
   return (
     <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-      {/* Receita Mensal */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -58,12 +35,13 @@ export function FinanceSummary({ incomeEntries, expenseEntries }: FinanceSummary
           </div>
         </CardHeader>
         <CardContent>
-          <p className="text-2xl font-bold text-emerald-600">{formatCurrency(monthlyIncome)}</p>
+          <p className="text-2xl font-bold text-emerald-600">
+            {formatCurrency(stats.monthlyIncomes)}
+          </p>
           <p className="text-xs text-muted-foreground mt-1">Total deste mês</p>
         </CardContent>
       </Card>
 
-      {/* Despesas Mensais */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -74,12 +52,13 @@ export function FinanceSummary({ incomeEntries, expenseEntries }: FinanceSummary
           </div>
         </CardHeader>
         <CardContent>
-          <p className="text-2xl font-bold text-red-600">{formatCurrency(monthlyExpenses)}</p>
+          <p className="text-2xl font-bold text-red-600">
+            {formatCurrency(stats.monthlyExpenses)}
+          </p>
           <p className="text-xs text-muted-foreground mt-1">Total deste mês</p>
         </CardContent>
       </Card>
 
-      {/* Saldo Mensal */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -90,14 +69,13 @@ export function FinanceSummary({ incomeEntries, expenseEntries }: FinanceSummary
           </div>
         </CardHeader>
         <CardContent>
-          <p className={`text-2xl font-bold ${balance >= 0 ? "text-emerald-600" : "text-red-600"}`}>
-            {formatCurrency(balance)}
+          <p className={`text-2xl font-bold ${stats.monthlyBalance >= 0 ? "text-emerald-600" : "text-red-600"}`}>
+            {formatCurrency(stats.monthlyBalance)}
           </p>
           <p className="text-xs text-muted-foreground mt-1">Receitas menos despesas</p>
         </CardContent>
       </Card>
 
-      {/* Saldo Geral */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -108,8 +86,8 @@ export function FinanceSummary({ incomeEntries, expenseEntries }: FinanceSummary
           </div>
         </CardHeader>
         <CardContent>
-          <p className={`text-2xl font-bold ${overallBalance >= 0 ? "text-emerald-600" : "text-red-600"}`}>
-            {formatCurrency(overallBalance)}
+          <p className={`text-2xl font-bold ${stats.netBalance >= 0 ? "text-emerald-600" : "text-red-600"}`}>
+            {formatCurrency(stats.netBalance)}
           </p>
           <p className="text-xs text-muted-foreground mt-1">Saldo acumulado total</p>
         </CardContent>

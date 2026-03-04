@@ -3,13 +3,16 @@ import { z } from "zod";
 export const financeSchema = z.object({
   description: z
     .string()
-    .min(3, "A descrição deve ter pelo menos 3 caracteres")
-    .max(100, "Descrição muito longa"),
-  
+    .max(100, "Descrição muito longa")
+    .optional()
+    .or(z.literal("")),
+
   amount: z.coerce
-    .number()
-    .positive("O valor deve ser maior que zero")
-    .or(z.string().transform((val) => Number(val.replace(",", ".")))),
+    .number({
+      required_error: "O valor é obrigatório",
+      invalid_type_error: "Digite um valor numérico válido",
+    })
+    .positive("O valor deve ser maior que zero"),
 
   type: z.enum(["INCOME", "EXPENSE"], {
     required_error: "Selecione o tipo da transação",

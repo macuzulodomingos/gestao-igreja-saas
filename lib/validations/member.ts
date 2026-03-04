@@ -28,4 +28,9 @@ export const memberSchema = z.object({
     .or(z.literal("")),
 
   joinDate: z.string().min(1, "Data é obrigatória"), // Aceita a string "YYYY-MM-DD" do navegador
+
+  status: z
+    .enum(["ATIVO", "INATIVO", "TRANSFERIDO", "FALECIDO"])
+    .optional()
+    .default("ATIVO"),
 });

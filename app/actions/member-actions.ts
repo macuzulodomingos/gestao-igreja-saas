@@ -107,6 +107,7 @@ export async function updateMemberAction(
       role: result.data.role, // O texto do formulário (ex: "Secretário")
       joinDate: joinDateUTC, // Passamos a data tratada
       phone: sanitizedPhone,
+      status: result.data.status, // 👈 ADICIONA ISTO
     });
 
     revalidatePath(`/[slug]/membros`, "page");

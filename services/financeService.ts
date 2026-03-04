@@ -1,69 +1,58 @@
 import prisma from "@/lib/prisma";
 import { TransactionType, Prisma } from "@prisma/client";
-import { 
-  FinanceTransaction, 
-  FinanceStats 
-} from "@/types/finance";
+import { FinanceTransaction, FinanceStats } from "@/types/finance";
 
 export interface CreateTransactionDTO {
   description: string;
   amount: number | string;
   type: TransactionType;
-  categoryId: string; // 👈 Alterado de category (string) para categoryId (ID da tabela)
+  categoryId: string;
   date: string | Date;
 }
 
-export class FinanceService {
-  /**
-   * Converte valor monetário para cêntimos de forma segura
-   */
-  private static toCents(amount: number | string): number {
-    const parsed = typeof amount === "string" 
-      ? parseFloat(amount.replace(',', '.')) 
-      : amount;
+// Helper privado — fora do objecto, igual ao sanitizeForLog do MemberService
+const toCents = (amount: number | string): number => {
+  const parsed = typeof amount === "string"
+    ? parseFloat(amount.replace(",", "."))
+    : amount;
 
-    if (isNaN(parsed)) return 0;
-    return Math.round(parsed * 100);
-  }
+  if (isNaN(parsed)) return 0;
+  return Math.round(parsed * 100);
+};
 
-  /**
-   * Cria uma transação com Auditoria e validação de Categoria
-   */
-  static async createTransaction(
+export const FinanceService = {
+  async createTransaction(
     churchId: string,
     actor: { userId: string; email: string },
     data: CreateTransactionDTO
   ): Promise<FinanceTransaction> {
-    const amountInCents = this.toCents(data.amount);
+    const amountInCents = toCents(data.amount);
 
     if (amountInCents <= 0 && data.type === "INCOME") {
       throw new Error("O valor da receita deve ser maior que zero.");
     }
 
     return await prisma.$transaction(async (tx) => {
-      // 1. Verificar se a categoria pertence à igreja e é do tipo correto
       const category = await tx.financeCategory.findFirst({
-        where: { id: data.categoryId, churchId, type: data.type }
+        where: { id: data.categoryId, churchId, type: data.type },
       });
 
       if (!category) {
         throw new Error("Categoria inválida para este tipo de transação.");
       }
 
-      // 2. Criar o registro financeiro
       const transaction = await tx.financeTransaction.create({
         data: {
           description: data.description,
           amount: amountInCents,
           type: data.type,
-          categoryId: data.categoryId, // 👈 Usa o ID da relação
+          categoryId: data.categoryId,
           date: new Date(data.date),
           churchId,
         },
-        include: { category: true } // Inclui os dados da categoria no retorno
+        include: { category: true },
       });
 
-      // 3. Log de Auditoria
       await tx.auditLog.create({
         data: {
           churchId,
@@ -78,57 +67,68 @@ export class FinanceService {
 
       return transaction as unknown as FinanceTransaction;
     });
-  }
+  },
 
-  /**
-   * Busca estatísticas (Totais)
-   */
-  static async getFinanceStats(churchId: string): Promise<FinanceStats> {
-    const totals = await prisma.financeTransaction.groupBy({
-      by: ['type'],
-      where: { churchId },
-      _sum: { amount: true }
-    });
+  async getFinanceStats(churchId: string) {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
 
-    const incomeCents = totals.find(t => t.type === "INCOME")?._sum.amount || 0;
-    const expenseCents = totals.find(t => t.type === "EXPENSE")?._sum.amount || 0;
+    const [allTotals, monthlyTotals] = await Promise.all([
+      // Totais gerais
+      prisma.financeTransaction.groupBy({
+        by: ["type"],
+        where: { churchId },
+        _sum: { amount: true },
+      }),
+      // Totais do mês actual
+      prisma.financeTransaction.groupBy({
+        by: ["type"],
+        where: { churchId, date: { gte: startOfMonth, lte: endOfMonth } },
+        _sum: { amount: true },
+      }),
+    ]);
+
+    const totalIncomes = (allTotals.find(t => t.type === "INCOME")?._sum.amount || 0) / 100;
+    const totalExpenses = (allTotals.find(t => t.type === "EXPENSE")?._sum.amount || 0) / 100;
+    const monthlyIncomes = (monthlyTotals.find(t => t.type === "INCOME")?._sum.amount || 0) / 100;
+    const monthlyExpenses = (monthlyTotals.find(t => t.type === "EXPENSE")?._sum.amount || 0) / 100;
 
     return {
-      totalIncomes: incomeCents / 100,
-      totalExpenses: expenseCents / 100,
-      netBalance: (incomeCents - expenseCents) / 100,
+      totalIncomes,
+      totalExpenses,
+      netBalance: totalIncomes - totalExpenses,
+      monthlyIncomes,
+      monthlyExpenses,
+      monthlyBalance: monthlyIncomes - monthlyExpenses,
     };
-  }
+  },
 
-  /**
-   * Lista transações com a Categoria populada
-   */
-  static async getTransactions(churchId: string, limit = 50): Promise<FinanceTransaction[]> {
+  async getTransactions(churchId: string, limit = 50, type?: "INCOME" | "EXPENSE") {
     const records = await prisma.financeTransaction.findMany({
-      where: { churchId },
-      include: { category: true }, // 👈 Importante para mostrar o nome da categoria na tabela
-      orderBy: { date: 'desc' },
+      where: {
+        churchId,
+        ...(type && { type }), // 👈 filtra por tipo se passado
+      },
+      include: { category: true },
+      orderBy: { date: "desc" },
       take: limit,
     });
 
     return records.map(r => ({
       ...r,
       amount: r.amount / 100,
-      // Se o teu tipo FinanceTransaction ainda espera uma string em category, mapeamos aqui:
-      category: r.category.name 
-    })) as unknown as FinanceTransaction[];
-  }
+      category: r.category.name,
+    }));
+  },
 
-  /**
-   * Busca as categorias disponíveis para a igreja (para usar no Select do formulário)
-   */
-  static async getCategories(churchId: string, type?: TransactionType) {
+  async getCategories(churchId: string, type?: TransactionType) {
     return await prisma.financeCategory.findMany({
-      where: { 
+      where: {
         churchId,
-        ...(type && { type })
+        ...(type && { type }),
       },
-      orderBy: { name: 'asc' }
+      orderBy: { name: "asc" },
     });
-  }
-}
+  },
+};

@@ -8,6 +8,7 @@ export default defineConfig({
 
   migrations: {
     path: "prisma/migrations",
+    seed: "tsx prisma/seed.ts", // 👈 ADICIONA ISTO
   },
   datasource: {
     url: env("DIRECT_URL"),

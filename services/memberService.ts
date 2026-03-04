@@ -24,6 +24,11 @@ interface Actor {
   email: string;
 }
 
+// 👇 ADICIONA ESTE HELPER
+const normalizeRoleName = (name: string) =>
+  name.trim().toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
+
+
 // Helper para limpar dados sensíveis ou inúteis para o log
 const sanitizeForLog = (data: any) => {
   if (!data) return null;
@@ -86,7 +91,7 @@ export const MemberService = {
 
       // Se o utilizador escreveu algo no campo "Função"
       if (data.role && data.role.trim() !== "") {
-        const roleName = data.role.trim();
+        const roleName = normalizeRoleName(data.role); // 👈 normaliza aqui
 
         // 🛡️ Verifica se existe ou cria o cargo na hora para esta igreja
         const roleRecord = await tx.memberRole.upsert({
@@ -149,7 +154,7 @@ export const MemberService = {
 
       // 🛡️ Lógica de Upsert para o Cargo
       if (data.role && data.role.trim() !== "") {
-        const roleName = data.role.trim();
+        const roleName = normalizeRoleName(data.role); // 👈 normaliza aqui
         const roleRecord = await tx.memberRole.upsert({
           where: {
             churchId_name: { churchId, name: roleName },

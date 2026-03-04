@@ -66,20 +66,15 @@ import { Member } from "@/types/member";
 const roleColors: Record<string, string> = {
   Pastor: "bg-primary/10 text-primary",
   Ancião: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-  Diácono:
-    "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
-  Membro: "bg-muted text-muted-foreground",
+  Diácono: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+  default: "bg-muted text-muted-foreground", // 👈 fallback para qualquer outro cargo
 };
 
 const statusColors: Record<string, string> = {
-  Ativo:
-    "bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800",
-  Inativo:
-    "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700",
-  Suspenso:
-    "bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800",
-  Pendente:
-    "bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-800",
+  ATIVO: "bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800",
+  INATIVO: "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700",
+  TRANSFERIDO: "bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-800",
+  FALECIDO: "bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800",
 };
 
 interface MemberClientProps {
@@ -350,6 +345,26 @@ export default function MemberClient({
                 </div>
               </div>
 
+              {/* 👇 ADICIONA AQUI */}
+              {editingMember && (
+                <div className="grid gap-2">
+                  <label htmlFor="status" className="text-sm font-medium">
+                    Status
+                  </label>
+                  <select
+                    id="status"
+                    name="status"
+                    defaultValue={editingMember?.status || "ATIVO"}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <option value="ATIVO">Ativo</option>
+                    <option value="INATIVO">Inativo</option>
+                    <option value="TRANSFERIDO">Transferido</option>
+                    <option value="FALECIDO">Falecido</option>
+                  </select>
+                </div>
+              )}
+
               <DialogFooter className="mt-4">
                 <Button type="submit" disabled={isPending} className="w-full">
                   {isPending ? (
@@ -432,10 +447,10 @@ export default function MemberClient({
                     </TableCell>
                     <TableCell>
                       <Badge
-                        className={roleColors[member.role?.name || "Membro"] || roleColors.Membro}
+                        className={roleColors[member.role?.name || ""] || roleColors.default}
                         variant="secondary"
                       >
-                        {member.role?.name || "Membro"}
+                        {member.role?.name || "Sem cargo"}
                       </Badge>
                     </TableCell>
                     <TableCell className="hidden lg:table-cell text-xs text-muted-foreground">
