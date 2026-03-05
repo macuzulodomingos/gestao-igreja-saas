@@ -4,55 +4,84 @@ import { auth } from "@/lib/auth";
 import { FinanceService } from "@/services/financeService";
 import { financeSchema } from "@/lib/validations/finance";
 import { revalidatePath } from "next/cache";
-import prisma from "@/lib/prisma"; // 👈 estava a faltar
+import prisma from "@/lib/prisma";
 
-export async function saveTransactionAction(formData: FormData) {
+/**
+ * Helper privado — mesmo padrão do member-actions
+ */
+async function getAuthContext() {
   const session = await auth();
+  if (!session?.user) throw new Error("UNAUTHORIZED");
 
-  if (!session?.user?.churchId) {
-    return { success: false, error: "Não autorizado ou sessão expirada." };
-  }
+  const churchId = session.user.churchId;
+  if (!churchId) throw new Error("CHURCH_ID_REQUIRED");
 
-  const { churchId, id: userId, email } = session.user;
+  return {
+    churchId,
+    actor: {
+      userId: session.user.id,
+      email: session.user.email!,
+    },
+  };
+}
 
+// --- ACTION DE CRIAR / EDITAR ---
+export async function saveTransactionAction(
+  formData: FormData,
+  transactionId?: string,
+) {
+  console.log("transactionId recebido:", transactionId);
   try {
-    const rawData = Object.fromEntries(formData.entries());
-    const result = financeSchema.safeParse(rawData);
+    const { churchId, actor } = await getAuthContext();
 
+    const result = financeSchema.safeParse(
+      Object.fromEntries(formData.entries()),
+    );
     if (!result.success) {
       return { success: false, fieldErrors: result.error.flatten().fieldErrors };
     }
 
-    const actor = { userId, email: email! };
-    await FinanceService.createTransaction(churchId, actor, result.data);
+    const dateUTC = new Date(`${result.data.date}T12:00:00Z`);
 
-    revalidatePath("/[slug]/financas", "page");
+    if (transactionId) {
+      await FinanceService.updateTransaction(transactionId, churchId, actor, {
+        ...result.data,
+        date: dateUTC,
+      });
+    } else {
+      await FinanceService.createTransaction(churchId, actor, {
+        ...result.data,
+        date: dateUTC,
+      });
+    }
+
+    revalidatePath(`/[slug]/financas`, "page");
     return { success: true };
 
-  } catch (error: unknown) {
+  } catch (error: any) {
     console.error("[SAVE_TRANSACTION_ERROR]:", error);
+    if (error.message === "UNAUTHORIZED")
+      return { success: false, error: "Não autenticado." };
     return { success: false, error: "Falha ao registar transação." };
   }
 }
 
+// --- ACTION DE DELETAR ---
 export async function deleteTransactionAction(id: string) {
-  const session = await auth();
-
-  if (!session?.user?.churchId) {
-    return { success: false, error: "Não autorizado." };
-  }
-
   try {
-    // 🔒 Multi-tenant: garante que só apaga da igreja correcta
+    const { churchId } = await getAuthContext();
+
     await prisma.financeTransaction.deleteMany({
-      where: { id, churchId: session.user.churchId },
+      where: { id, churchId }, // 🔒 Multi-tenant
     });
 
-    revalidatePath("/[slug]/financas", "page");
+    revalidatePath(`/[slug]/financas`, "page");
     return { success: true };
 
-  } catch (error) {
-    console.error("Erro ao eliminar:", error);
+  } catch (error: any) {
+    console.error("[DELETE_TRANSACTION_ERROR]:", error);
+    if (error.message === "UNAUTHORIZED")
+      return { success: false, error: "Não autenticado." };
     return { success: false, error: "Não foi possível eliminar o registo." };
   }
 }

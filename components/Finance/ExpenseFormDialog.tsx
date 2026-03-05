@@ -18,7 +18,10 @@ const schema = z.object({
   date: z.string().min(1, "Data obrigatória"),
   categoryId: z.string().min(1, "Categoria obrigatória"),
   amount: z.string().min(1, "Valor obrigatório").refine(
-    (val) => !isNaN(Number(val)) && Number(val) > 0,
+    (val) => {
+      const clean = val.replace(/\./g, "").replace(",", ".");
+      return !isNaN(Number(clean)) && Number(clean) > 0;
+    },
     "Valor deve ser positivo"
   ),
   description: z.string().max(200).optional(),
@@ -66,20 +69,35 @@ export function ExpenseFormDialog({ open, onOpenChange, entry, categories }: Pro
 
   const handleSubmit = (data: FormData) => {
     startTransition(async () => {
+      let cleanAmount = data.amount.trim();
+
+      const dotIndex = cleanAmount.lastIndexOf(".");
+      const commaIndex = cleanAmount.lastIndexOf(",");
+
+      if (commaIndex > dotIndex) {
+        cleanAmount = cleanAmount.replace(/\./g, "").replace(",", ".");
+      } else if (dotIndex !== -1) {
+        const decimals = cleanAmount.substring(dotIndex + 1);
+        if (decimals.length === 3) {
+          cleanAmount = cleanAmount.replace(/\./g, "");
+        }
+      }
+
       const formData = new FormData();
-      formData.append("description", data.description || "Despesa");
-      formData.append("amount", data.amount);
-      formData.append("type", "EXPENSE");        // 👈 única diferença
+      formData.append("description", data.description || "Despesa"); // 👈 era "Receita"
+      formData.append("amount", cleanAmount);
+      formData.append("type", "EXPENSE");                             // 👈 era "INCOME"
       formData.append("categoryId", data.categoryId);
       formData.append("date", data.date);
 
-      const result = await saveTransactionAction(formData);
+      // 👇 passa o id se for edição
+      const result = await saveTransactionAction(formData, entry?.id ?? undefined);
 
       if (result.success) {
-        toast.success("Despesa registada!");
+        toast.success(entry ? "Despesa actualizada!" : "Despesa registada!"); // 👈 era "Receita"
         onOpenChange(false);
       } else {
-        toast.error(result.error || "Erro ao registar despesa.");
+        toast.error(result.error || "Erro ao registar despesa."); // 👈 era "receita"
       }
     });
   };
@@ -120,7 +138,14 @@ export function ExpenseFormDialog({ open, onOpenChange, entry, categories }: Pro
             <FormField control={form.control} name="amount" render={({ field }) => (
               <FormItem>
                 <FormLabel>Valor (Kz)</FormLabel>
-                <FormControl><Input type="number" min="0" step="0.01" placeholder="0.00" {...field} /></FormControl>
+                <FormControl>
+                  <Input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="Ex: 6000 ou 6.000"
+                    {...field}
+                  />
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )} />
@@ -128,7 +153,9 @@ export function ExpenseFormDialog({ open, onOpenChange, entry, categories }: Pro
             <FormField control={form.control} name="description" render={({ field }) => (
               <FormItem>
                 <FormLabel>Descrição (Opcional)</FormLabel>
-                <FormControl><Textarea placeholder="Breve descrição da despesa..." className="resize-none" rows={2} {...field} /></FormControl>
+                <FormControl>
+                  <Textarea placeholder="Breve descrição da despesa..." className="resize-none" rows={2} {...field} />
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )} />

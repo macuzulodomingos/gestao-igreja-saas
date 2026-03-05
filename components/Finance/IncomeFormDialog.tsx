@@ -18,14 +18,16 @@ const schema = z.object({
   date: z.string().min(1, "Data obrigatória"),
   categoryId: z.string().min(1, "Categoria obrigatória"),
   amount: z.string().min(1, "Valor obrigatório").refine(
-    (val) => !isNaN(Number(val)) && Number(val) > 0,
+    (val) => {
+      const clean = val.replace(/\./g, "").replace(",", ".");
+      return !isNaN(Number(clean)) && Number(clean) > 0;
+    },
     "Valor deve ser positivo"
   ),
   description: z.string().max(200).optional(),
 });
 
 type FormData = z.infer<typeof schema>;
-
 type Category = { id: string; name: string };
 type Transaction = { id: string; description: string; amount: number; category: string; date: Date };
 
@@ -67,17 +69,34 @@ export function IncomeFormDialog({ open, onOpenChange, entry, categories }: Prop
 
   const handleSubmit = (data: FormData) => {
     startTransition(async () => {
+      console.log("entry no submit:", entry); // 👈 ADICIONA ISTO
+      console.log("entry?.id:", entry?.id);   // 👈 E ISTO
+      let cleanAmount = data.amount.trim();
+
+      const dotIndex = cleanAmount.lastIndexOf(".");
+      const commaIndex = cleanAmount.lastIndexOf(",");
+
+      if (commaIndex > dotIndex) {
+        cleanAmount = cleanAmount.replace(/\./g, "").replace(",", ".");
+      } else if (dotIndex !== -1) {
+        const decimals = cleanAmount.substring(dotIndex + 1);
+        if (decimals.length === 3) {
+          cleanAmount = cleanAmount.replace(/\./g, "");
+        }
+      }
+
       const formData = new FormData();
       formData.append("description", data.description || "Receita");
-      formData.append("amount", data.amount);
+      formData.append("amount", cleanAmount);
       formData.append("type", "INCOME");
       formData.append("categoryId", data.categoryId);
       formData.append("date", data.date);
 
-      const result = await saveTransactionAction(formData);
+      // 👇 ÚNICA MUDANÇA — passa o id se for edição
+      const result = await saveTransactionAction(formData, entry?.id ?? undefined);
 
       if (result.success) {
-        toast.success("Receita registada!");
+        toast.success(entry ? "Receita actualizada!" : "Receita registada!");
         onOpenChange(false);
       } else {
         toast.error(result.error || "Erro ao registar receita.");
@@ -121,7 +140,14 @@ export function IncomeFormDialog({ open, onOpenChange, entry, categories }: Prop
             <FormField control={form.control} name="amount" render={({ field }) => (
               <FormItem>
                 <FormLabel>Valor (Kz)</FormLabel>
-                <FormControl><Input type="number" min="0" step="0.01" placeholder="0.00" {...field} /></FormControl>
+                <FormControl>
+                  <Input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="Ex: 6000 ou 6.000"
+                    {...field}
+                  />
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )} />
@@ -129,7 +155,9 @@ export function IncomeFormDialog({ open, onOpenChange, entry, categories }: Prop
             <FormField control={form.control} name="description" render={({ field }) => (
               <FormItem>
                 <FormLabel>Descrição (Opcional)</FormLabel>
-                <FormControl><Textarea placeholder="Breve descrição..." className="resize-none" rows={2} {...field} /></FormControl>
+                <FormControl>
+                  <Textarea placeholder="Breve descrição..." className="resize-none" rows={2} {...field} />
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )} />

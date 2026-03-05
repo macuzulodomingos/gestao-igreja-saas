@@ -10,7 +10,6 @@ export interface CreateTransactionDTO {
   date: string | Date;
 }
 
-// Helper privado — fora do objecto, igual ao sanitizeForLog do MemberService
 const toCents = (amount: number | string): number => {
   const parsed = typeof amount === "string"
     ? parseFloat(amount.replace(",", "."))
@@ -21,6 +20,7 @@ const toCents = (amount: number | string): number => {
 };
 
 export const FinanceService = {
+
   async createTransaction(
     churchId: string,
     actor: { userId: string; email: string },
@@ -28,8 +28,8 @@ export const FinanceService = {
   ): Promise<FinanceTransaction> {
     const amountInCents = toCents(data.amount);
 
-    if (amountInCents <= 0 && data.type === "INCOME") {
-      throw new Error("O valor da receita deve ser maior que zero.");
+    if (amountInCents <= 0) {
+      throw new Error("O valor deve ser maior que zero.");
     }
 
     return await prisma.$transaction(async (tx) => {
@@ -69,19 +69,67 @@ export const FinanceService = {
     });
   },
 
+  // 👇 MÉTODO NOVO
+  async updateTransaction(
+    id: string,
+    churchId: string,
+    actor: { userId: string; email: string },
+    data: CreateTransactionDTO
+  ) {
+    const amountInCents = toCents(data.amount);
+
+    if (amountInCents <= 0) {
+      throw new Error("O valor deve ser maior que zero.");
+    }
+
+    return await prisma.$transaction(async (tx) => {
+      // 🔒 Garante que pertence à igreja correcta
+      const existing = await tx.financeTransaction.findFirst({
+        where: { id, churchId },
+      });
+
+      if (!existing) throw new Error("Transação não encontrada ou acesso negado.");
+
+      const updated = await tx.financeTransaction.update({
+        where: { id },
+        data: {
+          description: data.description,
+          amount: amountInCents,
+          type: data.type,
+          categoryId: data.categoryId,
+          date: new Date(data.date),
+        },
+        include: { category: true },
+      });
+
+      await tx.auditLog.create({
+        data: {
+          churchId,
+          userId: actor.userId,
+          userEmail: actor.email,
+          action: `UPDATE_${data.type}`,
+          entityName: "Finance",
+          entityId: id,
+          oldData: existing as unknown as Prisma.InputJsonValue,
+          newData: updated as unknown as Prisma.InputJsonValue,
+        },
+      });
+
+      return updated;
+    });
+  },
+
   async getFinanceStats(churchId: string) {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
 
     const [allTotals, monthlyTotals] = await Promise.all([
-      // Totais gerais
       prisma.financeTransaction.groupBy({
         by: ["type"],
         where: { churchId },
         _sum: { amount: true },
       }),
-      // Totais do mês actual
       prisma.financeTransaction.groupBy({
         by: ["type"],
         where: { churchId, date: { gte: startOfMonth, lte: endOfMonth } },
@@ -108,7 +156,7 @@ export const FinanceService = {
     const records = await prisma.financeTransaction.findMany({
       where: {
         churchId,
-        ...(type && { type }), // 👈 filtra por tipo se passado
+        ...(type && { type }),
       },
       include: { category: true },
       orderBy: { date: "desc" },

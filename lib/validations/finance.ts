@@ -3,31 +3,25 @@ import { z } from "zod";
 export const financeSchema = z.object({
   description: z
     .string()
-    .max(100, "Descrição muito longa")
+    .max(200, "Descrição muito longa")
     .optional()
-    .or(z.literal("")),
+    .default(""),
 
-  amount: z.coerce
-    .number({
-      required_error: "O valor é obrigatório",
-      invalid_type_error: "Digite um valor numérico válido",
-    })
-    .positive("O valor deve ser maior que zero"),
+  amount: z
+    .string()
+    .min(1, "Valor obrigatório")
+    .refine((val) => !isNaN(Number(val)) && Number(val) > 0, "Valor deve ser positivo"),
 
   type: z.enum(["INCOME", "EXPENSE"], {
-    required_error: "Selecione o tipo da transação",
+    required_error: "Selecione o tipo",
   }),
 
-  category: z
-    .string()
-    .min(1, "Selecione ou digite uma categoria"),
+  categoryId: z.string().min(1, "Categoria obrigatória"), // 👈 era "category"
 
   date: z
     .string()
-    .min(1, "A data é obrigatória")
-    .refine((val) => !isNaN(Date.parse(val)), {
-      message: "Data inválida",
-    }),
+    .min(1, "Data obrigatória")
+    .refine((val) => !isNaN(Date.parse(val)), "Data inválida"),
 });
 
 export type FinanceFormData = z.infer<typeof financeSchema>;
