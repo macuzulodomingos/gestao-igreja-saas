@@ -24,7 +24,7 @@ const schema = z.object({
     },
     "Valor deve ser positivo"
   ),
-  description: z.string().max(200).optional(),
+  description: z.string().max(200, "Descrição não pode ter mais de 200 caracteres").optional(),
 });
 
 type FormData = z.infer<typeof schema>;

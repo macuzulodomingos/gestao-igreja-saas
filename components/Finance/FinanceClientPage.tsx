@@ -11,6 +11,16 @@ import { Button } from "@/components/ui/button";
 import { Plus, TrendingUp, TrendingDown } from "lucide-react";
 import { deleteTransactionAction } from "@/app/actions/finance";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 // Tipo simples para as transações que vêm do servidor
 type Transaction = {
@@ -32,7 +42,14 @@ type Category = {
 interface FinanceClientProps {
   initialIncome: Transaction[];
   initialExpenses: Transaction[];
-  stats: { totalIncomes: number; totalExpenses: number; netBalance: number };
+  stats: {
+    totalIncomes: number;
+    totalExpenses: number;
+    netBalance: number;
+    monthlyIncomes: number;   // 👈 ADICIONA
+    monthlyExpenses: number;  // 👈 ADICIONA
+    monthlyBalance: number;   // 👈 ADICIONA
+  };
   incomeCategories: Category[];    // 👈 NOVO
   expenseCategories: Category[];   // 👈 NOVO
 }
@@ -48,6 +65,7 @@ export default function FinanceClientPage({
   const [isExpenseFormOpen, setIsExpenseFormOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<Transaction | null>(null);
   const [activeTab, setActiveTab] = useState("income");
+  const [entryToDelete, setEntryToDelete] = useState<Transaction | null>(null); // 👈 NOVO
 
   const handleAdd = () => {
     setEditingEntry(null);
@@ -61,11 +79,20 @@ export default function FinanceClientPage({
     else setIsExpenseFormOpen(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm("Deseja eliminar este registo?")) return;
-    const result = await deleteTransactionAction(id);
+  // 👇 Agora só abre o AlertDialog — não elimina directamente
+  const handleDelete = (id: string) => {
+    const entry =
+      initialIncome.find(e => e.id === id) ||
+      initialExpenses.find(e => e.id === id);
+    if (entry) setEntryToDelete(entry);
+  };
+
+  const confirmDelete = async () => {
+    if (!entryToDelete) return;
+    const result = await deleteTransactionAction(entryToDelete.id);
     if (result.success) toast.success("Eliminado com sucesso!");
     else toast.error("Erro ao eliminar.");
+    setEntryToDelete(null);
   };
 
   return (
@@ -124,6 +151,35 @@ export default function FinanceClientPage({
         entry={editingEntry}
         categories={expenseCategories} // 👈 categorias do banco
       />
+
+      {/* AlertDialog de confirmação — mesmo padrão dos membros */}
+      <AlertDialog
+        open={!!entryToDelete}
+        onOpenChange={(open) => !open && setEntryToDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Tens a certeza?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Deseja realmente eliminar este registo de{" "}
+              <strong>
+                {entryToDelete?.type === "INCOME" ? "receita" : "despesa"}
+              </strong>{" "}
+              da categoria <strong>{entryToDelete?.category}</strong>?{" "}
+              Esta acção é irreversível.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-white hover:bg-destructive/90"
+              onClick={confirmDelete}
+            >
+              Confirmar Eliminação
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
