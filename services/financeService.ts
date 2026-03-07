@@ -12,7 +12,7 @@ export interface CreateTransactionDTO {
 
 const toCents = (amount: number | string): number => {
   const parsed = typeof amount === "string"
-    ? parseFloat(amount.replace(",", "."))
+    ? parseFloat(amount.replace(/\./g, "").replace(",", "."))
     : amount;
 
   if (isNaN(parsed)) return 0;
@@ -116,6 +116,39 @@ export const FinanceService = {
       });
 
       return updated;
+    });
+  },
+
+  async deleteTransaction(
+    id: string,
+    churchId: string,
+    actor: { userId: string; email: string }
+  ) {
+    return await prisma.$transaction(async (tx) => {
+      // 🔒 Garante que pertence à igreja correcta
+      const existing = await tx.financeTransaction.findFirst({
+        where: { id, churchId },
+      });
+
+      if (!existing) throw new Error("Transação não encontrada ou acesso negado.");
+
+      await tx.financeTransaction.delete({
+        where: { id },
+      });
+
+      await tx.auditLog.create({
+        data: {
+          churchId,
+          userId: actor.userId,
+          userEmail: actor.email,
+          action: `DELETE_${existing.type}`,
+          entityName: "Finance",
+          entityId: id,
+          oldData: existing as unknown as Prisma.InputJsonValue,
+        },
+      });
+
+      return { success: true };
     });
   },
 

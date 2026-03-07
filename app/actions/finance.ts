@@ -9,11 +9,16 @@ import prisma from "@/lib/prisma";
 /**
  * Helper privado — mesmo padrão do member-actions
  */
-async function getAuthContext() {
+async function getAuthContext(targetChurchId?: string) {
   const session = await auth();
   if (!session?.user) throw new Error("UNAUTHORIZED");
 
-  const churchId = session.user.churchId;
+  const isSuperAdmin = session.user.role === "SUPER_ADMIN";
+
+  // Se for super admin e houver um alvo, usa o alvo. Caso contrário, usa a igreja do utilizador.
+  const churchId =
+    isSuperAdmin && targetChurchId ? targetChurchId : session.user.churchId;
+
   if (!churchId) throw new Error("CHURCH_ID_REQUIRED");
 
   return {
@@ -22,6 +27,7 @@ async function getAuthContext() {
       userId: session.user.id,
       email: session.user.email!,
     },
+    isSuperAdmin,
   };
 }
 
@@ -29,10 +35,10 @@ async function getAuthContext() {
 export async function saveTransactionAction(
   formData: FormData,
   transactionId?: string,
+  targetChurchId?: string, // 👈 para o super admin
 ) {
-  console.log("transactionId recebido:", transactionId);
   try {
-    const { churchId, actor } = await getAuthContext();
+    const { churchId, actor } = await getAuthContext(targetChurchId);
 
     const result = financeSchema.safeParse(
       Object.fromEntries(formData.entries()),
@@ -67,13 +73,14 @@ export async function saveTransactionAction(
 }
 
 // --- ACTION DE DELETAR ---
-export async function deleteTransactionAction(id: string) {
+export async function deleteTransactionAction(
+  id: string,
+  targetChurchId?: string,
+) {
   try {
-    const { churchId } = await getAuthContext();
+    const { churchId, actor } = await getAuthContext(targetChurchId);
 
-    await prisma.financeTransaction.deleteMany({
-      where: { id, churchId }, // 🔒 Multi-tenant
-    });
+    await FinanceService.deleteTransaction(id, churchId, actor); // 👈 usa o service
 
     revalidatePath(`/[slug]/financas`, "page");
     return { success: true };

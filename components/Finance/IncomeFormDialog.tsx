@@ -69,8 +69,6 @@ export function IncomeFormDialog({ open, onOpenChange, entry, categories }: Prop
 
   const handleSubmit = (data: FormData) => {
     startTransition(async () => {
-      console.log("entry no submit:", entry); // 👈 ADICIONA ISTO
-      console.log("entry?.id:", entry?.id);   // 👈 E ISTO
       let cleanAmount = data.amount.trim();
 
       const dotIndex = cleanAmount.lastIndexOf(".");
