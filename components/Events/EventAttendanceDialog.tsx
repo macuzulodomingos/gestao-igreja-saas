@@ -1,73 +1,76 @@
 "use client";
-import { useState, useEffect } from "react";
-import { ChurchEvent, members as allMembers } from "@/lib/mock-data";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+
+import { useState, useEffect, useTransition } from "react";
+import { toast } from "sonner";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { Search, Users } from "lucide-react";
-import { format } from "date-fns";
-import { pt } from "date-fns/locale";
+import { Search, Users, Loader2 } from "lucide-react";
+import { syncAttendeesAction } from "@/app/actions/event-actions";
+import { ChurchEvent, EventListMember } from "@/types/event";
 
-interface EventAttendanceDialogProps {
+interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   event: ChurchEvent;
-  onSave: (eventId: string, attendeeIds: string[]) => void;
+  allMembers: EventListMember[];
 }
 
-export function EventAttendanceDialog({
-  open,
-  onOpenChange,
-  event,
-  onSave,
-}: EventAttendanceDialogProps) {
+export function EventAttendanceDialog({ open, onOpenChange, event, allMembers }: Props) {
+  const [isPending, startTransition] = useTransition();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
-    setSelectedIds(event.attendeeIds);
-    setSearchTerm("");
-  }, [event]);
+    if (open) {
+      setSelectedIds(event.attendees.map(a => a.memberId));
+      setSearchTerm("");
+    }
+  }, [open, event]);
 
-  const filteredMembers = allMembers.filter(
-    (member) =>
-      member.status === "Activo" &&
-      member.name.toLowerCase().includes(searchTerm.toLowerCase())
+  const activeMembers = allMembers.filter(m => m.status === "ATIVO");
+
+  const filteredMembers = activeMembers.filter(m =>
+    m.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleToggleMember = (memberId: string) => {
-    setSelectedIds((prev) =>
+  const handleToggle = (memberId: string) => {
+    setSelectedIds(prev =>
       prev.includes(memberId)
-        ? prev.filter((id) => id !== memberId)
+        ? prev.filter(id => id !== memberId)
         : [...prev, memberId]
     );
   };
 
   const handleSelectAll = () => {
-    const activeIds = filteredMembers.map((m) => m.id);
-    setSelectedIds((prev) => {
-      const allSelected = activeIds.every((id) => prev.includes(id));
-      if (allSelected) {
-        return prev.filter((id) => !activeIds.includes(id));
-      }
-      return [...new Set([...prev, ...activeIds])];
-    });
+    const filteredIds = filteredMembers.map(m => m.id);
+    const allSelected = filteredIds.every(id => selectedIds.includes(id));
+    if (allSelected) {
+      setSelectedIds(prev => prev.filter(id => !filteredIds.includes(id)));
+    } else {
+      setSelectedIds(prev => [...new Set([...prev, ...filteredIds])]);
+    }
   };
 
   const handleSave = () => {
-    onSave(event.id, selectedIds);
+    startTransition(async () => {
+      const result = await syncAttendeesAction(event.id, selectedIds);
+      if (result.success) {
+        toast.success("Presenças actualizadas!");
+        onOpenChange(false);
+      } else {
+        toast.error(result.error || "Erro ao actualizar presenças.");
+      }
+    });
   };
 
-  const allFilteredSelected = filteredMembers.every((m) => selectedIds.includes(m.id));
+  const allFilteredSelected = filteredMembers.length > 0 &&
+    filteredMembers.every(m => selectedIds.includes(m.id));
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -75,12 +78,12 @@ export function EventAttendanceDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
-            Presença
+            Presenças
           </DialogTitle>
           <div className="text-sm text-muted-foreground">
             <span className="font-medium">{event.name}</span>
             <span className="mx-2">•</span>
-            {format(new Date(event.date), "MMM d, yyyy",{ locale: pt })} às {event.time}
+            {format(new Date(event.date), "dd 'de' MMM, yyyy", { locale: ptBR })} às {event.time}
           </div>
         </DialogHeader>
 
@@ -88,48 +91,46 @@ export function EventAttendanceDialog({
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search members..."
+              placeholder="Pesquisar membros..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={e => setSearchTerm(e.target.value)}
               className="pl-10"
             />
           </div>
 
           <div className="flex items-center justify-between">
             <Badge variant="secondary">
-              {selectedIds.length} de {allMembers.filter((m) => m.status === "Active").length} participando
+              {selectedIds.length} de {activeMembers.length} presentes
             </Badge>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={handleSelectAll}
-            >
-              {allFilteredSelected ? "Desmarcar tudo" : "Selecionar tudo"}
+            <Button type="button" variant="ghost" size="sm" onClick={handleSelectAll}>
+              {allFilteredSelected ? "Desmarcar tudo" : "Seleccionar tudo"}
             </Button>
           </div>
 
           <ScrollArea className="h-[300px] pr-4">
             <div className="space-y-2">
-              {filteredMembers.map((member) => (
-                <label
-                  key={member.id}
-                  className="flex items-center gap-3 p-3 rounded-lg border cursor-pointer hover:bg-muted/50 transition-colors"
-                >
-                  <Checkbox
-                    checked={selectedIds.includes(member.id)}
-                    onCheckedChange={() => handleToggleMember(member.id)}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm">{member.name}</p>
-                    <p className="text-xs text-muted-foreground">{member.role}</p>
-                  </div>
-                </label>
-              ))}
-              {filteredMembers.length === 0 && (
+              {filteredMembers.length === 0 ? (
                 <p className="text-center text-muted-foreground py-8">
                   Nenhum membro encontrado.
                 </p>
+              ) : (
+                filteredMembers.map(member => (
+                  <label
+                    key={member.id}
+                    className="flex items-center gap-3 p-3 rounded-lg border cursor-pointer hover:bg-muted/50 transition-colors"
+                  >
+                    <Checkbox
+                      checked={selectedIds.includes(member.id)}
+                      onCheckedChange={() => handleToggle(member.id)}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm">{member.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {member.role?.name || "Sem cargo"}
+                      </p>
+                    </div>
+                  </label>
+                ))
               )}
             </div>
           </ScrollArea>
@@ -139,7 +140,9 @@ export function EventAttendanceDialog({
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
-          <Button onClick={handleSave}>Salvar Presença</Button>
+          <Button onClick={handleSave} disabled={isPending}>
+            {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Salvar Presenças"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

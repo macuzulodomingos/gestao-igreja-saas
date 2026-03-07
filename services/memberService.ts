@@ -85,7 +85,7 @@ export const MemberService = {
   },
 
   // 2. Criar membro + Auditoria (Mapeamento explícito para segurança)
-  async createMember(churchId: string, actor: Actor, data: CreateMemberDTO) {
+ async createMember(churchId: string, actor: Actor, data: CreateMemberDTO) {
     return await prisma.$transaction(async (tx) => {
       let finalRoleId = null;
 

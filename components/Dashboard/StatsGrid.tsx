@@ -1,45 +1,56 @@
-import { Users, Calendar, Wallet, Church } from "lucide-react";
+import { Users, Wallet, TrendingUp, TrendingDown } from "lucide-react";
 import { StatsCard } from "./StatsCard";
-import { statsData, churchInfo } from "@/lib/mock-data";
 
-interface StatsGridProps {
-  churchId: string;
-}
-
-export function StatsGrid({ churchId }: StatsGridProps) {
-  const formattedBalance = new Intl.NumberFormat("pt-PT", {
+const formatCurrency = (amount: number) =>
+  new Intl.NumberFormat("pt-AO", {
     style: "currency",
     currency: "AOA",
     minimumFractionDigits: 0,
-  }).format(statsData.monthlyBalance);
+  }).format(amount).replace("AOA", "Kz");
 
+type Stats = {
+  totalMembers: number;
+  newMembersThisMonth: number;
+  memberGrowth: number;
+  monthlyIncome: number;
+  monthlyExpenses: number;
+  monthlyBalance: number;
+};
+
+interface StatsGridProps {
+  stats: Stats;
+}
+
+export function StatsGrid({ stats }: StatsGridProps) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
       <StatsCard
-        title="Total de membros"
-        value={statsData.totalMembers}
-        subtitle={`${statsData.memberGrowth} novidades neste mês`}
+        title="Total de Membros"
+        value={stats.totalMembers}
+        subtitle={`+${stats.newMembersThisMonth} este mês`}
         icon={Users}
-        trend={{ value: statsData.memberGrowth, isPositive: true }}
+        trend={{ value: stats.memberGrowth, isPositive: stats.memberGrowth >= 0 }}
       />
       <StatsCard
-        title="Eventos deste mês"
-        value={statsData.eventsThisMonth}
-        subtitle={`Próximo: ${statsData.nextEvent}`}
-        icon={Calendar}
+        title="Receitas do Mês"
+        value={formatCurrency(stats.monthlyIncome)}
+        subtitle="Total de entradas"
+        icon={TrendingUp}
+        valueClassName="text-green-600 dark:text-green-400" // 👈
       />
       <StatsCard
-        title="Saldo Mensal"
-        value={formattedBalance}
-        subtitle="Receitas vs Despesas"
+        title="Despesas do Mês"
+        value={formatCurrency(stats.monthlyExpenses)}
+        subtitle="Total de saídas"
+        icon={TrendingDown}
+        valueClassName="text-red-600 dark:text-red-400"  // 👈 não existe ainda
+      />
+      <StatsCard
+        title="Saldo do Mês"
+        value={formatCurrency(stats.monthlyBalance)}
+        subtitle="Receitas menos despesas"
         icon={Wallet}
-        trend={{ value: statsData.balanceTrend, isPositive: true }}
-      />
-      <StatsCard
-        title="Status do Plano"
-        value={churchInfo.plan}
-        subtitle={`Renovação: ${statsData.planRenewal}`}
-        icon={Church}
+        trend={{ value: 0, isPositive: stats.monthlyBalance >= 0 }}
       />
     </div>
   );

@@ -1,22 +1,36 @@
-import DashboardShell from "@/components/Dashboard/DashboardShell";
+import { DashboardService } from "@/services/dashboardService";
 import { getChurchBySlug } from "@/lib/tenant";
 import { notFound } from "next/navigation";
+import DashboardShell from "@/components/Dashboard/DashboardShell";
 
-export default async function DashboardPage({ 
-  params 
-}: { 
-  params: Promise<{ slug: string }> 
+export default async function DashboardPage({
+  params
+}: {
+  params: Promise<{ slug: string }>
 }) {
   const { slug } = await params;
 
-  // 🔍 Buscamos a igreja no banco para pegar o ID real
   const church = await getChurchBySlug(slug);
+  if (!church) return notFound();
 
-  // 🛡️ Segurança: Se alguém burlar a URL, paramos aqui
-  if (!church) {
-    return notFound();
-  }
+  const { churchId } = { churchId: church.id };
 
-  // ✅ Passamos o ID para o Shell carregar os dados certos
-  return <DashboardShell churchId={church.id} />;
+  const [stats, recentMembers, recentTransactions, membersChart, financeChart] =
+    await Promise.all([
+      DashboardService.getStats(churchId),
+      DashboardService.getRecentMembers(churchId),
+      DashboardService.getRecentTransactions(churchId),
+      DashboardService.getMembersChartData(churchId),
+      DashboardService.getFinanceChartData(churchId),
+    ]);
+
+  return (
+    <DashboardShell
+      stats={stats}
+      recentMembers={recentMembers}
+      recentTransactions={recentTransactions}
+      membersChart={membersChart}
+      financeChart={financeChart}
+    />
+  );
 }

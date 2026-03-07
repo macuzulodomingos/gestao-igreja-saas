@@ -1,179 +1,157 @@
 "use client";
-import { useEffect } from "react";
+
+import { useEffect, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Department, members } from "@/lib/mock-data";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { toast } from "sonner";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Loader2 } from "lucide-react";
+import { saveDepartmentAction } from "@/app/actions/department-actions";
 
-// Schema de validação do formulário
-const departmentFormSchema = z.object({
-  name: z.string().min(1, "O nome do departamento é obrigatório").max(100),
+const schema = z.object({
+  name: z.string().min(1, "Nome obrigatório").max(100),
+  description: z.string().max(500, "Máximo 500 caracteres").optional(),
   leaderId: z.string().optional(),
-  description: z.string().max(500).optional(),
 });
 
-type DepartmentFormData = z.infer<typeof departmentFormSchema>;
+type FormData = z.infer<typeof schema>;
 
-// Props do componente
-interface DepartmentFormDialogProps {
-  aberto: boolean;
-  aoMudarAberto: (aberto: boolean) => void;
-  departamento: Department | null;
-  aoSalvar: (data: Omit<Department, "id" | "memberIds">) => void;
+type Department = {
+  id: string;
+  name: string;
+  description: string | null;
+  leaderId: string | null;
+};
+
+type Member = {
+  id: string;
+  name: string;
+  role: { name: string } | null;
+};
+
+interface Props {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  department: Department | null;
+  members: Member[];
 }
 
-export function DepartmentFormDialog({
-  aberto,
-  aoMudarAberto,
-  departamento,
-  aoSalvar,
-}: DepartmentFormDialogProps) {
-  const form = useForm<DepartmentFormData>({
-    resolver: zodResolver(departmentFormSchema),
-    defaultValues: {
-      name: "",
-      leaderId: "none", // valor padrão para nenhum líder
-      description: "",
-    },
+export function DepartmentFormDialog({ open, onOpenChange, department, members }: Props) {
+  const [isPending, startTransition] = useTransition();
+
+  const form = useForm<FormData>({
+    resolver: zodResolver(schema),
+    defaultValues: { name: "", description: "", leaderId: "none" },
   });
 
-  // Atualiza valores do form quando o departamento muda
   useEffect(() => {
-    if (departamento) {
-      form.reset({
-        name: departamento.name,
-        leaderId: departamento.leaderId || "none",
-        description: departamento.description || "",
-      });
-    } else {
-      form.reset({
-        name: "",
-        leaderId: "none",
-        description: "",
-      });
+    if (open) {
+      if (department) {
+        form.reset({
+          name: department.name,
+          description: department.description || "",
+          leaderId: department.leaderId || "none",
+        });
+      } else {
+        form.reset({ name: "", description: "", leaderId: "none" });
+      }
     }
-  }, [departamento, form]);
+  }, [department, open, form]);
 
-  // Função de submit
-  const handleSubmit = (data: DepartmentFormData) => {
-    aoSalvar({
-      name: data.name,
-      leaderId: data.leaderId === "none" ? undefined : data.leaderId,
-      description: data.description || undefined,
+  const handleSubmit = (data: FormData) => {
+    startTransition(async () => {
+      const formData = new FormData();
+      formData.append("name", data.name);
+      formData.append("description", data.description || "");
+      formData.append("leaderId", data.leaderId || "none");
+
+      const result = await saveDepartmentAction(
+        formData,
+        department?.id ?? undefined
+      );
+
+      if (result.success) {
+        toast.success(department ? "Departamento actualizado!" : "Departamento criado!");
+        onOpenChange(false);
+      } else {
+        toast.error(result.error || "Erro ao salvar departamento.");
+      }
     });
   };
 
-  // Somente membros ativos para o select de líderes
-  const activeMembers = members.filter((m) => m.status === "Activo");
-
   return (
-    <Dialog open={aberto} onOpenChange={aoMudarAberto}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>
-            {departamento ? "Editar Departamento" : "Adicionar Novo Departamento"}
+            {department ? "Editar Departamento" : "Adicionar Departamento"}
           </DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-            {/* Nome do departamento */}
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nome do Departamento</FormLabel>
+
+            <FormField control={form.control} name="name" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Nome do Departamento</FormLabel>
+                <FormControl>
+                  <Input placeholder="Ex: Ministério de Adoração" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
+
+            <FormField control={form.control} name="leaderId" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Líder (Opcional)</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
-                    <Input placeholder="Ex.: Ministério de Adoração" {...field} />
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o líder" />
+                    </SelectTrigger>
                   </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                  <SelectContent>
+                    <SelectItem value="none">Sem líder</SelectItem>
+                    {members.map(member => (
+                      <SelectItem key={member.id} value={member.id}>
+                        {member.name} {member.role ? `(${member.role.name})` : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )} />
 
-            {/* Líder do departamento */}
-            <FormField
-              control={form.control}
-              name="leaderId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Líder (Opcional)</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o líder" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {/* Placeholder "Nenhum" com valor válido */}
-                      <SelectItem value="none" disabled>Nenhum</SelectItem>
-                      {activeMembers.map((member) => (
-                        <SelectItem key={member.id} value={member.id}>
-                          {member.name} ({member.role})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <FormField control={form.control} name="description" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Descrição (Opcional)</FormLabel>
+                <FormControl>
+                  <Textarea
+                    placeholder="Breve descrição deste departamento..."
+                    className="resize-none"
+                    rows={3}
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
 
-            {/* Descrição */}
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Descrição (Opcional)</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Breve descrição deste ministério..."
-                      className="resize-none"
-                      rows={3}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Botões */}
             <div className="flex justify-end gap-3 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => aoMudarAberto(false)}
-              >
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancelar
               </Button>
-              <Button type="submit">
-                {departamento ? "Salvar alterações" : "Adicionar Departamento"}
+              <Button type="submit" disabled={isPending}>
+                {isPending
+                  ? <Loader2 className="h-4 w-4 animate-spin" />
+                  : department ? "Salvar alterações" : "Adicionar Departamento"
+                }
               </Button>
             </div>
           </form>

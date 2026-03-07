@@ -29,6 +29,7 @@ model Church {
   categories   FinanceCategory[] // 👈 ADICIONADO
   subscription Subscription?     // 👈 ADICIONADO
   memberRoles  MemberRole[]
+  events Event[]
 }
 
 enum Plan {
@@ -122,6 +123,9 @@ model Member {
 
   // Um membro pode liderar departamentos
   ledDepartments Department[] @relation("DepartmentLeader")
+  departmentMembers DepartmentMember[] // 👈 NOVO
+
+  eventAttendances EventAttendee[]
 
   // ÍNDICES COMPOSTOS PARA PERFORMANCE NO SAAS
   @@index([churchId, name])
@@ -154,7 +158,7 @@ model MemberRole {
 model FinanceTransaction {
   id          String          @id @default(cuid())
   description String
-  amount      Int      // Mudamos de Decimal para Int (Cêntimos)
+  amount      BigInt   // 👈 era Int — BigInt suporta valores até 92 quadrilhões de cêntimos
   type        TransactionType
   date        DateTime        @default(now())
 
@@ -234,7 +238,70 @@ model Department {
   churchId String
   church   Church @relation(fields: [churchId], references: [id], onDelete: Cascade)
 
+  members  DepartmentMember[] // 👈 NOVO
+  events Event[]
+
   @@index([churchId])
+}
+
+// 👇 NOVA TABELA DE JUNÇÃO
+model DepartmentMember {
+  departmentId String
+  memberId     String
+  joinedAt     DateTime @default(now())
+
+  department Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  member     Member     @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@id([departmentId, memberId])
+  @@index([departmentId])
+  @@index([memberId])
+}
+
+// 9. EVENTOS
+model Event {
+  id          String      @id @default(cuid())
+  name        String
+  description String?
+  type        EventType
+  date        DateTime
+  time        String      // "09:00", "14:30"
+
+  // Departamento opcional
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id])
+
+  churchId String
+  church   Church @relation(fields: [churchId], references: [id], onDelete: Cascade)
+
+  // Presenças
+  attendees EventAttendee[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([churchId, date])
+}
+
+enum EventType {
+  SERVICO
+  REUNIAO
+  ENSAIO
+  CONFERENCIA
+  OUTRO
+}
+
+// Tabela de presenças
+model EventAttendee {
+  eventId  String
+  memberId String
+
+  event  Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  member Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@id([eventId, memberId])
+  @@index([eventId])
+  @@index([memberId])
 }
 
 // 8. AUDITORIA

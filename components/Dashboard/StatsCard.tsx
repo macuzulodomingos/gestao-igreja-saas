@@ -11,6 +11,7 @@ interface StatsCardProps {
     value: number;
     isPositive: boolean;
   };
+  valueClassName?: string; // 👈 NOVO
   className?: string;
 }
 
@@ -20,6 +21,7 @@ export function StatsCard({
   subtitle,
   icon: Icon,
   trend,
+  valueClassName, // 👈 NOVO
   className,
 }: StatsCardProps) {
   return (
@@ -29,7 +31,12 @@ export function StatsCard({
           <div className="space-y-1">
             <p className="text-sm font-medium text-muted-foreground">{title}</p>
             <div className="flex items-baseline gap-2">
-              <h3 className="text-2xl md:text-3xl font-bold text-foreground">{value}</h3>
+              <h3 className={cn(
+                "text-2xl md:text-3xl font-bold",
+                valueClassName ?? "text-foreground"  // 👈 aplica aqui
+              )}>
+                {value}
+              </h3>
               {trend && (
                 <span
                   className={cn(

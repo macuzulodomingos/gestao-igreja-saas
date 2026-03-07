@@ -1,15 +1,53 @@
 "use client";
+
 import { StatsGrid } from "@/components/Dashboard/StatsGrid";
 import { MembersChart } from "@/components/Dashboard/MembersChart";
 import { FinanceChart } from "@/components/Dashboard/FinanceChart";
 import { RecentMembers } from "@/components/Dashboard/RecentMembers";
 import { RecentTransactions } from "@/components/Dashboard/RecentTransactions";
 
+type Stats = {
+  totalMembers: number;
+  newMembersThisMonth: number;
+  memberGrowth: number;
+  monthlyIncome: number;
+  monthlyExpenses: number;
+  monthlyBalance: number;
+};
+
+type RecentMember = {
+  id: string;
+  name: string;
+  role: string;
+  joinDate: Date;
+};
+
+type RecentTransaction = {
+  id: string;
+  description: string;
+  amount: number;
+  type: "INCOME" | "EXPENSE";
+  category: string;
+  date: Date;
+};
+
+type ChartPoint = { month: string; [key: string]: number | string };
+
 interface DashboardShellProps {
-  churchId: string;
+  stats: Stats;
+  recentMembers: RecentMember[];
+  recentTransactions: RecentTransaction[];
+  membersChart: ChartPoint[];
+  financeChart: ChartPoint[];
 }
 
-export default function DashboardShell({ churchId }: DashboardShellProps) {
+export default function DashboardShell({
+  stats,
+  recentMembers,
+  recentTransactions,
+  membersChart,
+  financeChart,
+}: DashboardShellProps) {
   return (
     <div className="space-y-6 md:space-y-8">
       <div>
@@ -19,17 +57,16 @@ export default function DashboardShell({ churchId }: DashboardShellProps) {
         </p>
       </div>
 
-      {/* Passamos o ID para o Grid buscar dados reais */}
-      <StatsGrid churchId={churchId} />
+      <StatsGrid stats={stats} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-        <MembersChart churchId={churchId} />
-        <FinanceChart churchId={churchId} />
+        <MembersChart data={membersChart} />
+        <FinanceChart data={financeChart} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-        <RecentMembers churchId={churchId} />
-        <RecentTransactions churchId={churchId} />
+        <RecentMembers members={recentMembers} />
+        <RecentTransactions transactions={recentTransactions} />
       </div>
     </div>
   );

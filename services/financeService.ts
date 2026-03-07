@@ -10,13 +10,13 @@ export interface CreateTransactionDTO {
   date: string | Date;
 }
 
-const toCents = (amount: number | string): number => {
+const toCents = (amount: number | string): bigint => {
   const parsed = typeof amount === "string"
     ? parseFloat(amount.replace(/\./g, "").replace(",", "."))
     : amount;
 
-  if (isNaN(parsed)) return 0;
-  return Math.round(parsed * 100);
+  if (isNaN(parsed)) return BigInt(0);
+  return BigInt(Math.round(parsed * 100));
 };
 
 export const FinanceService = {
@@ -170,10 +170,10 @@ export const FinanceService = {
       }),
     ]);
 
-    const totalIncomes = (allTotals.find(t => t.type === "INCOME")?._sum.amount || 0) / 100;
-    const totalExpenses = (allTotals.find(t => t.type === "EXPENSE")?._sum.amount || 0) / 100;
-    const monthlyIncomes = (monthlyTotals.find(t => t.type === "INCOME")?._sum.amount || 0) / 100;
-    const monthlyExpenses = (monthlyTotals.find(t => t.type === "EXPENSE")?._sum.amount || 0) / 100;
+    const totalIncomes = Number(allTotals.find(t => t.type === "INCOME")?._sum.amount || 0) / 100;
+    const totalExpenses = Number(allTotals.find(t => t.type === "EXPENSE")?._sum.amount || 0) / 100;
+    const monthlyIncomes = Number(monthlyTotals.find(t => t.type === "INCOME")?._sum.amount || 0) / 100;
+    const monthlyExpenses = Number(monthlyTotals.find(t => t.type === "EXPENSE")?._sum.amount || 0) / 100;
 
     return {
       totalIncomes,
@@ -198,7 +198,7 @@ export const FinanceService = {
 
     return records.map(r => ({
       ...r,
-      amount: r.amount / 100,
+      amount: Number(r.amount) / 100,  // 👈 Number() converte BigInt
       category: r.category.name,
     }));
   },
