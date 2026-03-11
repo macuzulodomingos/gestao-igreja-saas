@@ -7,7 +7,8 @@ import { NextResponse } from "next/server";
 const { auth } = NextAuth(authConfig);
 
 export default auth((req) => {
-  const { nextUrl, auth: session } = req;
+  const session = req.auth;
+  const { nextUrl } = req;
   const isLoggedIn = !!session;
 
   // 2. Proteção de performance (ignorar arquivos estáticos)

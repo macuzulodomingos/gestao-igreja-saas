@@ -144,7 +144,7 @@ export function EventsList({ events, onEdit, onDelete, onManageAttendance }: Eve
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Próximos Eventos</CardTitle>
+          <CardTitle className="text-lg text-primary">Próximos Eventos</CardTitle>
         </CardHeader>
         <CardContent>
           {upcomingEvents.length === 0 ? (
@@ -158,7 +158,7 @@ export function EventsList({ events, onEdit, onDelete, onManageAttendance }: Eve
       {pastEvents.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Eventos Passados</CardTitle>
+            <CardTitle className="text-lg text-primary">Eventos Passados</CardTitle>
           </CardHeader>
           <CardContent>{renderTable(pastEvents)}</CardContent>
         </Card>

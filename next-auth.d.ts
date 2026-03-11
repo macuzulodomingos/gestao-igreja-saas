@@ -26,5 +26,6 @@ declare module "next-auth/jwt" {
     role: UserRole;
     churchId?: string;
     churchSlug?: string;
+    refreshedAt?: number;
   }
 }

@@ -26,7 +26,7 @@ export function DepartmentsList({ departments, onEdit, onDelete, onManageMembers
           <Card key={department.id} className="flex flex-col">
             <CardHeader className="flex flex-row items-start justify-between pb-2">
               <div className="space-y-1 flex-1 min-w-0">
-                <CardTitle className="text-lg truncate">{department.name}</CardTitle>
+                <CardTitle className="text-lg text-primary truncate">{department.name}</CardTitle>
                 {department.description && (
                   <p className="text-sm text-muted-foreground line-clamp-2">
                     {department.description}
