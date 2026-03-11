@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { MemberService } from "@/services/memberService";
+import { MemberRoleService } from "@/services/memberRoleService";
 import MembersClient from "@/components/Member/MembersClient";
 import { redirect } from "next/navigation";
 
@@ -32,12 +33,10 @@ export default async function MembersPage({ params, searchParams }: MembersPageP
 
   // 2. Busca Paginada no Banco de Dados
   // Passamos o churchId da sessão para garantir isolamento total
-  const { members, metadata } = await MemberService.getMembersByChurch(
-    churchId,
-    currentPage,
-    10, // Itens por página
-    searchTerm  // 👈 Faltava passar esta variável aqui!
-  );
+  const [{ members, metadata }, roles] = await Promise.all([
+    MemberService.getMembersByChurch(churchId, currentPage, 10, searchTerm),
+    MemberRoleService.getRoles(churchId),
+  ]);
 
   // 3. Renderização
   return (
@@ -46,6 +45,7 @@ export default async function MembersPage({ params, searchParams }: MembersPageP
         initialMembers={members} 
         slug={slug}
         metadata={metadata} // Dados da paginação (total, atual, etc)
+        roles={roles}
       />
     </div>
   );

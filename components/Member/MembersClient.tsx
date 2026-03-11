@@ -61,7 +61,7 @@ import {
 } from "@/app/actions/member-actions";
 import { useDebounce } from "@/hooks/use-debounce";
 import { MemberHistorySheet } from "@/components/Member/MemberHistorySheet";
-import { Member } from "@/types/member";
+import { Member, MemberRole } from "@/types/member";
 
 const roleColors: Record<string, string> = {
   Pastor: "bg-primary/10 text-primary",
@@ -85,6 +85,8 @@ interface MemberClientProps {
     totalPages: number;
     totalMembers: number;
   };
+  roles: MemberRole[];
+
 }
 
 
@@ -111,6 +113,7 @@ export default function MemberClient({
   initialMembers,
   slug,
   metadata,
+  roles,
 }: MemberClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -303,19 +306,23 @@ export default function MemberClient({
                     htmlFor="role"
                     className={`text-sm font-medium ${fieldErrors.role ? "text-destructive" : ""}`}
                   >
-                    Função
+                    Cargo
                   </label>
-                  <Input
+                  <select
                     id="role"
                     name="role"
-                    defaultValue={editingMember?.role?.name || ""}
-                    placeholder="Ex: Diácono"
-                    className={fieldErrors.role ? "border-destructive" : ""}
-                  />
+                    defaultValue={editingMember?.role?.id || ""}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <option value="">Sem cargo</option>
+                    {roles.map(role => (
+                      <option key={role.id} value={role.id}>
+                        {role.name}
+                      </option>
+                    ))}
+                  </select>
                   {fieldErrors.role && (
-                    <p className="text-xs text-destructive">
-                      {fieldErrors.role[0]}
-                    </p>
+                    <p className="text-xs text-destructive">{fieldErrors.role[0]}</p>
                   )}
                 </div>
                 {/* Data */}

@@ -5,7 +5,7 @@ type UpdateMemberDTO = {
   name?: string;
   email?: string | null;
   phone?: string | null;
-  role?: string | null; // 👈 Mudamos para receber o TEXTO do input
+  roleId?: string | null; // 👈 ID directo
   joinDate?: Date | string;
   status?: "ATIVO" | "INATIVO" | "TRANSFERIDO" | "FALECIDO"; // 👈 Use o Enum do Prisma
 };
@@ -14,7 +14,7 @@ type CreateMemberDTO = {
   name: string;
   email?: string | null;
   phone?: string | null;
-  role?: string | null; // 👈 Mudamos para receber o TEXTO do input
+  roleId?: string | null; // 👈 ID directo
   joinDate?: Date | string;
   status?: "ATIVO" | "INATIVO" | "TRANSFERIDO" | "FALECIDO"; // 👈 Use o Enum do Prisma
 };
@@ -23,11 +23,6 @@ interface Actor {
   userId: string;
   email: string;
 }
-
-// 👇 ADICIONA ESTE HELPER
-const normalizeRoleName = (name: string) =>
-  name.trim().toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
-
 
 // Helper para limpar dados sensíveis ou inúteis para o log
 const sanitizeForLog = (data: any) => {
@@ -87,22 +82,8 @@ export const MemberService = {
   // 2. Criar membro + Auditoria (Mapeamento explícito para segurança)
  async createMember(churchId: string, actor: Actor, data: CreateMemberDTO) {
     return await prisma.$transaction(async (tx) => {
-      let finalRoleId = null;
-
-      // Se o utilizador escreveu algo no campo "Função"
-      if (data.role && data.role.trim() !== "") {
-        const roleName = normalizeRoleName(data.role); // 👈 normaliza aqui
-
-        // 🛡️ Verifica se existe ou cria o cargo na hora para esta igreja
-        const roleRecord = await tx.memberRole.upsert({
-          where: {
-            churchId_name: { churchId, name: roleName },
-          },
-          update: {},
-          create: { name: roleName, churchId },
-        });
-        finalRoleId = roleRecord.id;
-      }
+      
+      const finalRoleId = data.roleId !== undefined ? data.roleId : null;
       const newMember = await tx.member.create({
         data: {
           name: data.name,
@@ -150,20 +131,7 @@ export const MemberService = {
     if (!currentMember) throw new Error("MEMBER_NOT_FOUND_OR_ACCESS_DENIED");
 
     return await prisma.$transaction(async (tx) => {
-      let finalRoleId = null;
-
-      // 🛡️ Lógica de Upsert para o Cargo
-      if (data.role && data.role.trim() !== "") {
-        const roleName = normalizeRoleName(data.role); // 👈 normaliza aqui
-        const roleRecord = await tx.memberRole.upsert({
-          where: {
-            churchId_name: { churchId, name: roleName },
-          },
-          update: {},
-          create: { name: roleName, churchId },
-        });
-        finalRoleId = roleRecord.id;
-      }
+      const finalRoleId = data.roleId !== undefined ? data.roleId : null;
 
       // 🛡️ updateMany com churchId é a sua garantia multi-tenant
       await tx.member.updateMany({

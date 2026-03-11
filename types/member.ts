@@ -18,6 +18,11 @@ export interface Member {
   updatedAt?: Date;
 }
 
+export interface MemberRole {
+  id: string;
+  name: string;
+}
+
 export interface AuditLog {
   id: string;
   churchId: string;

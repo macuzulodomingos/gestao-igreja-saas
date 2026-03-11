@@ -58,7 +58,7 @@ export async function createMemberAction(
 
     await MemberService.createMember(churchId, actor, {
       ...result.data,
-      role: result.data.role, // Passamos o texto que o utilizador digitou
+      roleId: result.data.role || null, 
       joinDate: joinDateUTC, // Use a data tratada aqui também
       phone: sanitizedPhone,
     });
@@ -104,7 +104,7 @@ export async function updateMemberAction(
 
     await MemberService.updateMember(memberId, churchId, actor, {
       ...result.data,
-      role: result.data.role, // O texto do formulário (ex: "Secretário")
+      roleId: result.data.role || null,
       joinDate: joinDateUTC, // Passamos a data tratada
       phone: sanitizedPhone,
       status: result.data.status, // 👈 ADICIONA ISTO
