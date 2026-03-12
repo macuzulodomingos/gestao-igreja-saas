@@ -152,10 +152,13 @@ export const FinanceService = {
     });
   },
 
-  async getFinanceStats(churchId: string) {
+  async getFinanceStats(churchId: string, month?: number, year?: number) {
     const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+    const m = month || now.getMonth() + 1;
+    const y = year || now.getFullYear();
+
+    const startOfMonth = new Date(y, m - 1, 1);
+    const endOfMonth = new Date(y, m, 0, 23, 59, 59);
 
     const [allTotals, monthlyTotals] = await Promise.all([
       prisma.financeTransaction.groupBy({
@@ -170,10 +173,10 @@ export const FinanceService = {
       }),
     ]);
 
-    const totalIncomes = Number(allTotals.find(t => t.type === "INCOME")?._sum.amount || 0) / 100;
-    const totalExpenses = Number(allTotals.find(t => t.type === "EXPENSE")?._sum.amount || 0) / 100;
-    const monthlyIncomes = Number(monthlyTotals.find(t => t.type === "INCOME")?._sum.amount || 0) / 100;
-    const monthlyExpenses = Number(monthlyTotals.find(t => t.type === "EXPENSE")?._sum.amount || 0) / 100;
+    const totalIncomes = Number(allTotals.find(t => t.type === "INCOME")?._sum.amount ?? 0) / 100;
+    const totalExpenses = Number(allTotals.find(t => t.type === "EXPENSE")?._sum.amount ?? 0) / 100;
+    const monthlyIncomes = Number(monthlyTotals.find(t => t.type === "INCOME")?._sum.amount ?? 0) / 100;
+    const monthlyExpenses = Number(monthlyTotals.find(t => t.type === "EXPENSE")?._sum.amount ?? 0) / 100;
 
     return {
       totalIncomes,
@@ -185,11 +188,25 @@ export const FinanceService = {
     };
   },
 
-  async getTransactions(churchId: string, limit = 50, type?: "INCOME" | "EXPENSE") {
+  async getTransactions(
+    churchId: string,
+    limit = 50,
+    type?: "INCOME" | "EXPENSE",
+    month?: number,
+    year?: number
+  ) {
+    const dateFilter = month && year ? {
+      date: {
+        gte: new Date(year, month - 1, 1),
+        lte: new Date(year, month, 0, 23, 59, 59),
+      }
+    } : {};
+
     const records = await prisma.financeTransaction.findMany({
       where: {
         churchId,
         ...(type && { type }),
+        ...dateFilter,
       },
       include: { category: true },
       orderBy: { date: "desc" },
@@ -198,7 +215,7 @@ export const FinanceService = {
 
     return records.map(r => ({
       ...r,
-      amount: Number(r.amount) / 100,  // 👈 Number() converte BigInt
+      amount: Number(r.amount) / 100,
       category: r.category.name,
     }));
   },

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import { FinanceSummary } from "./FinanceSummary";
 import { IncomeList } from "./IncomeList";
 import { ExpenseList } from "./ExpenseList";
@@ -8,21 +9,20 @@ import { IncomeFormDialog } from "./IncomeFormDialog";
 import { ExpenseFormDialog } from "./ExpenseFormDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Plus, TrendingUp, TrendingDown } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Plus, TrendingUp, TrendingDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { deleteTransactionAction } from "@/app/actions/finance";
 import { toast } from "sonner";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-// Tipo simples para as transações que vêm do servidor
+const MONTHS = [
+  "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+  "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
+];
+
 type Transaction = {
   id: string;
   description: string;
@@ -33,7 +33,6 @@ type Transaction = {
   churchId: string;
 };
 
-// Tipo para as categorias
 type Category = {
   id: string;
   name: string;
@@ -46,12 +45,14 @@ interface FinanceClientProps {
     totalIncomes: number;
     totalExpenses: number;
     netBalance: number;
-    monthlyIncomes: number;   // 👈 ADICIONA
-    monthlyExpenses: number;  // 👈 ADICIONA
-    monthlyBalance: number;   // 👈 ADICIONA
+    monthlyIncomes: number;
+    monthlyExpenses: number;
+    monthlyBalance: number;
   };
-  incomeCategories: Category[];    // 👈 NOVO
-  expenseCategories: Category[];   // 👈 NOVO
+  incomeCategories: Category[];
+  expenseCategories: Category[];
+  currentMonth: number;
+  currentYear: number;
 }
 
 export default function FinanceClientPage({
@@ -60,12 +61,41 @@ export default function FinanceClientPage({
   stats,
   incomeCategories,
   expenseCategories,
+  currentMonth,
+  currentYear,
 }: FinanceClientProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+
   const [isIncomeFormOpen, setIsIncomeFormOpen] = useState(false);
   const [isExpenseFormOpen, setIsExpenseFormOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<Transaction | null>(null);
   const [activeTab, setActiveTab] = useState("income");
-  const [entryToDelete, setEntryToDelete] = useState<Transaction | null>(null); // 👈 NOVO
+  const [entryToDelete, setEntryToDelete] = useState<Transaction | null>(null);
+
+  const navigateToMonth = (month: number, year: number) => {
+    router.push(`${pathname}?month=${month}&year=${year}`);
+  };
+
+  const handlePrevMonth = () => {
+    if (currentMonth === 1) {
+      navigateToMonth(12, currentYear - 1);
+    } else {
+      navigateToMonth(currentMonth - 1, currentYear);
+    }
+  };
+
+  const handleNextMonth = () => {
+    const now = new Date();
+    const isCurrentMonth = currentMonth === now.getMonth() + 1 && currentYear === now.getFullYear();
+    if (isCurrentMonth) return;
+
+    if (currentMonth === 12) {
+      navigateToMonth(1, currentYear + 1);
+    } else {
+      navigateToMonth(currentMonth + 1, currentYear);
+    }
+  };
 
   const handleAdd = () => {
     setEditingEntry(null);
@@ -79,7 +109,6 @@ export default function FinanceClientPage({
     else setIsExpenseFormOpen(true);
   };
 
-  // 👇 Agora só abre o AlertDialog — não elimina directamente
   const handleDelete = (id: string) => {
     const entry =
       initialIncome.find(e => e.id === id) ||
@@ -95,25 +124,86 @@ export default function FinanceClientPage({
     setEntryToDelete(null);
   };
 
+  const now = new Date();
+  const isCurrentMonth = currentMonth === now.getMonth() + 1 && currentYear === now.getFullYear();
+
+  // Anos disponíveis (5 anos atrás até ao ano actual)
+  const years = Array.from(
+    { length: 6 },
+    (_, i) => now.getFullYear() - 5 + i
+  );
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Finanças</h1>
-        <p className="text-muted-foreground">
-          Acompanhe as receitas e despesas da sua igreja.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Finanças</h1>
+          <p className="text-muted-foreground">
+            Acompanhe as receitas e despesas da sua igreja.
+          </p>
+        </div>
+
+        {/* Selector de mês/ano */}
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={handlePrevMonth}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+
+          <Select
+            value={String(currentMonth)}
+            onValueChange={(val) => navigateToMonth(Number(val), currentYear)}
+          >
+            <SelectTrigger className="w-[130px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {MONTHS.map((name, i) => (
+                <SelectItem key={i + 1} value={String(i + 1)}>
+                  {name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={String(currentYear)}
+            onValueChange={(val) => navigateToMonth(currentMonth, Number(val))}
+          >
+            <SelectTrigger className="w-[90px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {years.map(y => (
+                <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={handleNextMonth}
+            disabled={isCurrentMonth}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
-      <FinanceSummary stats={stats} />
+      <FinanceSummary stats={stats} month={currentMonth} year={currentYear} />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <div className="flex justify-between items-center mb-4">
           <TabsList>
             <TabsTrigger value="income">
-              <TrendingUp className="mr-2 h-4 w-4" /> Receitas
+              <TrendingUp className="mr-2 h-4 w-4" /> Receitas ({initialIncome.length})
             </TabsTrigger>
             <TabsTrigger value="expenses">
-              <TrendingDown className="mr-2 h-4 w-4" /> Despesas
+              <TrendingDown className="mr-2 h-4 w-4" /> Despesas ({initialExpenses.length})
             </TabsTrigger>
           </TabsList>
           <Button onClick={handleAdd} className="gap-2">
@@ -142,17 +232,16 @@ export default function FinanceClientPage({
         open={isIncomeFormOpen}
         onOpenChange={setIsIncomeFormOpen}
         entry={editingEntry}
-        categories={incomeCategories}  // 👈 categorias do banco
+        categories={incomeCategories}
       />
 
       <ExpenseFormDialog
         open={isExpenseFormOpen}
         onOpenChange={setIsExpenseFormOpen}
         entry={editingEntry}
-        categories={expenseCategories} // 👈 categorias do banco
+        categories={expenseCategories}
       />
 
-      {/* AlertDialog de confirmação — mesmo padrão dos membros */}
       <AlertDialog
         open={!!entryToDelete}
         onOpenChange={(open) => !open && setEntryToDelete(null)}

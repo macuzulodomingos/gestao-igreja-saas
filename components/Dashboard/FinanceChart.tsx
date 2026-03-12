@@ -35,9 +35,9 @@ export function FinanceChart({ data }: FinanceChartProps) {
               tick={{ fill: "var(--color-muted-foreground)", fontSize: 12 }}
               tickFormatter={formatKzShort} />
             <ChartTooltip content={<ChartTooltipContent
-              formatter={(value: number) =>
+              formatter={(value) =>
                 new Intl.NumberFormat("pt-AO", { style: "currency", currency: "AOA", minimumFractionDigits: 0 })
-                  .format(value).replace("AOA", "Kz")
+                  .format(Number(value)).replace("AOA", "Kz")
               }
             />} />
             <ChartLegend content={<ChartLegendContent />} />

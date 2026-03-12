@@ -1,5 +1,5 @@
 // components/audit/AuditHistory.tsx
-import { Prisma } from "@/app/generated/prisma";
+import { Prisma } from "@prisma/client";
 
 interface AuditLog {
   id: string;

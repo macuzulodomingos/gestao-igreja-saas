@@ -31,14 +31,15 @@ type RecentTransaction = {
   date: Date;
 };
 
-type ChartPoint = { month: string; [key: string]: number | string };
+type MembersChartPoint = { month: string; members: number };
+type FinanceChartPoint = { month: string; income: number; expenses: number };
 
 interface DashboardShellProps {
   stats: Stats;
   recentMembers: RecentMember[];
   recentTransactions: RecentTransaction[];
-  membersChart: ChartPoint[];
-  financeChart: ChartPoint[];
+  membersChart: MembersChartPoint[]; // 👈
+  financeChart: FinanceChartPoint[];  // 👈
 }
 
 export default function DashboardShell({

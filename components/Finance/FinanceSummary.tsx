@@ -10,6 +10,8 @@ interface FinanceSummaryProps {
     monthlyExpenses: number;
     monthlyBalance: number;
   };
+  month: number;  // 👈 NOVO
+  year: number;   // 👈 NOVO
 }
 
 const formatCurrency = (amount: number) =>
@@ -19,8 +21,10 @@ const formatCurrency = (amount: number) =>
     minimumFractionDigits: 2,
   }).format(amount).replace("AOA", "Kz");
 
-export function FinanceSummary({ stats }: FinanceSummaryProps) {
-  const monthName = new Date().toLocaleString("pt-AO", { month: "long" });
+export function FinanceSummary({ stats, month, year }: FinanceSummaryProps) {
+  // 👇 Usa o mês do filtro em vez de new Date()
+  const monthName = new Date(year, month - 1, 1)
+    .toLocaleString("pt-AO", { month: "long" });
   const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
 
   return (
