@@ -1,11 +1,12 @@
-
 import prisma from "./prisma"
 
-
-export async function getChurchBySlug(slug: string) {
-  // Como mentor, recomendo usar cache aqui no futuro
+export async function getChurchBySlug(slug: string, churchId?: string) {
   return await prisma.church.findUnique({
-    where: { slug },
-    select: { id: true, name: true, plan: true }
-  })
+    where: {
+      slug,
+      // 🔒 Se churchId for passado, garante que o slug pertence à igreja da sessão
+      ...(churchId && { id: churchId }),
+    },
+    select: { id: true, name: true, plan: true, slug: true },
+  });
 }

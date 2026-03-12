@@ -17,6 +17,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { DownloadPDFButton } from "./DownloadPDFButton";
 
 const MONTHS = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
@@ -53,6 +54,7 @@ interface FinanceClientProps {
   expenseCategories: Category[];
   currentMonth: number;
   currentYear: number;
+  churchName: string; // 👈 NOVO
 }
 
 export default function FinanceClientPage({
@@ -63,6 +65,7 @@ export default function FinanceClientPage({
   expenseCategories,
   currentMonth,
   currentYear,
+  churchName,
 }: FinanceClientProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -145,6 +148,14 @@ export default function FinanceClientPage({
 
         {/* Selector de mês/ano */}
         <div className="flex items-center gap-2">
+          <DownloadPDFButton
+            churchName={churchName}
+            month={currentMonth}
+            year={currentYear}
+            income={initialIncome}
+            expenses={initialExpenses}
+            stats={stats}
+          />
           <Button
             variant="outline"
             size="icon"

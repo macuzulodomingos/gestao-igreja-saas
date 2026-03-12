@@ -1,13 +1,14 @@
 "use client";
 
-import { 
-  Church, 
-  LayoutDashboard, 
-  Users, 
-  Calendar, 
-  Wallet, 
+import {
+  Church,
+  LayoutDashboard,
+  Users,
+  Calendar,
+  Wallet,
   Building2,
-  ShieldCheck 
+  ShieldCheck,
+  Settings
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import {
@@ -67,6 +68,12 @@ export function AppSidebar({ slug, initialRole }: AppSidebarProps) {
       url: `/${slug}/departamentos`,
       roles: ["SUPER_ADMIN", "ADMIN", "SECRETARY"],
       icon: Building2,
+    },
+    {
+      title: "Configurações",
+      url: `/${slug}/configuracoes`,
+      roles: ["SUPER_ADMIN", "ADMIN"],
+      icon: Settings,
     },
     {
       title: "Configurações SaaS",

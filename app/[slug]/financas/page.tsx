@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { FinanceService } from "@/services/financeService";
 import FinanceClientPage from "@/components/Finance/FinanceClientPage";
+import prisma from "@/lib/prisma";
 
 interface FinancasPageProps {
   searchParams: Promise<{ month?: string; year?: string }>;
@@ -14,6 +15,10 @@ export default async function FinancasPage({ searchParams }: FinancasPageProps) 
   const { churchId } = session.user;
   const sParams = await searchParams;
 
+  const church = await prisma.church.findUnique({
+    where: { id: churchId },
+    select: { name: true },
+  });
   const now = new Date();
   const month = Number(sParams.month) || now.getMonth() + 1;
   const year = Number(sParams.year) || now.getFullYear();
@@ -36,6 +41,7 @@ export default async function FinancasPage({ searchParams }: FinancasPageProps) 
       expenseCategories={expenseCategories}
       currentMonth={month}
       currentYear={year}
+      churchName={church?.name ?? "Igreja"}
     />
   );
 }
