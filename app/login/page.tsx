@@ -3,6 +3,7 @@
 import { authenticate } from "@/app/actions/auth";
 import { useFormStatus } from "react-dom";
 import { Church } from "lucide-react";
+import Link from "next/link";
 
 export default function LoginPage() {
   return (
@@ -42,6 +43,13 @@ export default function LoginPage() {
           </div>
           <LoginButton />
         </form>
+
+        <p className="text-center text-sm text-muted-foreground">
+          Ainda não tem conta?{" "}
+          <Link href="/registar" className="text-primary hover:underline font-medium">
+            Registar Igreja
+          </Link>
+        </p>
       </div>
     </div>
   );

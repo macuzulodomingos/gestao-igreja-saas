@@ -7,17 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ChevronLeft, ChevronRight, Shield, Filter } from "lucide-react";
+import { AuditLog } from "@/types/audit";
 
-interface AuditLog {
-  id: string;
-  action: string;
-  entityName: string;
-  entityId: string;
-  userEmail: string | null;
-  oldData: any;
-  newData: any;
-  createdAt: Date | string;
-}
 
 interface AuditoriaClientProps {
   initialLogs: AuditLog[];

@@ -29,7 +29,7 @@ export default auth((req) => {
   }
 
   // 4. Se não logado, bloqueia tudo exceto login e home
-  if (!isLoggedIn && nextUrl.pathname !== "/login" && nextUrl.pathname !== "/") {
+  if (!isLoggedIn && nextUrl.pathname !== "/login" && nextUrl.pathname !== "/" && nextUrl.pathname !== "/registar") {
     return NextResponse.redirect(new URL("/login", nextUrl));
   }
 
