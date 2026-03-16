@@ -2,7 +2,7 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Tags, ShieldCheck, Shield, FileText, BookOpen } from "lucide-react";
+import { Tags, ShieldCheck, Shield, Users, FileText, BookOpen } from "lucide-react";
 
 interface ConfiguracoesPageProps {
     params: Promise<{ slug: string }>;
@@ -28,6 +28,13 @@ export default async function ConfiguracoesPage({ params }: ConfiguracoesPagePro
             href: `/${slug}/configuracoes/cargos`,
             icon: ShieldCheck,
             color: "bg-primary/10 text-primary",
+        },
+        {
+            title: "Utilizadores",
+            description: "Gere quem tem acesso ao painel da sua igreja.",
+            href: `/${slug}/configuracoes/utilizadores`,
+            icon: Users,
+            color: "bg-blue-500/10 text-blue-600",
         },
         {
             title: "Auditoria",

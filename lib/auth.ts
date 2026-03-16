@@ -29,6 +29,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         });
 
         if (!user || !user.password) return null;
+        if (user.deletedAt) return null; // 👈 bloqueia utilizadores eliminados
 
         const passwordMatch = await bcrypt.compare(password as string, user.password);
 

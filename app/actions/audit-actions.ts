@@ -3,28 +3,35 @@
 import { auth } from "@/lib/auth";
 import { AuditService } from "@/services/auditService";
 import { MemberService } from "@/services/memberService";
-import { AuditLog } from "@/app/generated/prisma";
 
-async function getAuthContext() {
+
+async function getAuthContext(targetChurchId?: string) {
   const session = await auth();
   if (!session?.user) throw new Error("UNAUTHORIZED");
 
   const isSuperAdmin = session.user.role === "SUPER_ADMIN";
-  const churchId = session.user.churchId;
+  const churchId = isSuperAdmin && targetChurchId
+    ? targetChurchId
+    : session.user.churchId;
 
-  if (!churchId && !isSuperAdmin) throw new Error("CHURCH_ID_REQUIRED");
+  if (!churchId) throw new Error("CHURCH_ID_REQUIRED"); // 👈 mesmo padrão
 
-  return { churchId, isSuperAdmin, session };
+  return {
+    churchId,
+    actor: {
+      userId: session.user.id,
+      email: session.user.email!,
+    },
+    isSuperAdmin,
+  };
 }
 
-export async function getChurchLogsAction(filters?: {
-  entityName?: string;
-  action?: string;
-  page?: number;
-}) {
+export async function getChurchLogsAction(
+  filters?: { entityName?: string; action?: string; page?: number },
+  targetChurchId?: string,
+) {
   try {
-    const { churchId } = await getAuthContext();
-    if (!churchId) return { success: false, error: "Igreja não encontrada." };
+    const { churchId } = await getAuthContext(targetChurchId);
 
     const result = await AuditService.getChurchLogs(churchId, {
       ...filters,
@@ -33,25 +40,30 @@ export async function getChurchLogsAction(filters?: {
 
     return { success: true, ...result };
   } catch (error: any) {
+    if (error.message === "UNAUTHORIZED")
+      return { success: false, error: "Não autenticado." };
+    if (error.message === "CHURCH_ID_REQUIRED")
+      return { success: false, error: "Igreja não encontrada." };
     console.error("[GET_CHURCH_LOGS_ERROR]:", error);
     return { success: false, error: "Erro ao carregar logs." };
   }
 }
 
-export async function getMemberHistoryAction(memberId: string) {
-  const session = await auth();
-  const userChurchId = session?.user?.churchId;
-  const userRole = session?.user?.role;
-
-  if (!session) return { success: false, error: "Não autorizado" };
-
+export async function getMemberHistoryAction(
+  memberId: string,
+  targetChurchId?: string,
+) {
   try {
+    const { churchId, isSuperAdmin } = await getAuthContext(targetChurchId);
+
     const history = await MemberService.getMemberHistory(
       memberId,
-      userRole === "SUPER_ADMIN" ? undefined : userChurchId
+      isSuperAdmin ? undefined : churchId
     );
-    return { success: true, data: history as AuditLog[] };
-  } catch (error) {
+    return { success: true, data: history };
+  } catch (error: any) {
+    if (error.message === "UNAUTHORIZED")
+      return { success: false, error: "Não autenticado." };
     console.error("Erro ao buscar histórico:", error);
     return { success: false, error: "Falha ao carregar histórico" };
   }

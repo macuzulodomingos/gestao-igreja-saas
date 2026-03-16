@@ -1,9 +1,7 @@
 "use server";
 
-import prisma from "@/lib/prisma";
-import bcrypt from "bcryptjs";
 import { z } from "zod";
-import { redirect } from "next/navigation";
+import { ChurchService } from "@/services/churchService";
 
 const registerSchema = z.object({
   churchName: z.string().min(3, "Nome da igreja obrigatório").max(100),
@@ -25,73 +23,20 @@ export async function registerChurchAction(formData: FormData) {
     return { success: false, fieldErrors: result.error.flatten().fieldErrors };
   }
 
-  const { churchName, churchSlug, adminName, adminEmail, adminPassword } = result.data;
-
   try {
-    // Verifica slug duplicado
-    const existingChurch = await prisma.church.findUnique({
-      where: { slug: churchSlug },
-    });
-    if (existingChurch) {
-      return { success: false, fieldErrors: { churchSlug: ["Este slug já está em uso. Escolha outro."] } };
-    }
-
-    // Verifica email duplicado
-    const existingUser = await prisma.user.findUnique({
-      where: { email: adminEmail },
-    });
-    if (existingUser) {
-      return { success: false, fieldErrors: { adminEmail: ["Este e-mail já está registado."] } };
-    }
-
-    const hashedPassword = await bcrypt.hash(adminPassword, 12);
-
-    // Cria Igreja + Admin numa transacção
-    await prisma.$transaction(async (tx) => {
-      const church = await tx.church.create({
-        data: {
-          name: churchName,
-          slug: churchSlug,
-          plan: "FREE",
-        },
-      });
-
-      await tx.user.create({
-        data: {
-          name: adminName,
-          email: adminEmail,
-          password: hashedPassword,
-          role: "ADMIN",
-          churchId: church.id,
-        },
-      });
-
-      // Cria categorias padrão
-      await tx.financeCategory.createMany({
-        data: [
-          { name: "Dízimo", type: "INCOME", churchId: church.id },
-          { name: "Oferta", type: "INCOME", churchId: church.id },
-          { name: "Doação", type: "INCOME", churchId: church.id },
-          { name: "Salários", type: "EXPENSE", churchId: church.id },
-          { name: "Manutenção", type: "EXPENSE", churchId: church.id },
-          { name: "Utilities", type: "EXPENSE", churchId: church.id },
-        ],
-      });
-
-      // Cria cargos padrão
-      await tx.memberRole.createMany({
-        data: [
-          { name: "Pastor", churchId: church.id },
-          { name: "Diácono", churchId: church.id },
-          { name: "Secretário", churchId: church.id },
-          { name: "Tesoureiro", churchId: church.id },
-        ],
-      });
-    });
-
-    return { success: true, slug: churchSlug };
+    await ChurchService.registerChurch(result.data);
+    return { success: true, slug: result.data.churchSlug };
 
   } catch (error: any) {
+    if (error.code === "P2002") {
+      const field = error.meta?.target?.[0];
+      if (field === "slug") {
+        return { success: false, fieldErrors: { churchSlug: ["Este slug já está em uso. Escolha outro."] } };
+      }
+      if (field === "email") {
+        return { success: false, fieldErrors: { adminEmail: ["Este e-mail já está registado."] } };
+      }
+    }
     console.error("[REGISTER_CHURCH_ERROR]:", error);
     return { success: false, error: "Erro ao criar conta. Tente novamente." };
   }

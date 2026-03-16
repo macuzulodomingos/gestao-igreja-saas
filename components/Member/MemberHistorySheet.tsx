@@ -10,7 +10,7 @@ import {
   SheetDescription,
   SheetTrigger // Adicione este import
 } from "@/components/ui/sheet";
-import { getMemberHistoryAction } from "@/app/actions/audit";
+import { getMemberHistoryAction } from "@/app/actions/audit-actions";
 import { AuditHistory } from "@/components/audit/AuditHistory";
 import { Loader2, History } from "lucide-react";
 import { AuditLog, Member } from "@/types/member";

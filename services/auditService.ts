@@ -15,7 +15,7 @@ export const AuditService = {
     const where = {
       churchId,
       ...(filters.entityName && { entityName: filters.entityName }),
-      ...(filters.action && { action: { contains: filters.action } }),
+      ...(filters.action && { action: { contains: filters.action, mode: "insensitive" as const, } }),
     };
 
     const [logs, total] = await Promise.all([
@@ -34,6 +34,7 @@ export const AuditService = {
         total,
         totalPages: Math.ceil(total / limit),
         currentPage: page,
+        hasNext: page < Math.ceil(total / limit), // 👈 AMBOS
       },
     };
   },

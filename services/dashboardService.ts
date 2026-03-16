@@ -2,7 +2,7 @@ import prisma from "@/lib/prisma";
 
 export const DashboardService = {
 
-  async getStats(churchId: string) {
+  async getChurchStats(churchId: string) {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);

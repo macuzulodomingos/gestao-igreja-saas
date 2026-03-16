@@ -59,8 +59,10 @@ model User {
 
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime? // 👈 NOVO — Soft Delete
 
   @@index([churchId])
+  @@index([deletedAt]) // 👈 índice para filtrar activos rapidamente
 }
 
 enum UserRole {
@@ -307,7 +309,7 @@ model EventAttendee {
 // 8. AUDITORIA
 model AuditLog {
   id            String   @id @default(cuid())
-  churchId      String
+  churchId      String?  // 👈 torna opcional para logs de sistema
   userId        String?  // Quem realizou a ação
   userEmail     String?  // E-mail para consulta rápida no painel
   action        String   // Ex: "CREATE", "UPDATE", "DELETE"
@@ -318,9 +320,11 @@ model AuditLog {
   ipAddress     String?
   createdAt     DateTime @default(now())
 
-  church        Church   @relation(fields: [churchId], references: [id], onDelete: Cascade)
+  church        Church?   @relation(fields: [churchId], references: [id], onDelete: Cascade)
 
   // Índices otimizados para consultas de suporte e painéis de admin
   @@index([churchId, createdAt(sort: Desc)])
   @@index([entityName, entityId])
+  @@index([churchId, entityName, action])  // 👈 NOVO — filtros combinados
+  @@index([userId])                         // 👈 NOVO — rastrear por utilizador
 }

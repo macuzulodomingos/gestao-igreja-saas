@@ -17,7 +17,7 @@ export default async function DashboardPage({
 
   const [stats, recentMembers, recentTransactions, membersChart, financeChart] =
     await Promise.all([
-      DashboardService.getStats(churchId),
+      DashboardService.getChurchStats(churchId),
       DashboardService.getRecentMembers(churchId),
       DashboardService.getRecentTransactions(churchId),
       DashboardService.getMembersChartData(churchId),

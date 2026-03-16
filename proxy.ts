@@ -3,33 +3,42 @@ import NextAuth from "next-auth";
 import { authConfig } from "@/lib/auth.config";
 import { NextResponse } from "next/server";
 
-// 1. Inicializa o Auth.js com a config leve (Edge-compatible)
 const { auth } = NextAuth(authConfig);
 
 export default auth((req) => {
   const session = req.auth;
   const { nextUrl } = req;
   const isLoggedIn = !!session;
+  const role = session?.user?.role;
+  const slug = session?.user?.churchSlug;
 
-  // 2. Proteção de performance (ignorar arquivos estáticos)
+  // 1. Ignora arquivos estáticos
   if (nextUrl.pathname.includes('.')) return NextResponse.next();
 
-  // 3. Lógica de Redirecionamento (Ponto que você precisava)
-  if (isLoggedIn && (nextUrl.pathname === "/login" || nextUrl.pathname === "/")) {
-    const role = session.user?.role;
-    const slug = session.user?.churchSlug;
-
-    if (role === "SUPER_ADMIN") {
-      return NextResponse.redirect(new URL("/admin", nextUrl));
+  // 2. Rotas públicas — sempre acessíveis
+  const publicRoutes = ["/", "/login", "/registar"];
+  if (publicRoutes.includes(nextUrl.pathname)) {
+    if (isLoggedIn) {
+      if (role === "SUPER_ADMIN") {
+        return NextResponse.redirect(new URL("/admin", nextUrl));
+      }
+      if (slug) {
+        return NextResponse.redirect(new URL(`/${slug}/painel`, nextUrl));
+      }
     }
+    return NextResponse.next();
+  }
 
+  // 3. Se não logado, bloqueia tudo
+  if (!isLoggedIn) {
+    return NextResponse.redirect(new URL("/login", nextUrl));
+  }
+
+  // 4. Protege /admin — só SUPER_ADMIN
+  if (nextUrl.pathname.startsWith("/admin") && role !== "SUPER_ADMIN") {
     if (slug) {
       return NextResponse.redirect(new URL(`/${slug}/painel`, nextUrl));
     }
-  }
-
-  // 4. Se não logado, bloqueia tudo exceto login e home
-  if (!isLoggedIn && nextUrl.pathname !== "/login" && nextUrl.pathname !== "/" && nextUrl.pathname !== "/registar") {
     return NextResponse.redirect(new URL("/login", nextUrl));
   }
 
@@ -37,6 +46,5 @@ export default auth((req) => {
 });
 
 export const config = {
-  // Matcher padrão recomendado pela Vercel/Auth.js
   matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
 };
