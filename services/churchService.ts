@@ -51,6 +51,17 @@ export const ChurchService = {
           { name: "Tesoureiro", churchId: church.id },
         ],
       });
+
+      await tx.auditLog.create({
+        data: {
+          churchId: church.id,
+          userEmail: data.adminEmail,
+          action: "CREATE_CHURCH",
+          entityName: "Church",
+          entityId: church.id,
+          newData: { name: data.churchName, slug: data.churchSlug, plan: "FREE" },
+        },
+      });
     });
   },
 };

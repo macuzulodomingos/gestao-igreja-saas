@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { ChurchService } from "@/services/churchService";
+import { Prisma } from "@prisma/client";
 
 const registerSchema = z.object({
   churchName: z.string().min(3, "Nome da igreja obrigatório").max(100),
@@ -27,14 +28,16 @@ export async function registerChurchAction(formData: FormData) {
     await ChurchService.registerChurch(result.data);
     return { success: true, slug: result.data.churchSlug };
 
-  } catch (error: any) {
-    if (error.code === "P2002") {
-      const field = error.meta?.target?.[0];
-      if (field === "slug") {
-        return { success: false, fieldErrors: { churchSlug: ["Este slug já está em uso. Escolha outro."] } };
-      }
-      if (field === "email") {
-        return { success: false, fieldErrors: { adminEmail: ["Este e-mail já está registado."] } };
+  } catch (error: unknown) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === "P2002") {
+        const targets = error.meta?.target as string[] | undefined;
+        if (targets?.includes("slug")) {
+          return { success: false, fieldErrors: { churchSlug: ["Este slug já está em uso."] } };
+        }
+        if (targets?.includes("email")) {
+          return { success: false, fieldErrors: { adminEmail: ["Este e-mail já está registado."] } };
+        }
       }
     }
     console.error("[REGISTER_CHURCH_ERROR]:", error);

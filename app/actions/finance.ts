@@ -4,7 +4,7 @@ import { auth } from "@/lib/auth";
 import { FinanceService } from "@/services/financeService";
 import { financeSchema } from "@/lib/validations/finance";
 import { revalidatePath } from "next/cache";
-import prisma from "@/lib/prisma";
+import { revalidateTag } from "next/cache";
 
 /**
  * Helper privado — mesmo padrão do member-actions
@@ -62,6 +62,8 @@ export async function saveTransactionAction(
     }
 
     revalidatePath(`/[slug]/financas`, "page");
+    revalidateTag(`finances-${churchId}`, "nested");
+    revalidateTag(`church-${churchId}`, "nested");
     return { success: true };
 
   } catch (error: any) {
@@ -83,6 +85,8 @@ export async function deleteTransactionAction(
     await FinanceService.deleteTransaction(id, churchId, actor); // 👈 usa o service
 
     revalidatePath(`/[slug]/financas`, "page");
+    revalidateTag(`finances-${churchId}`, "nested");
+    revalidateTag(`church-${churchId}`, "nested");
     return { success: true };
 
   } catch (error: any) {

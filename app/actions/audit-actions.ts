@@ -3,6 +3,7 @@
 import { auth } from "@/lib/auth";
 import { AuditService } from "@/services/auditService";
 import { MemberService } from "@/services/memberService";
+import { getErrorMessage } from "@/lib/errors";
 
 
 async function getAuthContext(targetChurchId?: string) {
@@ -39,10 +40,11 @@ export async function getChurchLogsAction(
     });
 
     return { success: true, ...result };
-  } catch (error: any) {
-    if (error.message === "UNAUTHORIZED")
+  } catch (error: unknown) {
+    const message = getErrorMessage(error);
+    if (message === "UNAUTHORIZED")
       return { success: false, error: "Não autenticado." };
-    if (error.message === "CHURCH_ID_REQUIRED")
+    if (message === "CHURCH_ID_REQUIRED")
       return { success: false, error: "Igreja não encontrada." };
     console.error("[GET_CHURCH_LOGS_ERROR]:", error);
     return { success: false, error: "Erro ao carregar logs." };
@@ -61,8 +63,9 @@ export async function getMemberHistoryAction(
       isSuperAdmin ? undefined : churchId
     );
     return { success: true, data: history };
-  } catch (error: any) {
-    if (error.message === "UNAUTHORIZED")
+  } catch (error: unknown) {
+    const message = getErrorMessage(error);
+    if (message === "UNAUTHORIZED")
       return { success: false, error: "Não autenticado." };
     console.error("Erro ao buscar histórico:", error);
     return { success: false, error: "Falha ao carregar histórico" };

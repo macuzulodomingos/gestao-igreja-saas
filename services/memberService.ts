@@ -5,18 +5,18 @@ type UpdateMemberDTO = {
   name?: string;
   email?: string | null;
   phone?: string | null;
-  roleId?: string | null; // 👈 ID directo
+  roleId?: string | null;
   joinDate?: Date | string;
-  status?: "ATIVO" | "INATIVO" | "TRANSFERIDO" | "FALECIDO"; // 👈 Use o Enum do Prisma
+  status?: "ATIVO" | "INATIVO" | "TRANSFERIDO" | "FALECIDO";
 };
 
 type CreateMemberDTO = {
   name: string;
   email?: string | null;
   phone?: string | null;
-  roleId?: string | null; // 👈 ID directo
+  roleId?: string | null;
   joinDate?: Date | string;
-  status?: "ATIVO" | "INATIVO" | "TRANSFERIDO" | "FALECIDO"; // 👈 Use o Enum do Prisma
+  status?: "ATIVO" | "INATIVO" | "TRANSFERIDO" | "FALECIDO";
 };
 
 interface Actor {
@@ -24,22 +24,15 @@ interface Actor {
   email: string;
 }
 
-// Helper para limpar dados sensíveis ou inúteis para o log
-const sanitizeForLog = (data: any) => {
-  if (!data) return null;
-  // Usamos o "destructuring" para separar o que NÃO queremos
+// 👈 tipo seguro em vez de any
+const sanitizeForLog = (data: Record<string, unknown> | null) => {
+  if (!data) return undefined; // 👈 undefined em vez de null
   const { churchId, updatedAt, createdAt, ...importantData } = data;
-  return importantData;
+  return importantData as Prisma.InputJsonValue;  // 👈 cast aqui no helper
 };
 
 export const MemberService = {
-  // 1. Busca Paginada - Robusta e Segura
-  async getMembersByChurch(
-    churchId: string,
-    page = 1,
-    limit = 10,
-    search = "",
-  ) {
+  async getMembersByChurch(churchId: string, page = 1, limit = 10, search = "") {
     const safePage = Math.max(1, page);
     const safeLimit = Math.min(100, Math.max(1, limit));
     const searchTerm = search.trim();
@@ -59,7 +52,19 @@ export const MemberService = {
     const [members, total] = await Promise.all([
       prisma.member.findMany({
         where: whereClause,
-        include: { role: true }, // 👈 Traz o nome do cargo (ex: "Pastor")
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone: true,
+          status: true,
+          joinDate: true,
+          roleId: true,
+          churchId: true,
+          createdAt: true,
+          updatedAt: true,
+          role: { select: { id: true, name: true } }, // 👈 select em vez de include
+        },
         orderBy: { name: "asc" },
         skip: (safePage - 1) * safeLimit,
         take: safeLimit,
@@ -79,22 +84,33 @@ export const MemberService = {
     };
   },
 
-  // 2. Criar membro + Auditoria (Mapeamento explícito para segurança)
- async createMember(churchId: string, actor: Actor, data: CreateMemberDTO) {
-    return await prisma.$transaction(async (tx) => {
-      
+  async createMember(churchId: string, actor: Actor, data: CreateMemberDTO) {
+    return prisma.$transaction(async (tx) => {
       const finalRoleId = data.roleId !== undefined ? data.roleId : null;
+
       const newMember = await tx.member.create({
         data: {
           name: data.name,
           email: data.email ?? undefined,
           phone: data.phone ?? undefined,
-          roleId: finalRoleId ?? undefined, // 👈 Agora usamos o ID gerado
+          roleId: finalRoleId ?? undefined,
           joinDate: data.joinDate ? new Date(data.joinDate) : new Date(),
           status: data.status ?? "ATIVO",
-          churchId, // 🔒 Injetado via servidor
+          churchId,
         },
-        include: { role: true }
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone: true,
+          status: true,
+          joinDate: true,
+          roleId: true,
+          churchId: true,
+          createdAt: true,
+          updatedAt: true,
+          role: { select: { id: true, name: true } },
+        },
       });
 
       await tx.auditLog.create({
@@ -105,7 +121,7 @@ export const MemberService = {
           action: "CREATE_MEMBER",
           entityName: "Member",
           entityId: newMember.id,
-          newData: newMember as unknown as Prisma.InputJsonValue,
+          newData: sanitizeForLog(newMember as Record<string, unknown>),
         },
       });
 
@@ -113,41 +129,48 @@ export const MemberService = {
     });
   },
 
-  // 3. Atualizar membro + Auditoria (Isolamento total SaaS)
-  async updateMember(
-    id: string,
-    churchId: string,
-    actor: Actor,
-    data: UpdateMemberDTO,
-  ) {
+  async updateMember(id: string, churchId: string, actor: Actor, data: UpdateMemberDTO) {
     const validJoinDate =
       data.joinDate && !isNaN(new Date(data.joinDate).getTime())
         ? new Date(data.joinDate)
         : undefined;
-    const currentMember = await prisma.member.findFirst({
-      where: { id, churchId },
+
+    // 👈 findUnique + verificação manual do churchId
+    const currentMember = await prisma.member.findUnique({
+      where: { id },
     });
 
-    if (!currentMember) throw new Error("MEMBER_NOT_FOUND_OR_ACCESS_DENIED");
+    if (!currentMember) throw new Error("MEMBER_NOT_FOUND");
+    if (currentMember.churchId !== churchId) throw new Error("MEMBER_NOT_FOUND");
 
-    return await prisma.$transaction(async (tx) => {
+    return prisma.$transaction(async (tx) => {
       const finalRoleId = data.roleId !== undefined ? data.roleId : null;
 
-      // 🛡️ updateMany com churchId é a sua garantia multi-tenant
-      await tx.member.updateMany({
-        where: { id, churchId },
+      // 👈 update em vez de updateMany
+      const updatedMember = await tx.member.update({
+        where: { id },
         data: {
           name: data.name,
           email: data.email,
           phone: data.phone,
-          // 🛡️ A SOLUÇÃO: Se o roleId for uma string vazia ou inválida, enviamos null
-          roleId: finalRoleId, // 👈 Salva o ID (seja novo ou existente)
+          roleId: finalRoleId,
           status: data.status,
           joinDate: validJoinDate,
         },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone: true,
+          status: true,
+          joinDate: true,
+          roleId: true,
+          churchId: true,
+          createdAt: true,
+          updatedAt: true,
+          role: { select: { id: true, name: true } },
+        },
       });
-
-      const updatedMember = await tx.member.findUnique({ where: { id }, include: { role: true } });
 
       await tx.auditLog.create({
         data: {
@@ -157,12 +180,8 @@ export const MemberService = {
           action: "UPDATE_MEMBER",
           entityName: "Member",
           entityId: id,
-          oldData: sanitizeForLog(
-            currentMember,
-          ) as unknown as Prisma.InputJsonValue,
-          newData: sanitizeForLog(
-            updatedMember,
-          ) as unknown as Prisma.InputJsonValue,
+          oldData: sanitizeForLog(currentMember as Record<string, unknown>),
+          newData: sanitizeForLog(updatedMember as Record<string, unknown>),
         },
       });
 
@@ -170,18 +189,18 @@ export const MemberService = {
     });
   },
 
-  // 4. Excluir membro + Auditoria
   async deleteMember(id: string, churchId: string, actor: Actor) {
-    const memberToDelete = await prisma.member.findFirst({
-      where: { id, churchId },
+    // 👈 findUnique + verificação manual do churchId
+    const memberToDelete = await prisma.member.findUnique({
+      where: { id },
     });
 
-    if (!memberToDelete) throw new Error("MEMBER_NOT_FOUND_OR_ACCESS_DENIED");
+    if (!memberToDelete) throw new Error("MEMBER_NOT_FOUND");
+    if (memberToDelete.churchId !== churchId) throw new Error("MEMBER_NOT_FOUND");
 
-    return await prisma.$transaction(async (tx) => {
-      const result = await tx.member.deleteMany({
-        where: { id, churchId },
-      });
+    return prisma.$transaction(async (tx) => {
+      // 👈 delete em vez de deleteMany
+      await tx.member.delete({ where: { id } });
 
       await tx.auditLog.create({
         data: {
@@ -191,22 +210,17 @@ export const MemberService = {
           action: "DELETE_MEMBER",
           entityName: "Member",
           entityId: id,
-          oldData: memberToDelete as unknown as Prisma.InputJsonValue,
+          oldData: sanitizeForLog(memberToDelete as Record<string, unknown>),
         },
       });
-
-      return result;
     });
   },
 
-  // NOVA FUNÇÃO: Buscar histórico de um membro específico
   async getMemberHistory(memberId: string, churchId?: string) {
-    return await prisma.auditLog.findMany({
+    return prisma.auditLog.findMany({
       where: {
         entityId: memberId,
         entityName: "Member",
-        // Se o churchId for passado (usuário comum), filtra.
-        // Se for undefined (SuperAdmin), ignora o filtro de igreja.
         ...(churchId && { churchId }),
       },
       orderBy: { createdAt: "desc" },
