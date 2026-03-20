@@ -1,42 +1,69 @@
 import prisma from "@/lib/prisma";
 import { unstable_cache } from "next/cache";
 
+// Converte BigInt de centavos para number
+function centsToAmount(value: unknown): number {
+  if (value == null) return 0;
+  return Number(BigInt(Math.round(Number(value)))) / 100;
+}
+
+// 👈 Datas sempre em UTC — evita bug de fuso horário na Vercel
+function getMonthRangeUTC(year: number, month: number) {
+  const start = new Date(Date.UTC(year, month, 1));
+  const end = new Date(Date.UTC(year, month + 1, 0, 23, 59, 59, 999));
+  return { start, end };
+}
+
+function getCurrentMonthRangeUTC() {
+  const now = new Date();
+  return getMonthRangeUTC(now.getUTCFullYear(), now.getUTCMonth());
+}
+
+function getLastMonthRangeUTC() {
+  const now = new Date();
+  return getMonthRangeUTC(now.getUTCFullYear(), now.getUTCMonth() - 1);
+}
+
 export const DashboardService = {
 
   async getChurchStats(churchId: string) {
     return unstable_cache(
       async () => {
-        const now = new Date();
-        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-        const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-        const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+        try {
+          const { start: startOfMonth } = getCurrentMonthRangeUTC();
+          const { start: startOfLastMonth, end: endOfLastMonth } = getLastMonthRangeUTC();
 
-        const [totalMembers, newMembersThisMonth, newMembersLastMonth, financeTotals] =
-          await Promise.all([
-            prisma.member.count({ where: { churchId, status: "ATIVO" } }),
-            prisma.member.count({ where: { churchId, joinDate: { gte: startOfMonth } } }),
-            prisma.member.count({ where: { churchId, joinDate: { gte: startOfLastMonth, lte: endOfLastMonth } } }),
-            prisma.financeTransaction.groupBy({
-              by: ["type"],
-              where: { churchId, date: { gte: startOfMonth } },
-              _sum: { amount: true },
-            }),
-          ]);
+          const [totalMembers, newMembersThisMonth, newMembersLastMonth, financeTotals] =
+            await Promise.all([
+              prisma.member.count({ where: { churchId, status: "ATIVO" } }),
+              prisma.member.count({ where: { churchId, joinDate: { gte: startOfMonth } } }),
+              prisma.member.count({ where: { churchId, joinDate: { gte: startOfLastMonth, lte: endOfLastMonth } } }),
+              prisma.financeTransaction.groupBy({
+                by: ["type"],
+                where: { churchId, date: { gte: startOfMonth } },
+                _sum: { amount: true },
+              }),
+            ]);
 
-        const monthlyIncome = Number(financeTotals.find(t => t.type === "INCOME")?._sum.amount ?? 0) / 100;
-        const monthlyExpenses = Number(financeTotals.find(t => t.type === "EXPENSE")?._sum.amount ?? 0) / 100;
-        const memberGrowth = newMembersLastMonth > 0
-          ? Math.round(((newMembersThisMonth - newMembersLastMonth) / newMembersLastMonth) * 100)
-          : newMembersThisMonth > 0 ? 100 : 0;
+          const monthlyIncome = centsToAmount(financeTotals.find(t => t.type === "INCOME")?._sum.amount);
+          const monthlyExpenses = centsToAmount(financeTotals.find(t => t.type === "EXPENSE")?._sum.amount);
 
-        return {
-          totalMembers,
-          newMembersThisMonth,
-          memberGrowth,
-          monthlyIncome,
-          monthlyExpenses,
-          monthlyBalance: monthlyIncome - monthlyExpenses,
-        };
+          const memberGrowth = newMembersLastMonth > 0
+            ? Math.round(((newMembersThisMonth - newMembersLastMonth) / newMembersLastMonth) * 100)
+            : newMembersThisMonth > 0 ? 100 : 0;
+
+          return {
+            totalMembers,
+            newMembersThisMonth,
+            memberGrowth,
+            monthlyIncome,
+            monthlyExpenses,
+            monthlyBalance: monthlyIncome - monthlyExpenses,
+          };
+        } catch (error) {
+          console.error("[DashboardService] getChurchStats error:", error);
+          throw error;
+        }
       },
       [`dashboard-stats-${churchId}`],
       { revalidate: 60, tags: [`church-${churchId}`, `dashboard-${churchId}`] }
@@ -46,26 +73,31 @@ export const DashboardService = {
   async getRecentMembers(churchId: string, limit = 5) {
     return unstable_cache(
       async () => {
-        const members = await prisma.member.findMany({
-          where: { churchId },
-          select: {
-            id: true,
-            name: true,
-            joinDate: true,
-            role: { select: { name: true } },
-          },
-          orderBy: { joinDate: "desc" },
-          take: limit,
-        });
+        try {
+          const members = await prisma.member.findMany({
+            where: { churchId },
+            select: {
+              id: true,
+              name: true,
+              joinDate: true,
+              role: { select: { name: true } },
+            },
+            orderBy: { joinDate: "desc" },
+            take: limit,
+          });
 
-        return members.map(m => ({
-          id: m.id,
-          name: m.name,
-          role: m.role?.name || "Membro",
-          joinDate: m.joinDate,
-        }));
+          return members.map(m => ({
+            id: m.id,
+            name: m.name,
+            role: m.role?.name || "Membro",
+            joinDate: m.joinDate,
+          }));
+        } catch (error) {
+          console.error("[DashboardService] getRecentMembers error:", error);
+          throw error;
+        }
       },
-      [`dashboard-recent-members-${churchId}`],
+      [`dashboard-recent-members-${churchId}-${limit}`],
       { revalidate: 60, tags: [`church-${churchId}`, `members-${churchId}`] }
     )();
   },
@@ -73,30 +105,35 @@ export const DashboardService = {
   async getRecentTransactions(churchId: string, limit = 5) {
     return unstable_cache(
       async () => {
-        const transactions = await prisma.financeTransaction.findMany({
-          where: { churchId },
-          select: {
-            id: true,
-            description: true,
-            amount: true,
-            type: true,
-            date: true,
-            category: { select: { name: true } },
-          },
-          orderBy: { date: "desc" },
-          take: limit,
-        });
+        try {
+          const transactions = await prisma.financeTransaction.findMany({
+            where: { churchId },
+            select: {
+              id: true,
+              description: true,
+              amount: true,
+              type: true,
+              date: true,
+              category: { select: { name: true } },
+            },
+            orderBy: { date: "desc" },
+            take: limit,
+          });
 
-        return transactions.map(t => ({
-          id: t.id,
-          description: t.description,
-          amount: Number(t.amount) / 100,
-          type: t.type,
-          category: t.category.name,
-          date: t.date,
-        }));
+          return transactions.map(t => ({
+            id: t.id,
+            description: t.description,
+            amount: centsToAmount(t.amount),
+            type: t.type as "INCOME" | "EXPENSE",
+            category: t.category.name,
+            date: t.date,
+          }));
+        } catch (error) {
+          console.error("[DashboardService] getRecentTransactions error:", error);
+          throw error;
+        }
       },
-      [`dashboard-recent-transactions-${churchId}`],
+      [`dashboard-recent-transactions-${churchId}-${limit}`],
       { revalidate: 60, tags: [`church-${churchId}`, `finances-${churchId}`] }
     )();
   },
@@ -104,27 +141,50 @@ export const DashboardService = {
   async getMembersChartData(churchId: string) {
     return unstable_cache(
       async () => {
-        const months = Array.from({ length: 6 }, (_, i) => {
-          const d = new Date();
-          d.setMonth(d.getMonth() - (5 - i));
-          return {
-            year: d.getFullYear(),
-            month: d.getMonth(),
-            label: d.toLocaleString("pt-AO", { month: "short" }),
-          };
-        });
+        try {
+          const now = new Date();
 
-        const data = await Promise.all(
-          months.map(async ({ year, month, label }) => {
-            const end = new Date(year, month + 1, 0, 23, 59, 59);
-            const count = await prisma.member.count({
-              where: { churchId, joinDate: { lte: end }, status: "ATIVO" },
-            });
+          // 👈 Ponto 1 — uma única query em vez de 6
+          const sixMonthsAgo = new Date(Date.UTC(
+            now.getUTCFullYear(),
+            now.getUTCMonth() - 5,
+            1
+          ));
+
+          // Busca todos os membros activos registados nos últimos 6 meses
+          const rawData = await prisma.member.groupBy({
+            by: ["joinDate"],
+            where: {
+              churchId,
+              status: "ATIVO",
+              joinDate: { gte: sixMonthsAgo },
+            },
+            _count: { id: true },
+          });
+
+          // Monta os últimos 6 meses em UTC
+          const months = Array.from({ length: 6 }, (_, i) => {
+            const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - (5 - i), 1));
+            return {
+              year: d.getUTCFullYear(),
+              month: d.getUTCMonth(),
+              label: d.toLocaleString("pt-AO", { month: "short", timeZone: "UTC" }),
+            };
+          });
+
+          // Agrupa por mês no código
+          return months.map(({ year, month, label }) => {
+            const count = rawData.filter(r => {
+              const d = new Date(r.joinDate);
+              return d.getUTCFullYear() === year && d.getUTCMonth() === month;
+            }).reduce((sum, r) => sum + r._count.id, 0);
+
             return { month: label, members: count };
-          })
-        );
-
-        return data;
+          });
+        } catch (error) {
+          console.error("[DashboardService] getMembersChartData error:", error);
+          throw error;
+        }
       },
       [`dashboard-members-chart-${churchId}`],
       { revalidate: 300, tags: [`church-${churchId}`, `members-${churchId}`] }
@@ -134,35 +194,56 @@ export const DashboardService = {
   async getFinanceChartData(churchId: string) {
     return unstable_cache(
       async () => {
-        const months = Array.from({ length: 6 }, (_, i) => {
-          const d = new Date();
-          d.setMonth(d.getMonth() - (5 - i));
-          return {
-            year: d.getFullYear(),
-            month: d.getMonth(),
-            label: d.toLocaleString("pt-AO", { month: "short" }),
-          };
-        });
+        try {
+          const now = new Date();
 
-        const data = await Promise.all(
-          months.map(async ({ year, month, label }) => {
-            const start = new Date(year, month, 1);
-            const end = new Date(year, month + 1, 0, 23, 59, 59);
+          // 👈 Ponto 1 — uma única query em vez de 6
+          const sixMonthsAgo = new Date(Date.UTC(
+            now.getUTCFullYear(),
+            now.getUTCMonth() - 5,
+            1
+          ));
 
-            const totals = await prisma.financeTransaction.groupBy({
-              by: ["type"],
-              where: { churchId, date: { gte: start, lte: end } },
-              _sum: { amount: true },
+          const rawData = await prisma.financeTransaction.groupBy({
+            by: ["type", "date"],
+            where: {
+              churchId,
+              date: { gte: sixMonthsAgo },
+            },
+            _sum: { amount: true },
+          });
+
+          // Monta os últimos 6 meses em UTC
+          const months = Array.from({ length: 6 }, (_, i) => {
+            const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - (5 - i), 1));
+            return {
+              year: d.getUTCFullYear(),
+              month: d.getUTCMonth(),
+              label: d.toLocaleString("pt-AO", { month: "short", timeZone: "UTC" }),
+            };
+          });
+
+          // Agrupa por mês no código
+          return months.map(({ year, month, label }) => {
+            const monthData = rawData.filter(r => {
+              const d = new Date(r.date);
+              return d.getUTCFullYear() === year && d.getUTCMonth() === month;
             });
 
-            const income = Number(totals.find(t => t.type === "INCOME")?._sum.amount ?? 0) / 100;
-            const expenses = Number(totals.find(t => t.type === "EXPENSE")?._sum.amount ?? 0) / 100;
+            const income = monthData
+              .filter(r => r.type === "INCOME")
+              .reduce((sum, r) => sum + centsToAmount(r._sum.amount), 0);
+
+            const expenses = monthData
+              .filter(r => r.type === "EXPENSE")
+              .reduce((sum, r) => sum + centsToAmount(r._sum.amount), 0);
 
             return { month: label, income, expenses };
-          })
-        );
-
-        return data;
+          });
+        } catch (error) {
+          console.error("[DashboardService] getFinanceChartData error:", error);
+          throw error;
+        }
       },
       [`dashboard-finance-chart-${churchId}`],
       { revalidate: 300, tags: [`church-${churchId}`, `finances-${churchId}`] }

@@ -32,9 +32,17 @@ export async function getChurchLogsAction(
   targetChurchId?: string,
 ) {
   try {
-    const { churchId } = await getAuthContext(targetChurchId);
+    const { churchId, isSuperAdmin } = await getAuthContext(targetChurchId);
 
-    const result = await AuditService.getChurchLogs(churchId, {
+    // 🔒 ADMIN vê logs da sua igreja
+    // 🔒 SUPER_ADMIN pode ver logs de sistema (null) ou de uma igreja (targetChurchId)
+    const logChurchId = isSuperAdmin ? (targetChurchId ?? null) : churchId;
+
+    if (!isSuperAdmin && !logChurchId) {
+      return { success: false, error: "Igreja não encontrada." };
+    }
+
+    const result = await AuditService.getChurchLogs(logChurchId, {
       ...filters,
       limit: 20,
     });

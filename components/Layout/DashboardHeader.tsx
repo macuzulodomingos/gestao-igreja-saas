@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { Plan } from "@/app/generated/prisma";
+import { Plan } from "@prisma/client";
 import { RoleBadge } from "./RoleBadge";
 import { signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";

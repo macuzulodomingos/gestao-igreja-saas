@@ -50,7 +50,7 @@ export default async function ConfiguracoesPage({ params }: ConfiguracoesPagePro
             <div>
                 <h1 className="text-2xl md:text-3xl font-bold text-foreground">Configurações</h1>
                 <p className="text-muted-foreground mt-1">
-                    Personalize a sua igreja e gira as definições do sistema.
+                    Personalize a sua igreja e gere as definições do sistema.
                 </p>
             </div>
 

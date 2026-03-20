@@ -6,7 +6,7 @@ export interface AuditLog {
   entityName: string;
   entityId: string;
   userEmail: string | null;
-  oldData: Prisma.JsonValue;
-  newData: Prisma.JsonValue;
+  oldData?: Prisma.JsonValue;
+  newData?: Prisma.JsonValue;
   createdAt: Date | string;
 }

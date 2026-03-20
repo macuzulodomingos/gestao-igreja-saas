@@ -1,5 +1,5 @@
 import prisma from "@/lib/prisma";
-import { Prisma } from "@/app/generated/prisma";
+import { Prisma } from "@prisma/client";
 
 type EventType = "SERVICO" | "REUNIAO" | "ENSAIO" | "CONFERENCIA" | "OUTRO";
 

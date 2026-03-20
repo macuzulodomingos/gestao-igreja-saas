@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useTransition } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,8 @@ interface AuditoriaClientProps {
     total: number;
     totalPages: number;
     currentPage: number;
+    hasNext: boolean;  // 👈 NOVO
+    hasPrev: boolean;  // 👈 NOVO
   };
   filters: {
     entityName: string;
@@ -184,10 +186,10 @@ export default function AuditoriaClient({
 
                   <div className="text-right shrink-0">
                     <p className="text-xs text-muted-foreground">
-                      {new Date(log.createdAt).toLocaleDateString("pt-BR")}
+                      {new Date(log.createdAt).toLocaleDateString("pt-AO")}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {new Date(log.createdAt).toLocaleTimeString("pt-BR", {
+                      {new Date(log.createdAt).toLocaleTimeString("pt-AO", {
                         hour: "2-digit",
                         minute: "2-digit",
                       })}
@@ -211,7 +213,7 @@ export default function AuditoriaClient({
               variant="outline"
               size="sm"
               onClick={() => handlePageChange(metadata.currentPage - 1)}
-              disabled={metadata.currentPage <= 1 || isPending}
+              disabled={!metadata.hasPrev || isPending} // 👈 usa hasPrev
             >
               <ChevronLeft className="h-4 w-4 mr-1" /> Anterior
             </Button>
@@ -219,7 +221,7 @@ export default function AuditoriaClient({
               variant="outline"
               size="sm"
               onClick={() => handlePageChange(metadata.currentPage + 1)}
-              disabled={metadata.currentPage >= metadata.totalPages || isPending}
+              disabled={!metadata.hasNext || isPending} // 👈 usa hasNext
             >
               Próximo <ChevronRight className="h-4 w-4 ml-1" />
             </Button>

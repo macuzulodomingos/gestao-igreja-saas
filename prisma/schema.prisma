@@ -132,6 +132,7 @@ model Member {
   // ÍNDICES COMPOSTOS PARA PERFORMANCE NO SAAS
   @@index([churchId, name])
   @@index([churchId, email])
+  @@index([churchId, status, joinDate]) // 👈 NOVO — acelera o gráfico de membros
 }
 
 enum MemberStatus {

@@ -4,7 +4,7 @@ import { auth } from "@/lib/auth";
 import { MemberService } from "@/services/memberService";
 import { revalidatePath } from "next/cache";
 import { memberSchema } from "@/lib/validations/member";
-import { revalidateTag } from "next/cache";
+import { updateTag } from "next/cache";
 
 /**
  * Helper privado para garantir segurança e auditoria em todas as ações.
@@ -65,8 +65,9 @@ export async function createMemberAction(
     });
 
     revalidatePath(`/[slug]/membros`, "page");
-    revalidateTag(`members-${churchId}`, "nested");
-    revalidateTag(`church-${churchId}`, "nested");
+    updateTag(`members-${churchId}`);
+    updateTag(`church-${churchId}`);
+
     return { success: true };
   } catch (error: any) {
     if (error.message === "UNAUTHORIZED")
@@ -114,8 +115,9 @@ export async function updateMemberAction(
     });
 
     revalidatePath(`/[slug]/membros`, "page");
-    revalidateTag(`members-${churchId}`, "nested");
-    revalidateTag(`church-${churchId}`, "nested");
+    updateTag(`members-${churchId}`);
+    updateTag(`church-${churchId}`);
+
     return { success: true };
   } catch (error: any) {
     console.error("Erro ao editar:", error);
@@ -137,8 +139,9 @@ export async function deleteMemberAction(
     await MemberService.deleteMember(memberId, churchId, actor);
 
     revalidatePath(`/[slug]/membros`, "page");
-    revalidateTag(`members-${churchId}`, "nested");
-    revalidateTag(`church-${churchId}`, "nested");
+    updateTag(`members-${churchId}`);
+    updateTag(`church-${churchId}`);
+    
     return { success: true };
   } catch (error: any) {
     return {
