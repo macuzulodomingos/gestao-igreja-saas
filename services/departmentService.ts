@@ -1,5 +1,4 @@
 import prisma from "@/lib/prisma";
-import { Prisma } from "@prisma/client";
 
 export interface CreateDepartmentDTO {
   name: string;
@@ -10,11 +9,31 @@ export interface CreateDepartmentDTO {
 export const DepartmentService = {
 
   async getDepartments(churchId: string) {
-    return await prisma.department.findMany({
+    return prisma.department.findMany({
       where: { churchId },
-      include: {
-        leader: { include: { role: true } },
-        members: { include: { member: { include: { role: true } } } }, // 👈 NOVO
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        leaderId: true,
+        leader: {
+          select: {
+            id: true,
+            name: true,
+            role: { select: { name: true } },
+          },
+        },
+        members: {
+          select: {
+            member: {
+              select: {
+                id: true,
+                name: true,
+                role: { select: { name: true } },
+              },
+            },
+          },
+        },
       },
       orderBy: { name: "asc" },
     });
@@ -25,12 +44,14 @@ export const DepartmentService = {
     actor: { userId: string; email: string },
     data: CreateDepartmentDTO
   ) {
-    return await prisma.$transaction(async (tx) => {
+    return prisma.$transaction(async (tx) => {
       if (data.leaderId) {
-        const leader = await tx.member.findFirst({
-          where: { id: data.leaderId, churchId },
+        const leader = await tx.member.findUnique({
+          where: { id: data.leaderId },
+          select: { id: true, churchId: true },
         });
-        if (!leader) throw new Error("Líder inválido para esta igreja.");
+        if (!leader || leader.churchId !== churchId)
+          throw new Error("INVALID_LEADER");
       }
 
       const department = await tx.department.create({
@@ -40,7 +61,7 @@ export const DepartmentService = {
           leaderId: data.leaderId || null,
           churchId,
         },
-        include: { leader: true },
+        select: { id: true, name: true, description: true, leaderId: true },
       });
 
       await tx.auditLog.create({
@@ -51,7 +72,7 @@ export const DepartmentService = {
           action: "CREATE_DEPARTMENT",
           entityName: "Department",
           entityId: department.id,
-          newData: department as unknown as Prisma.InputJsonValue,
+          newData: { name: data.name, leaderId: data.leaderId ?? null },
         },
       });
 
@@ -65,17 +86,22 @@ export const DepartmentService = {
     actor: { userId: string; email: string },
     data: CreateDepartmentDTO
   ) {
-    return await prisma.$transaction(async (tx) => {
-      const existing = await tx.department.findFirst({
-        where: { id, churchId },
+    return prisma.$transaction(async (tx) => {
+      const existing = await tx.department.findUnique({
+        where: { id },
+        select: { id: true, name: true, churchId: true, leaderId: true },
       });
-      if (!existing) throw new Error("Departamento não encontrado ou acesso negado.");
+
+      if (!existing) throw new Error("DEPARTMENT_NOT_FOUND");
+      if (existing.churchId !== churchId) throw new Error("DEPARTMENT_NOT_FOUND");
 
       if (data.leaderId) {
-        const leader = await tx.member.findFirst({
-          where: { id: data.leaderId, churchId },
+        const leader = await tx.member.findUnique({
+          where: { id: data.leaderId },
+          select: { id: true, churchId: true },
         });
-        if (!leader) throw new Error("Líder inválido para esta igreja.");
+        if (!leader || leader.churchId !== churchId)
+          throw new Error("INVALID_LEADER");
       }
 
       const updated = await tx.department.update({
@@ -85,7 +111,7 @@ export const DepartmentService = {
           description: data.description || null,
           leaderId: data.leaderId || null,
         },
-        include: { leader: true },
+        select: { id: true, name: true, description: true, leaderId: true },
       });
 
       await tx.auditLog.create({
@@ -96,8 +122,8 @@ export const DepartmentService = {
           action: "UPDATE_DEPARTMENT",
           entityName: "Department",
           entityId: id,
-          oldData: existing as unknown as Prisma.InputJsonValue,
-          newData: updated as unknown as Prisma.InputJsonValue,
+          oldData: { name: existing.name, leaderId: existing.leaderId },
+          newData: { name: data.name, leaderId: data.leaderId ?? null },
         },
       });
 
@@ -110,11 +136,14 @@ export const DepartmentService = {
     churchId: string,
     actor: { userId: string; email: string }
   ) {
-    return await prisma.$transaction(async (tx) => {
-      const existing = await tx.department.findFirst({
-        where: { id, churchId },
+    return prisma.$transaction(async (tx) => {
+      const existing = await tx.department.findUnique({
+        where: { id },
+        select: { id: true, name: true, churchId: true },
       });
-      if (!existing) throw new Error("Departamento não encontrado ou acesso negado.");
+
+      if (!existing) throw new Error("DEPARTMENT_NOT_FOUND");
+      if (existing.churchId !== churchId) throw new Error("DEPARTMENT_NOT_FOUND");
 
       await tx.department.delete({ where: { id } });
 
@@ -126,42 +155,36 @@ export const DepartmentService = {
           action: "DELETE_DEPARTMENT",
           entityName: "Department",
           entityId: id,
-          oldData: existing as unknown as Prisma.InputJsonValue,
+          oldData: { name: existing.name },
         },
       });
-
-      return { success: true };
     });
   },
 
-  // 👇 NOVO — Sincroniza membros do departamento
   async syncDepartmentMembers(
     departmentId: string,
     churchId: string,
     memberIds: string[],
     actor: { userId: string; email: string }
   ) {
-    return await prisma.$transaction(async (tx) => {
-      // 🔒 Verifica que o departamento pertence à igreja
-      const department = await tx.department.findFirst({
-        where: { id: departmentId, churchId },
+    return prisma.$transaction(async (tx) => {
+      const department = await tx.department.findUnique({
+        where: { id: departmentId },
+        select: { id: true, churchId: true },
       });
-      if (!department) throw new Error("Departamento não encontrado ou acesso negado.");
 
-      // 🔒 Verifica que todos os membros pertencem à mesma igreja
+      if (!department) throw new Error("DEPARTMENT_NOT_FOUND");
+      if (department.churchId !== churchId) throw new Error("DEPARTMENT_NOT_FOUND");
+
       if (memberIds.length > 0) {
         const validMembers = await tx.member.count({
           where: { id: { in: memberIds }, churchId },
         });
-        if (validMembers !== memberIds.length) {
-          throw new Error("Um ou mais membros são inválidos para esta igreja.");
-        }
+        if (validMembers !== memberIds.length)
+          throw new Error("INVALID_MEMBERS");
       }
 
-      // Remove todos os membros actuais e insere os novos (sync completo)
-      await tx.departmentMember.deleteMany({
-        where: { departmentId },
-      });
+      await tx.departmentMember.deleteMany({ where: { departmentId } });
 
       if (memberIds.length > 0) {
         await tx.departmentMember.createMany({
@@ -177,11 +200,9 @@ export const DepartmentService = {
           action: "SYNC_DEPARTMENT_MEMBERS",
           entityName: "Department",
           entityId: departmentId,
-          newData: { memberIds } as unknown as Prisma.InputJsonValue,
+          newData: { memberIds },
         },
       });
-
-      return { success: true };
     });
   },
 };

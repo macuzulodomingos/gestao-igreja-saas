@@ -1,7 +1,8 @@
 import { DashboardService } from "@/services/dashboardService";
 import { getChurchBySlug } from "@/lib/tenant";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import DashboardShell from "@/components/Dashboard/DashboardShell";
+import { auth } from "@/lib/auth";
 
 export default async function DashboardPage({
   params
@@ -9,11 +10,14 @@ export default async function DashboardPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params;
+  const session = await auth();
 
-  const church = await getChurchBySlug(slug);
+  if (!session?.user) redirect("/login");
+
+  const church = await getChurchBySlug(slug, session.user.churchId ?? undefined);
   if (!church) return notFound();
 
-  const { churchId } = { churchId: church.id };
+  const churchId = church.id;
 
   const [stats, recentMembers, recentTransactions, membersChart, financeChart] =
     await Promise.all([

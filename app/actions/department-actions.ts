@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { DepartmentService } from "@/services/departmentService";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { getErrorMessage } from "@/lib/errors";
 
 const departmentSchema = z.object({
   name: z.string().min(1, "Nome obrigatório").max(100),
@@ -37,9 +38,7 @@ export async function saveDepartmentAction(
   try {
     const { churchId, actor } = await getAuthContext(targetChurchId);
 
-    const result = departmentSchema.safeParse(
-      Object.fromEntries(formData.entries())
-    );
+    const result = departmentSchema.safeParse(Object.fromEntries(formData.entries()));
     if (!result.success) {
       return { success: false, fieldErrors: result.error.flatten().fieldErrors };
     }
@@ -61,10 +60,15 @@ export async function saveDepartmentAction(
     revalidatePath(`/[slug]/departamentos`, "page");
     return { success: true };
 
-  } catch (error: any) {
-    console.error("[SAVE_DEPARTMENT_ERROR]:", error);
-    if (error.message === "UNAUTHORIZED")
+  } catch (error: unknown) {
+    const message = getErrorMessage(error);
+    if (message === "UNAUTHORIZED")
       return { success: false, error: "Não autenticado." };
+    if (message === "CHURCH_ID_REQUIRED")
+      return { success: false, error: "Igreja não encontrada." };
+    if (message === "INVALID_LEADER")
+      return { success: false, error: "Líder inválido para esta igreja." };
+    console.error("[SAVE_DEPARTMENT_ERROR]:", error);
     return { success: false, error: "Erro ao salvar departamento." };
   }
 }
@@ -81,10 +85,13 @@ export async function deleteDepartmentAction(
     revalidatePath(`/[slug]/departamentos`, "page");
     return { success: true };
 
-  } catch (error: any) {
-    console.error("[DELETE_DEPARTMENT_ERROR]:", error);
-    if (error.message === "UNAUTHORIZED")
+  } catch (error: unknown) {
+    const message = getErrorMessage(error);
+    if (message === "UNAUTHORIZED")
       return { success: false, error: "Não autenticado." };
+    if (message === "DEPARTMENT_NOT_FOUND")
+      return { success: false, error: "Departamento não encontrado." };
+    console.error("[DELETE_DEPARTMENT_ERROR]:", error);
     return { success: false, error: "Não foi possível eliminar o departamento." };
   }
 }
@@ -107,10 +114,15 @@ export async function syncDepartmentMembersAction(
     revalidatePath(`/[slug]/departamentos`, "page");
     return { success: true };
 
-  } catch (error: any) {
-    console.error("[SYNC_MEMBERS_ERROR]:", error);
-    if (error.message === "UNAUTHORIZED")
+  } catch (error: unknown) {
+    const message = getErrorMessage(error);
+    if (message === "UNAUTHORIZED")
       return { success: false, error: "Não autenticado." };
+    if (message === "INVALID_MEMBERS")
+      return { success: false, error: "Um ou mais membros são inválidos." };
+    if (message === "DEPARTMENT_NOT_FOUND")
+      return { success: false, error: "Departamento não encontrado." };
+    console.error("[SYNC_MEMBERS_ERROR]:", error);
     return { success: false, error: "Erro ao actualizar membros." };
   }
 }
