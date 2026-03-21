@@ -28,7 +28,7 @@ export function EventAttendanceDialog({ open, onOpenChange, event, allMembers }:
 
   useEffect(() => {
     if (open) {
-      setSelectedIds(event.attendees.map(a => a.memberId));
+      setSelectedIds(event.attendees.map(a => a.member.id));
       setSearchTerm("");
     }
   }, [open, event]);

@@ -1,11 +1,9 @@
 import prisma from "@/lib/prisma";
 
-type EventType = "SERVICO" | "REUNIAO" | "ENSAIO" | "CONFERENCIA" | "OUTRO";
-
 export interface CreateEventDTO {
   name: string;
   description?: string;
-  type: EventType;
+  categoryId: string;  // 👈 substitui type
   date: Date;
   time: string;
   departmentId?: string;
@@ -20,7 +18,8 @@ export const EventService = {
         id: true,
         name: true,
         description: true,
-        type: true,
+        categoryId: true,           // 👈
+        category: { select: { id: true, name: true } }, // 👈
         date: true,
         time: true,
         departmentId: true,
@@ -41,6 +40,14 @@ export const EventService = {
     data: CreateEventDTO
   ) {
     return prisma.$transaction(async (tx) => {
+      // 🔒 Verifica que a categoria pertence à igreja
+      const category = await tx.eventCategory.findUnique({
+        where: { id: data.categoryId },
+        select: { id: true, name: true, churchId: true },
+      });
+      if (!category || category.churchId !== churchId)
+        throw new Error("INVALID_CATEGORY");
+
       if (data.departmentId) {
         const dept = await tx.department.findUnique({
           where: { id: data.departmentId },
@@ -54,13 +61,13 @@ export const EventService = {
         data: {
           name: data.name,
           description: data.description || null,
-          type: data.type,
+          categoryId: data.categoryId, // 👈
           date: data.date,
           time: data.time,
           departmentId: data.departmentId || null,
           churchId,
         },
-        select: { id: true, name: true, type: true, date: true, time: true },
+        select: { id: true, name: true, categoryId: true, date: true, time: true },
       });
 
       await tx.auditLog.create({
@@ -73,7 +80,7 @@ export const EventService = {
           entityId: event.id,
           newData: {
             name: data.name,
-            type: data.type,
+            category: category.name,
             date: data.date,
             departmentId: data.departmentId ?? null,
           },
@@ -93,11 +100,19 @@ export const EventService = {
     return prisma.$transaction(async (tx) => {
       const existing = await tx.event.findUnique({
         where: { id },
-        select: { id: true, name: true, type: true, date: true, churchId: true },
+        select: { id: true, name: true, categoryId: true, date: true, churchId: true },
       });
 
       if (!existing) throw new Error("EVENT_NOT_FOUND");
       if (existing.churchId !== churchId) throw new Error("EVENT_NOT_FOUND");
+
+      // 🔒 Verifica que a categoria pertence à igreja
+      const category = await tx.eventCategory.findUnique({
+        where: { id: data.categoryId },
+        select: { id: true, name: true, churchId: true },
+      });
+      if (!category || category.churchId !== churchId)
+        throw new Error("INVALID_CATEGORY");
 
       if (data.departmentId) {
         const dept = await tx.department.findUnique({
@@ -113,12 +128,12 @@ export const EventService = {
         data: {
           name: data.name,
           description: data.description || null,
-          type: data.type,
+          categoryId: data.categoryId, // 👈
           date: data.date,
           time: data.time,
           departmentId: data.departmentId || null,
         },
-        select: { id: true, name: true, type: true, date: true, time: true },
+        select: { id: true, name: true, categoryId: true, date: true, time: true },
       });
 
       await tx.auditLog.create({
@@ -129,8 +144,8 @@ export const EventService = {
           action: "UPDATE_EVENT",
           entityName: "Event",
           entityId: id,
-          oldData: { name: existing.name, type: existing.type, date: existing.date },
-          newData: { name: data.name, type: data.type, date: data.date },
+          oldData: { name: existing.name, categoryId: existing.categoryId, date: existing.date },
+          newData: { name: data.name, categoryId: data.categoryId, date: data.date },
         },
       });
 
@@ -146,7 +161,7 @@ export const EventService = {
     return prisma.$transaction(async (tx) => {
       const existing = await tx.event.findUnique({
         where: { id },
-        select: { id: true, name: true, type: true, churchId: true },
+        select: { id: true, name: true, categoryId: true, churchId: true },
       });
 
       if (!existing) throw new Error("EVENT_NOT_FOUND");
@@ -162,7 +177,7 @@ export const EventService = {
           action: "DELETE_EVENT",
           entityName: "Event",
           entityId: id,
-          oldData: { name: existing.name, type: existing.type },
+          oldData: { name: existing.name, categoryId: existing.categoryId },
         },
       });
     });

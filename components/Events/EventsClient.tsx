@@ -12,18 +12,20 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ChurchEvent, EventListMember, EventListDepartment } from "@/types/event";
+import { ChurchEvent, EventCategory, EventListMember, EventListDepartment } from "@/types/event";
 
 interface EventsClientProps {
   initialEvents: ChurchEvent[];
   members: EventListMember[];
   departments: EventListDepartment[];
+  categories: EventCategory[]; // 👈 NOVO
 }
 
 export default function EventsClient({
   initialEvents,
   members,
   departments,
+  categories, // 👈 NOVO
 }: EventsClientProps) {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isAttendanceOpen, setIsAttendanceOpen] = useState(false);
@@ -86,6 +88,7 @@ export default function EventsClient({
         onOpenChange={setIsFormOpen}
         event={editingEvent}
         departments={departments}
+        categories={categories} // 👈 NOVO
       />
 
       {selectedEvent && (

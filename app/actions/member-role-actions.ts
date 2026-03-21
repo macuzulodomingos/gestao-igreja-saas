@@ -4,23 +4,9 @@ import { auth } from "@/lib/auth";
 import { MemberRoleService } from "@/services/memberRoleService";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { getAuthContext } from "@/lib/auth-context";
 
-async function getAuthContext(targetChurchId?: string) {
-  const session = await auth();
-  if (!session?.user) throw new Error("UNAUTHORIZED");
 
-  const isSuperAdmin = session.user.role === "SUPER_ADMIN";
-  const churchId = isSuperAdmin && targetChurchId
-    ? targetChurchId
-    : session.user.churchId;
-
-  if (!churchId) throw new Error("CHURCH_ID_REQUIRED");
-
-  return {
-    churchId,
-    actor: { userId: session.user.id, email: session.user.email! },
-  };
-}
 
 const roleSchema = z.object({
   name: z.string().min(1, "Nome obrigatório").max(50, "Máximo 50 caracteres"),

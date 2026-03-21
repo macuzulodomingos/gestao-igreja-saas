@@ -4,6 +4,7 @@ import { z } from "zod";
 import { ChurchService } from "@/services/churchService";
 import { Prisma } from "@prisma/client";
 
+
 const registerSchema = z.object({
   churchName: z.string().min(3, "Nome da igreja obrigatório").max(100),
   churchSlug: z.string()

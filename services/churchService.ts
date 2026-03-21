@@ -52,6 +52,16 @@ export const ChurchService = {
           ],
         });
 
+        await tx.eventCategory.createMany({
+          data: [
+            { name: "Culto", churchId: church.id },
+            { name: "Oração", churchId: church.id },
+            { name: "Ensaio", churchId: church.id },
+            { name: "Reunião", churchId: church.id },
+            { name: "Conferência", churchId: church.id },
+          ],
+        });
+
         return church;
       },
       {

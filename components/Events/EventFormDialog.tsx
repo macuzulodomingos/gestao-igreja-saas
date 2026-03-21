@@ -12,47 +12,29 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
+import { eventSchema } from "@/lib/validations/event";
 import { saveEventAction } from "@/app/actions/event-actions";
-import { ChurchEvent, EventListDepartment, EventType } from "@/types/event";
+import { ChurchEvent, EventCategory, EventListDepartment } from "@/types/event";
 
-const eventTypeLabels: Record<EventType, string> = {
-  SERVICO: "Serviço",
-  REUNIAO: "Reunião",
-  ENSAIO: "Ensaio",
-  CONFERENCIA: "Conferência",
-  OUTRO: "Outro",
-};
-
-const schema = z.object({
-  name: z.string().min(1, "Nome obrigatório").max(100),
-  description: z.string().max(500, "Máximo 500 caracteres").optional().or(z.literal("")),
-  type: z.enum(["SERVICO", "REUNIAO", "ENSAIO", "CONFERENCIA", "OUTRO"]),
-  date: z.string().min(1, "Data obrigatória").refine(
-    (val) => new Date(val) >= new Date(new Date().toDateString()),
-    "A data não pode ser no passado"
-  ),
-  time: z.string().min(1, "Hora obrigatória"),
-  departmentId: z.string().optional().or(z.literal("")),
-});
-
-type FormData = z.infer<typeof schema>;
+type FormData = z.infer<typeof eventSchema>;
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   event: ChurchEvent | null;
   departments: EventListDepartment[];
+  categories: EventCategory[]; // 👈 novo
 }
 
-export function EventFormDialog({ open, onOpenChange, event, departments }: Props) {
+export function EventFormDialog({ open, onOpenChange, event, departments, categories }: Props) {
   const [isPending, startTransition] = useTransition();
 
   const form = useForm<FormData>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(eventSchema),
     defaultValues: {
       name: "",
       description: "",
-      type: "SERVICO",
+      categoryId: "",
       date: "",
       time: "",
       departmentId: "none",
@@ -65,7 +47,7 @@ export function EventFormDialog({ open, onOpenChange, event, departments }: Prop
         form.reset({
           name: event.name,
           description: event.description || "",
-          type: event.type,
+          categoryId: event.categoryId,
           date: new Date(event.date).toISOString().split("T")[0],
           time: event.time,
           departmentId: event.departmentId || "none",
@@ -74,21 +56,21 @@ export function EventFormDialog({ open, onOpenChange, event, departments }: Prop
         form.reset({
           name: "",
           description: "",
-          type: "SERVICO",
+          categoryId: categories[0]?.id ?? "",
           date: new Date().toISOString().split("T")[0],
           time: "09:00",
           departmentId: "none",
         });
       }
     }
-  }, [event, open, form]);
+  }, [event, open, form, categories]);
 
   const handleSubmit = (data: FormData) => {
     startTransition(async () => {
       const formData = new FormData();
       formData.append("name", data.name);
       formData.append("description", data.description || "");
-      formData.append("type", data.type);
+      formData.append("categoryId", data.categoryId);
       formData.append("date", data.date);
       formData.append("time", data.time);
       formData.append("departmentId", data.departmentId || "none");
@@ -98,6 +80,8 @@ export function EventFormDialog({ open, onOpenChange, event, departments }: Prop
       if (result.success) {
         toast.success(event ? "Evento actualizado!" : "Evento criado!");
         onOpenChange(false);
+      } else if (result.fieldErrors) {
+        toast.error("Verifique os erros no formulário.");
       } else {
         toast.error(result.error || "Erro ao salvar evento.");
       }
@@ -123,19 +107,28 @@ export function EventFormDialog({ open, onOpenChange, event, departments }: Prop
               </FormItem>
             )} />
 
-            <FormField control={form.control} name="type" render={({ field }) => (
+            {/* 👈 Categoria dinâmica em vez de type fixo */}
+            <FormField control={form.control} name="categoryId" render={({ field }) => (
               <FormItem>
-                <FormLabel>Tipo</FormLabel>
+                <FormLabel>Categoria</FormLabel>
                 <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
-                    <SelectTrigger><SelectValue placeholder="Selecione o tipo" /></SelectTrigger>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione a categoria" />
+                    </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {(Object.keys(eventTypeLabels) as EventType[]).map(type => (
-                      <SelectItem key={type} value={type}>
-                        {eventTypeLabels[type]}
+                    {categories.length === 0 ? (
+                      <SelectItem value="no-categories" disabled>
+                        Nenhuma categoria — crie em Configurações
                       </SelectItem>
-                    ))}
+                    ) : (
+                      categories.map(cat => (
+                        <SelectItem key={cat.id} value={cat.id}>
+                          {cat.name}
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -164,7 +157,9 @@ export function EventFormDialog({ open, onOpenChange, event, departments }: Prop
                 <FormLabel>Departamento (Opcional)</FormLabel>
                 <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
-                    <SelectTrigger><SelectValue placeholder="Selecione o departamento" /></SelectTrigger>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o departamento" />
+                    </SelectTrigger>
                   </FormControl>
                   <SelectContent>
                     <SelectItem value="none">Sem departamento</SelectItem>

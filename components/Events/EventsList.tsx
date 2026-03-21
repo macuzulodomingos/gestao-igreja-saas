@@ -10,23 +10,7 @@ import {
 import { MoreHorizontal, Pencil, Trash2, Users, Calendar, Clock } from "lucide-react";
 import { format, isPast, isToday } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ChurchEvent, EventType } from "@/types/event";
-
-const eventTypeLabels: Record<EventType, string> = {
-  SERVICO: "Serviço",
-  REUNIAO: "Reunião",
-  ENSAIO: "Ensaio",
-  CONFERENCIA: "Conferência",
-  OUTRO: "Outro",
-};
-
-const eventTypeColors: Record<EventType, string> = {
-  SERVICO: "bg-primary/10 text-primary",
-  REUNIAO: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
-  ENSAIO: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
-  CONFERENCIA: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-  OUTRO: "bg-muted text-muted-foreground",
-};
+import { ChurchEvent } from "@/types/event";
 
 interface EventsListProps {
   events: ChurchEvent[];
@@ -61,8 +45,9 @@ export function EventsList({ events, onEdit, onDelete, onManageAttendance }: Eve
           </div>
         </TableCell>
         <TableCell>
-          <Badge variant="secondary" className={eventTypeColors[event.type]}>
-            {eventTypeLabels[event.type]}
+          {/* 👈 categoria dinâmica em vez de type fixo */}
+          <Badge variant="secondary" className="bg-primary/10 text-primary">
+            {event.category.name}
           </Badge>
         </TableCell>
         <TableCell>
@@ -127,7 +112,7 @@ export function EventsList({ events, onEdit, onDelete, onManageAttendance }: Eve
         <TableHeader>
           <TableRow>
             <TableHead>Evento</TableHead>
-            <TableHead>Tipo</TableHead>
+            <TableHead>Categoria</TableHead>
             <TableHead>Data</TableHead>
             <TableHead>Hora</TableHead>
             <TableHead>Departamento</TableHead>

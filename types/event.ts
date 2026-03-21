@@ -1,7 +1,10 @@
-export type EventType = "SERVICO" | "REUNIAO" | "ENSAIO" | "CONFERENCIA" | "OUTRO";
+export interface EventCategory {
+  id: string;
+  name: string;
+}
 
 export interface EventAttendee {
-  memberId: string;
+  member: { id: string; name: string }; // 👈 reflecte o que o service retorna
 }
 
 export interface EventDepartment {
@@ -13,15 +16,13 @@ export interface ChurchEvent {
   id: string;
   name: string;
   description: string | null;
-  type: EventType;
+  categoryId: string;           // 👈 substitui type
+  category: EventCategory;      // 👈 novo
   date: Date;
   time: string;
   departmentId: string | null;
   department: EventDepartment | null;
   attendees: EventAttendee[];
-  churchId: string;
-  createdAt: Date;
-  updatedAt: Date;
 }
 
 export interface EventListMember {

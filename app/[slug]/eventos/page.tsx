@@ -4,6 +4,7 @@ import { EventService } from "@/services/eventService";
 import { MemberService } from "@/services/memberService";
 import { DepartmentService } from "@/services/departmentService";
 import EventsClient from "@/components/Events/EventsClient";
+import { EventCategoryService } from "@/services/eventCategoryService"; // 👈 NOVO
 
 export default async function EventosPage() {
   const session = await auth();
@@ -11,10 +12,11 @@ export default async function EventosPage() {
 
   const { churchId } = session.user;
 
-  const [events, membersData, departments] = await Promise.all([
+  const [events, membersData, departments, categories] = await Promise.all([
     EventService.getEvents(churchId),
     MemberService.getMembersByChurch(churchId, 1, 100),
     DepartmentService.getDepartments(churchId),
+    EventCategoryService.getCategories(churchId), // 👈 NOVO
   ]);
 
   return (
@@ -22,6 +24,7 @@ export default async function EventosPage() {
       initialEvents={events}
       members={membersData.members}
       departments={departments}
+      categories={categories} // 👈 NOVO
     />
   );
 }

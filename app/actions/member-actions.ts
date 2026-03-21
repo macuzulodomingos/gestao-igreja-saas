@@ -5,32 +5,13 @@ import { MemberService } from "@/services/memberService";
 import { revalidatePath } from "next/cache";
 import { memberSchema } from "@/lib/validations/member";
 import { updateTag } from "next/cache";
+import { getAuthContext } from "@/lib/auth-context";
 
 /**
  * Helper privado para garantir segurança e auditoria em todas as ações.
  * Extrai o usuário logado e define qual igreja será afetada (Multi-tenant).
  */
-async function getAuthContext(targetChurchId?: string) {
-  const session = await auth();
-  if (!session?.user) throw new Error("UNAUTHORIZED");
 
-  const isSuperAdmin = session.user.role === "SUPER_ADMIN";
-
-  // Se for admin e houver um alvo, usa o alvo. Caso contrário, usa a igreja do usuário.
-  const churchId =
-    isSuperAdmin && targetChurchId ? targetChurchId : session.user.churchId;
-
-  if (!churchId) throw new Error("CHURCH_ID_REQUIRED");
-
-  return {
-    churchId,
-    actor: {
-      userId: session.user.id,
-      email: session.user.email!,
-    },
-    isSuperAdmin,
-  };
-}
 
 // --- ACTION DE CRIAR ---
 export async function createMemberAction(

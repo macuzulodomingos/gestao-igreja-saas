@@ -30,6 +30,7 @@ model Church {
   subscription Subscription?     // 👈 ADICIONADO
   memberRoles  MemberRole[]
   events Event[]
+  eventCategories EventCategory[]
 }
 
 enum Plan {
@@ -266,9 +267,11 @@ model Event {
   id          String      @id @default(cuid())
   name        String
   description String?
-  type        EventType
   date        DateTime
   time        String      // "09:00", "14:30"
+
+  categoryId   String
+  category     EventCategory @relation(fields: [categoryId], references: [id])
 
   // Departamento opcional
   departmentId String?
@@ -286,12 +289,16 @@ model Event {
   @@index([churchId, date])
 }
 
-enum EventType {
-  SERVICO
-  REUNIAO
-  ENSAIO
-  CONFERENCIA
-  OUTRO
+model EventCategory {
+  id       String @id @default(cuid())
+  name     String // "Oração", "Culto", "Ensaio"
+  churchId String
+  church   Church @relation(fields: [churchId], references: [id], onDelete: Cascade)
+
+  events Event[]
+
+  @@unique([churchId, name])
+  @@index([churchId])
 }
 
 // Tabela de presenças

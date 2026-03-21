@@ -3,38 +3,11 @@
 import { auth } from "@/lib/auth";
 import { EventService } from "@/services/eventService";
 import { revalidatePath } from "next/cache";
-import { z } from "zod";
 import { getErrorMessage, isPrismaError } from "@/lib/errors";
+import { eventSchema } from "@/lib/validations/event";
+import { getAuthContext } from "@/lib/auth-context";
 
-async function getAuthContext(targetChurchId?: string) {
-  const session = await auth();
-  if (!session?.user) throw new Error("UNAUTHORIZED");
 
-  const isSuperAdmin = session.user.role === "SUPER_ADMIN";
-  const churchId = isSuperAdmin && targetChurchId
-    ? targetChurchId
-    : session.user.churchId;
-
-  if (!churchId) throw new Error("CHURCH_ID_REQUIRED");
-
-  return {
-    churchId,
-    actor: { userId: session.user.id, email: session.user.email! },
-    isSuperAdmin,
-  };
-}
-
-const eventSchema = z.object({
-  name: z.string().min(1, "Nome obrigatório").max(100),
-  description: z.string().max(500).optional().or(z.literal("")),
-  type: z.enum(["SERVICO", "REUNIAO", "ENSAIO", "CONFERENCIA", "OUTRO"]),
-  date: z.string().min(1, "Data obrigatória").refine(
-    (val) => new Date(val) >= new Date(new Date().toDateString()),
-    "A data não pode ser no passado"
-  ),
-  time: z.string().min(1, "Hora obrigatória"),
-  departmentId: z.string().optional().or(z.literal("")),
-});
 
 export async function saveEventAction(
   formData: FormData,
@@ -52,7 +25,7 @@ export async function saveEventAction(
     const data = {
       name: result.data.name,
       description: result.data.description || undefined,
-      type: result.data.type,
+      categoryId: result.data.categoryId, // 👈
       date: new Date(`${result.data.date}T12:00:00Z`),
       time: result.data.time,
       departmentId: result.data.departmentId === "none" || !result.data.departmentId
@@ -77,6 +50,8 @@ export async function saveEventAction(
       return { success: false, error: "Igreja não encontrada." };
     if (message === "INVALID_DEPARTMENT")
       return { success: false, error: "Departamento inválido para esta igreja." };
+    if (message === "INVALID_CATEGORY")
+      return { success: false, error: "Categoria inválida para esta igreja." };
     if (isPrismaError(error) && error.code === "P2002")
       return { success: false, error: "Já existe um evento com estes dados." };
     if (isPrismaError(error) && error.code === "P2025")
