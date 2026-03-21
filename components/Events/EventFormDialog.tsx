@@ -27,7 +27,10 @@ const schema = z.object({
   name: z.string().min(1, "Nome obrigatório").max(100),
   description: z.string().max(500, "Máximo 500 caracteres").optional().or(z.literal("")),
   type: z.enum(["SERVICO", "REUNIAO", "ENSAIO", "CONFERENCIA", "OUTRO"]),
-  date: z.string().min(1, "Data obrigatória"),
+  date: z.string().min(1, "Data obrigatória").refine(
+    (val) => new Date(val) >= new Date(new Date().toDateString()),
+    "A data não pode ser no passado"
+  ),
   time: z.string().min(1, "Hora obrigatória"),
   departmentId: z.string().optional().or(z.literal("")),
 });

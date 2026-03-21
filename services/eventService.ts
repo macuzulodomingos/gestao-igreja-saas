@@ -1,5 +1,4 @@
 import prisma from "@/lib/prisma";
-import { Prisma } from "@prisma/client";
 
 type EventType = "SERVICO" | "REUNIAO" | "ENSAIO" | "CONFERENCIA" | "OUTRO";
 
@@ -15,11 +14,22 @@ export interface CreateEventDTO {
 export const EventService = {
 
   async getEvents(churchId: string) {
-    return await prisma.event.findMany({
+    return prisma.event.findMany({
       where: { churchId },
-      include: {
-        department: true,
-        attendees: { include: { member: true } },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        type: true,
+        date: true,
+        time: true,
+        departmentId: true,
+        department: { select: { id: true, name: true } },
+        attendees: {
+          select: {
+            member: { select: { id: true, name: true } },
+          },
+        },
       },
       orderBy: { date: "asc" },
     });
@@ -30,12 +40,14 @@ export const EventService = {
     actor: { userId: string; email: string },
     data: CreateEventDTO
   ) {
-    return await prisma.$transaction(async (tx) => {
+    return prisma.$transaction(async (tx) => {
       if (data.departmentId) {
-        const dept = await tx.department.findFirst({
-          where: { id: data.departmentId, churchId },
+        const dept = await tx.department.findUnique({
+          where: { id: data.departmentId },
+          select: { id: true, churchId: true },
         });
-        if (!dept) throw new Error("Departamento inválido para esta igreja.");
+        if (!dept || dept.churchId !== churchId)
+          throw new Error("INVALID_DEPARTMENT");
       }
 
       const event = await tx.event.create({
@@ -48,7 +60,7 @@ export const EventService = {
           departmentId: data.departmentId || null,
           churchId,
         },
-        include: { department: true },
+        select: { id: true, name: true, type: true, date: true, time: true },
       });
 
       await tx.auditLog.create({
@@ -59,7 +71,12 @@ export const EventService = {
           action: "CREATE_EVENT",
           entityName: "Event",
           entityId: event.id,
-          newData: event as unknown as Prisma.InputJsonValue,
+          newData: {
+            name: data.name,
+            type: data.type,
+            date: data.date,
+            departmentId: data.departmentId ?? null,
+          },
         },
       });
 
@@ -73,15 +90,22 @@ export const EventService = {
     actor: { userId: string; email: string },
     data: CreateEventDTO
   ) {
-    return await prisma.$transaction(async (tx) => {
-      const existing = await tx.event.findFirst({ where: { id, churchId } });
-      if (!existing) throw new Error("Evento não encontrado ou acesso negado.");
+    return prisma.$transaction(async (tx) => {
+      const existing = await tx.event.findUnique({
+        where: { id },
+        select: { id: true, name: true, type: true, date: true, churchId: true },
+      });
+
+      if (!existing) throw new Error("EVENT_NOT_FOUND");
+      if (existing.churchId !== churchId) throw new Error("EVENT_NOT_FOUND");
 
       if (data.departmentId) {
-        const dept = await tx.department.findFirst({
-          where: { id: data.departmentId, churchId },
+        const dept = await tx.department.findUnique({
+          where: { id: data.departmentId },
+          select: { id: true, churchId: true },
         });
-        if (!dept) throw new Error("Departamento inválido para esta igreja.");
+        if (!dept || dept.churchId !== churchId)
+          throw new Error("INVALID_DEPARTMENT");
       }
 
       const updated = await tx.event.update({
@@ -94,7 +118,7 @@ export const EventService = {
           time: data.time,
           departmentId: data.departmentId || null,
         },
-        include: { department: true },
+        select: { id: true, name: true, type: true, date: true, time: true },
       });
 
       await tx.auditLog.create({
@@ -105,8 +129,8 @@ export const EventService = {
           action: "UPDATE_EVENT",
           entityName: "Event",
           entityId: id,
-          oldData: existing as unknown as Prisma.InputJsonValue,
-          newData: updated as unknown as Prisma.InputJsonValue,
+          oldData: { name: existing.name, type: existing.type, date: existing.date },
+          newData: { name: data.name, type: data.type, date: data.date },
         },
       });
 
@@ -119,9 +143,14 @@ export const EventService = {
     churchId: string,
     actor: { userId: string; email: string }
   ) {
-    return await prisma.$transaction(async (tx) => {
-      const existing = await tx.event.findFirst({ where: { id, churchId } });
-      if (!existing) throw new Error("Evento não encontrado ou acesso negado.");
+    return prisma.$transaction(async (tx) => {
+      const existing = await tx.event.findUnique({
+        where: { id },
+        select: { id: true, name: true, type: true, churchId: true },
+      });
+
+      if (!existing) throw new Error("EVENT_NOT_FOUND");
+      if (existing.churchId !== churchId) throw new Error("EVENT_NOT_FOUND");
 
       await tx.event.delete({ where: { id } });
 
@@ -133,11 +162,9 @@ export const EventService = {
           action: "DELETE_EVENT",
           entityName: "Event",
           entityId: id,
-          oldData: existing as unknown as Prisma.InputJsonValue,
+          oldData: { name: existing.name, type: existing.type },
         },
       });
-
-      return { success: true };
     });
   },
 
@@ -147,17 +174,21 @@ export const EventService = {
     memberIds: string[],
     actor: { userId: string; email: string }
   ) {
-    return await prisma.$transaction(async (tx) => {
-      const event = await tx.event.findFirst({ where: { id: eventId, churchId } });
-      if (!event) throw new Error("Evento não encontrado ou acesso negado.");
+    return prisma.$transaction(async (tx) => {
+      const event = await tx.event.findUnique({
+        where: { id: eventId },
+        select: { id: true, churchId: true },
+      });
+
+      if (!event) throw new Error("EVENT_NOT_FOUND");
+      if (event.churchId !== churchId) throw new Error("EVENT_NOT_FOUND");
 
       if (memberIds.length > 0) {
         const validMembers = await tx.member.count({
           where: { id: { in: memberIds }, churchId },
         });
-        if (validMembers !== memberIds.length) {
-          throw new Error("Um ou mais membros são inválidos.");
-        }
+        if (validMembers !== memberIds.length)
+          throw new Error("INVALID_MEMBERS");
       }
 
       await tx.eventAttendee.deleteMany({ where: { eventId } });
@@ -176,11 +207,9 @@ export const EventService = {
           action: "SYNC_EVENT_ATTENDEES",
           entityName: "Event",
           entityId: eventId,
-          newData: { memberIds } as unknown as Prisma.InputJsonValue,
+          newData: { memberIds },
         },
       });
-
-      return { success: true };
     });
   },
 };
