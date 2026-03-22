@@ -1,6 +1,6 @@
 import prisma from "@/lib/prisma";
+import { TransactionType } from "@prisma/client";
 
-type TransactionType = "INCOME" | "EXPENSE";
 
 export interface CreateCategoryDTO {
   name: string;

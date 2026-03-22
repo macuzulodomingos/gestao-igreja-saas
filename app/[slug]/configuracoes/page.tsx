@@ -2,7 +2,7 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Tags, ShieldCheck, Shield, Users, CalendarDays, FileText, BookOpen } from "lucide-react";
+import { Tags, ShieldCheck, Shield, Users, CalendarDays, FileText, BookOpen, Globe } from "lucide-react";
 
 interface ConfiguracoesPageProps {
     params: Promise<{ slug: string }>;
@@ -42,6 +42,13 @@ export default async function ConfiguracoesPage({ params }: ConfiguracoesPagePro
             href: `/${slug}/configuracoes/categorias-eventos`,
             icon: CalendarDays,
             color: "bg-blue-500/10 text-blue-600",
+        },
+        {
+            title: "Igreja",
+            description: "Nome, slug, fuso horário e informações gerais.",
+            href: `/${slug}/configuracoes/igreja`,
+            icon: Globe,
+            color: "bg-violet-500/10 text-violet-600",
         },
         {
             title: "Auditoria",

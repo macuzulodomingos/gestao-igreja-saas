@@ -5,6 +5,8 @@ import { financeSchema } from "@/lib/validations/finance";
 import { revalidatePath, updateTag } from "next/cache";
 import { getAuthContext } from "@/lib/auth-context";
 import { getErrorMessage, isPrismaError } from "@/lib/errors";
+import { fromZonedTime } from "date-fns-tz";
+import prisma from "@/lib/prisma";
 
 export async function saveTransactionAction(
   formData: FormData,
@@ -19,7 +21,20 @@ export async function saveTransactionAction(
       return { success: false, fieldErrors: result.error.flatten().fieldErrors };
     }
 
-    const dateUTC = new Date(`${result.data.date}T12:00:00Z`);
+    // Busca o timezone da igreja
+    const church = await prisma.church.findUnique({
+      where: { id: churchId },
+      select: { timezone: true },
+    });
+
+    const timezone = church?.timezone ?? "Africa/Luanda";
+
+    // 👈 converte para UTC usando o timezone da igreja
+    const dateUTC = fromZonedTime(
+      `${result.data.date}T12:00:00`, // hora do meio-dia local
+      timezone
+    );
+
 
     if (transactionId) {
       await FinanceService.updateTransaction(transactionId, churchId, actor, {

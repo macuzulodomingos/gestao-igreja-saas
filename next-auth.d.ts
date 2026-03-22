@@ -11,6 +11,7 @@ declare module "next-auth" {
       // 2. Tornamos opcionais porque o Super Admin pode ser global
       churchId?: string;
       churchSlug?: string;
+      timezone: string; // 👈 NOVO
     } & DefaultSession["user"];
   }
 
@@ -18,6 +19,7 @@ declare module "next-auth" {
     role: UserRole;
     churchId?: string;
     churchSlug?: string;
+    timezone: string; // 👈 NOVO
   }
 }
 
@@ -27,5 +29,6 @@ declare module "next-auth/jwt" {
     churchId?: string;
     churchSlug?: string;
     refreshedAt?: number;
+    timezone: string; // 👈 NOVO
   }
 }

@@ -44,6 +44,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           role: user.role,
           churchId: user.churchId,
           churchSlug: user.church?.slug || null,
+          timezone: user.timezone ?? "Africa/Luanda", // 👈 NOVO
         };
       },
     }),
@@ -56,6 +57,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.role = user.role as UserRole;
         token.churchId = user.churchId ?? null;
         token.churchSlug = user.churchSlug ?? null;
+        token.timezone = user.timezone ?? "Africa/Luanda"; // 👈 NOVO
         token.refreshedAt = Date.now();
         return token;
       }
@@ -81,6 +83,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       token.role = dbUser.role as UserRole;
       token.churchId = dbUser.churchId ?? null;
       token.churchSlug = dbUser.church?.slug ?? null;
+      token.timezone = dbUser.timezone ?? "Africa/Luanda"; // 👈 NOVO
       token.refreshedAt = Date.now();
 
       return token;
@@ -92,6 +95,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.role = token.role as UserRole;
         session.user.churchId = token.churchId as string;
         session.user.churchSlug = token.churchSlug as string;
+        session.user.timezone = (token.timezone ?? "Africa/Luanda") as string;
       }
       return session;
     },

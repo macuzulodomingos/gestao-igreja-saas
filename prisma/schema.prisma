@@ -54,6 +54,7 @@ model User {
   role     UserRole @default(OPERATOR)
   churchId String? // 👈 Transformamos em OPCIONAL
   church   Church?   @relation(fields: [churchId], references: [id], onDelete: Cascade)
+  timezone String @default("Africa/Luanda") // 👈 NOVO
 
   // Relações exigidas pelo Auth.js Adapter
   accounts      Account[]

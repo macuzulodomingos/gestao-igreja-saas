@@ -5,10 +5,11 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getAuthContext } from "@/lib/auth-context";
 import { getErrorMessage, isPrismaError } from "@/lib/errors";
+import { TransactionType } from "@prisma/client";
 
 const categorySchema = z.object({
-  name: z.string().min(1, "Nome obrigatório").max(50, "Máximo 50 caracteres").trim(),
-  type: z.enum(["INCOME", "EXPENSE"]),
+  name: z.string().trim().min(1, "Nome obrigatório").max(50, "Máximo 50 caracteres"),
+  type: z.nativeEnum(TransactionType),
 });
 
 export async function saveCategoryAction(
@@ -72,6 +73,8 @@ export async function deleteCategoryAction(
       return { success: false, error: "Não é possível eliminar uma categoria com transacções associadas." };
     if (isPrismaError(error) && error.code === "P2025")
       return { success: false, error: "Categoria já foi eliminada." };
+    if (isPrismaError(error) && error.code === "P2003")
+      return { success: false, error: "Não é possível eliminar uma categoria com transacções associadas." };
     console.error("[DELETE_CATEGORY_ERROR]:", error);
     return { success: false, error: "Erro ao eliminar categoria." };
   }

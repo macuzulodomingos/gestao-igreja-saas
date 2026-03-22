@@ -18,6 +18,7 @@ export const authConfig = {
       if (user) {
         token.role = user.role;
         token.churchSlug = user.churchSlug;
+        token.timezone = user.timezone; // 👈 NOVO
       }
       return token;
     },
@@ -25,6 +26,7 @@ export const authConfig = {
       if (token && session.user) {
         session.user.role = token.role as UserRole;
         session.user.churchSlug = token.churchSlug as string;
+        session.user.timezone = token.timezone as string; // 👈 NOVO
       }
       return session;
     },
