@@ -5,6 +5,7 @@ export interface CreateEventCategoryDTO {
 }
 
 export const EventCategoryService = {
+  
   async getCategories(churchId: string) {
     return prisma.eventCategory.findMany({
       where: { churchId },
@@ -50,15 +51,12 @@ export const EventCategoryService = {
     actor: { userId: string; email: string },
     data: CreateEventCategoryDTO
   ) {
-    console.log("UPDATE_CATEGORY DEBUG:", { id, churchId });
 
     return prisma.$transaction(async (tx) => {
       const existing = await tx.eventCategory.findUnique({
         where: { id },
         select: { id: true, name: true, churchId: true },
       });
-
-      console.log("EXISTING:", existing);
 
       if (!existing) throw new Error("CATEGORY_NOT_FOUND");
       if (existing.churchId !== churchId) throw new Error("CATEGORY_NOT_FOUND");

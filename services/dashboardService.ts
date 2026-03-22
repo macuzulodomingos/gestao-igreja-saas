@@ -1,11 +1,7 @@
 import prisma from "@/lib/prisma";
 import { unstable_cache } from "next/cache";
+import { centsToAmount } from "@/lib/money";
 
-// Converte BigInt de centavos para number
-function centsToAmount(value: unknown): number {
-  if (value == null) return 0;
-  return Number(BigInt(Math.round(Number(value)))) / 100;
-}
 
 // 👈 Datas sempre em UTC — evita bug de fuso horário na Vercel
 function getMonthRangeUTC(year: number, month: number) {

@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
-import { TransactionType, Prisma } from "@prisma/client";
-import { FinanceTransaction, FinanceStats } from "@/types/finance";
+import { TransactionType } from "@prisma/client";
+import { FinanceTransaction } from "@/types/finance";
+import { centsToAmount, amountToCents } from "@/lib/money";
 
 export interface CreateTransactionDTO {
   description: string;
@@ -10,14 +11,6 @@ export interface CreateTransactionDTO {
   date: string | Date;
 }
 
-const toCents = (amount: number | string): bigint => {
-  const parsed = typeof amount === "string"
-    ? parseFloat(amount.replace(/\./g, "").replace(",", "."))
-    : amount;
-
-  if (isNaN(parsed)) return BigInt(0);
-  return BigInt(Math.round(parsed * 100));
-};
 
 export const FinanceService = {
 
@@ -26,20 +19,20 @@ export const FinanceService = {
     actor: { userId: string; email: string },
     data: CreateTransactionDTO
   ): Promise<FinanceTransaction> {
-    const amountInCents = toCents(data.amount);
+    const amountInCents = amountToCents(data.amount);
+    if (amountInCents <= 0) throw new Error("INVALID_AMOUNT");
 
-    if (amountInCents <= 0) {
-      throw new Error("O valor deve ser maior que zero.");
-    }
-
-    return await prisma.$transaction(async (tx) => {
-      const category = await tx.financeCategory.findFirst({
-        where: { id: data.categoryId, churchId, type: data.type },
+    return prisma.$transaction(async (tx) => {
+      // 🔒 Verifica que a categoria pertence à igreja e tem o tipo correcto
+      const category = await tx.financeCategory.findUnique({
+        where: { id: data.categoryId },
+        select: { id: true, name: true, type: true, churchId: true },
       });
 
-      if (!category) {
-        throw new Error("Categoria inválida para este tipo de transação.");
-      }
+      if (!category || category.churchId !== churchId)
+        throw new Error("INVALID_CATEGORY");
+      if (category.type !== data.type)
+        throw new Error("CATEGORY_TYPE_MISMATCH");
 
       const transaction = await tx.financeTransaction.create({
         data: {
@@ -50,7 +43,14 @@ export const FinanceService = {
           date: new Date(data.date),
           churchId,
         },
-        include: { category: true },
+        select: {
+          id: true,
+          description: true,
+          amount: true,
+          type: true,
+          date: true,
+          category: { select: { id: true, name: true } },
+        },
       });
 
       await tx.auditLog.create({
@@ -58,10 +58,16 @@ export const FinanceService = {
           churchId,
           userId: actor.userId,
           userEmail: actor.email,
-          action: `CREATE_${transaction.type}`,
+          action: `CREATE_${data.type}`,
           entityName: "Finance",
           entityId: transaction.id,
-          newData: transaction as unknown as Prisma.InputJsonValue,
+          newData: {
+            description: data.description,
+            amount: centsToAmount(amountInCents),
+            type: data.type,
+            category: category.name,
+            date: data.date,
+          },
         },
       });
 
@@ -69,26 +75,35 @@ export const FinanceService = {
     });
   },
 
-  // 👇 MÉTODO NOVO
   async updateTransaction(
     id: string,
     churchId: string,
     actor: { userId: string; email: string },
     data: CreateTransactionDTO
   ) {
-    const amountInCents = toCents(data.amount);
+    const amountInCents = amountToCents(data.amount);
+    if (amountInCents <= 0) throw new Error("INVALID_AMOUNT");
 
-    if (amountInCents <= 0) {
-      throw new Error("O valor deve ser maior que zero.");
-    }
-
-    return await prisma.$transaction(async (tx) => {
-      // 🔒 Garante que pertence à igreja correcta
-      const existing = await tx.financeTransaction.findFirst({
-        where: { id, churchId },
+    return prisma.$transaction(async (tx) => {
+      // 👈 findUnique porque id é @id
+      const existing = await tx.financeTransaction.findUnique({
+        where: { id },
+        select: { id: true, description: true, amount: true, type: true, date: true, churchId: true },
       });
 
-      if (!existing) throw new Error("Transação não encontrada ou acesso negado.");
+      if (!existing) throw new Error("TRANSACTION_NOT_FOUND");
+      if (existing.churchId !== churchId) throw new Error("TRANSACTION_NOT_FOUND");
+
+      // 🔒 Verifica que a categoria pertence à igreja
+      const category = await tx.financeCategory.findUnique({
+        where: { id: data.categoryId },
+        select: { id: true, name: true, type: true, churchId: true },
+      });
+
+      if (!category || category.churchId !== churchId)
+        throw new Error("INVALID_CATEGORY");
+      if (category.type !== data.type)
+        throw new Error("CATEGORY_TYPE_MISMATCH");
 
       const updated = await tx.financeTransaction.update({
         where: { id },
@@ -99,7 +114,14 @@ export const FinanceService = {
           categoryId: data.categoryId,
           date: new Date(data.date),
         },
-        include: { category: true },
+        select: {
+          id: true,
+          description: true,
+          amount: true,
+          type: true,
+          date: true,
+          category: { select: { id: true, name: true } },
+        },
       });
 
       await tx.auditLog.create({
@@ -110,8 +132,19 @@ export const FinanceService = {
           action: `UPDATE_${data.type}`,
           entityName: "Finance",
           entityId: id,
-          oldData: existing as unknown as Prisma.InputJsonValue,
-          newData: updated as unknown as Prisma.InputJsonValue,
+          oldData: {
+            description: existing.description,
+            amount: centsToAmount(existing.amount),
+            type: existing.type,
+            date: existing.date,
+          },
+          newData: {
+            description: data.description,
+            amount: centsToAmount(amountInCents),
+            type: data.type,
+            category: category.name,
+            date: data.date,
+          },
         },
       });
 
@@ -124,17 +157,17 @@ export const FinanceService = {
     churchId: string,
     actor: { userId: string; email: string }
   ) {
-    return await prisma.$transaction(async (tx) => {
-      // 🔒 Garante que pertence à igreja correcta
-      const existing = await tx.financeTransaction.findFirst({
-        where: { id, churchId },
-      });
-
-      if (!existing) throw new Error("Transação não encontrada ou acesso negado.");
-
-      await tx.financeTransaction.delete({
+    return prisma.$transaction(async (tx) => {
+      // 👈 findUnique porque id é @id
+      const existing = await tx.financeTransaction.findUnique({
         where: { id },
+        select: { id: true, description: true, amount: true, type: true, date: true, churchId: true },
       });
+
+      if (!existing) throw new Error("TRANSACTION_NOT_FOUND");
+      if (existing.churchId !== churchId) throw new Error("TRANSACTION_NOT_FOUND");
+
+      await tx.financeTransaction.delete({ where: { id } });
 
       await tx.auditLog.create({
         data: {
@@ -144,21 +177,25 @@ export const FinanceService = {
           action: `DELETE_${existing.type}`,
           entityName: "Finance",
           entityId: id,
-          oldData: existing as unknown as Prisma.InputJsonValue,
+          oldData: {
+            description: existing.description,
+            amount: centsToAmount(existing.amount),
+            type: existing.type,
+            date: existing.date,
+          },
         },
       });
-
-      return { success: true };
     });
   },
 
   async getFinanceStats(churchId: string, month?: number, year?: number) {
     const now = new Date();
-    const m = month || now.getMonth() + 1;
-    const y = year || now.getFullYear();
+    const m = month || now.getUTCMonth() + 1;
+    const y = year || now.getUTCFullYear();
 
-    const startOfMonth = new Date(y, m - 1, 1);
-    const endOfMonth = new Date(y, m, 0, 23, 59, 59);
+    // 👈 UTC para evitar bugs na Vercel
+    const startOfMonth = new Date(Date.UTC(y, m - 1, 1));
+    const endOfMonth = new Date(Date.UTC(y, m, 0, 23, 59, 59, 999));
 
     const [allTotals, monthlyTotals] = await Promise.all([
       prisma.financeTransaction.groupBy({
@@ -173,10 +210,10 @@ export const FinanceService = {
       }),
     ]);
 
-    const totalIncomes = Number(allTotals.find(t => t.type === "INCOME")?._sum.amount ?? 0) / 100;
-    const totalExpenses = Number(allTotals.find(t => t.type === "EXPENSE")?._sum.amount ?? 0) / 100;
-    const monthlyIncomes = Number(monthlyTotals.find(t => t.type === "INCOME")?._sum.amount ?? 0) / 100;
-    const monthlyExpenses = Number(monthlyTotals.find(t => t.type === "EXPENSE")?._sum.amount ?? 0) / 100;
+    const totalIncomes = centsToAmount(allTotals.find(t => t.type === "INCOME")?._sum.amount);
+    const totalExpenses = centsToAmount(allTotals.find(t => t.type === "EXPENSE")?._sum.amount);
+    const monthlyIncomes = centsToAmount(monthlyTotals.find(t => t.type === "INCOME")?._sum.amount);
+    const monthlyExpenses = centsToAmount(monthlyTotals.find(t => t.type === "EXPENSE")?._sum.amount);
 
     return {
       totalIncomes,
@@ -191,41 +228,43 @@ export const FinanceService = {
   async getTransactions(
     churchId: string,
     limit = 50,
-    type?: "INCOME" | "EXPENSE",
+    type?: TransactionType,
     month?: number,
     year?: number
   ) {
+    // 👈 UTC para evitar bugs na Vercel
     const dateFilter = month && year ? {
       date: {
-        gte: new Date(year, month - 1, 1),
-        lte: new Date(year, month, 0, 23, 59, 59),
+        gte: new Date(Date.UTC(year, month - 1, 1)),
+        lte: new Date(Date.UTC(year, month, 0, 23, 59, 59, 999)),
       }
     } : {};
 
     const records = await prisma.financeTransaction.findMany({
-      where: {
-        churchId,
-        ...(type && { type }),
-        ...dateFilter,
+      where: { churchId, ...(type && { type }), ...dateFilter },
+      select: {
+        id: true,
+        description: true,
+        amount: true,
+        type: true,
+        date: true,
+        category: { select: { id: true, name: true } },
       },
-      include: { category: true },
       orderBy: { date: "desc" },
       take: limit,
     });
 
     return records.map(r => ({
       ...r,
-      amount: Number(r.amount) / 100,
+      amount: centsToAmount(r.amount),
       category: r.category.name,
     }));
   },
 
   async getCategories(churchId: string, type?: TransactionType) {
-    return await prisma.financeCategory.findMany({
-      where: {
-        churchId,
-        ...(type && { type }),
-      },
+    return prisma.financeCategory.findMany({
+      where: { churchId, ...(type && { type }) },
+      select: { id: true, name: true, type: true },
       orderBy: { name: "asc" },
     });
   },

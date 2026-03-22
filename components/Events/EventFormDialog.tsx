@@ -44,12 +44,21 @@ export function EventFormDialog({ open, onOpenChange, event, departments, catego
   useEffect(() => {
     if (open) {
       if (event) {
+        // 👈 extrai date e time do startAt usando timezone do navegador
+        const startAt = new Date(event.startAt);
+        const date = startAt.toLocaleDateString("en-CA"); // formato YYYY-MM-DD
+        const time = startAt.toLocaleTimeString("pt-AO", {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false,
+        });
+
         form.reset({
           name: event.name,
           description: event.description || "",
           categoryId: event.categoryId,
-          date: new Date(event.date).toISOString().split("T")[0],
-          time: event.time,
+          date,
+          time,
           departmentId: event.departmentId || "none",
         });
       } else {
@@ -57,7 +66,7 @@ export function EventFormDialog({ open, onOpenChange, event, departments, catego
           name: "",
           description: "",
           categoryId: categories[0]?.id ?? "",
-          date: new Date().toISOString().split("T")[0],
+          date: new Date().toLocaleDateString("en-CA"),
           time: "09:00",
           departmentId: "none",
         });

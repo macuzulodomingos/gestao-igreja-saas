@@ -1,25 +1,20 @@
 "use server";
 
-import { auth } from "@/lib/auth";
 import { FinanceService } from "@/services/financeService";
 import { financeSchema } from "@/lib/validations/finance";
-import { revalidatePath } from "next/cache";
-import { updateTag } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { getAuthContext } from "@/lib/auth-context";
+import { getErrorMessage, isPrismaError } from "@/lib/errors";
 
-
-// --- ACTION DE CRIAR / EDITAR ---
 export async function saveTransactionAction(
   formData: FormData,
   transactionId?: string,
-  targetChurchId?: string, // 👈 para o super admin
+  targetChurchId?: string,
 ) {
   try {
     const { churchId, actor } = await getAuthContext(targetChurchId);
 
-    const result = financeSchema.safeParse(
-      Object.fromEntries(formData.entries()),
-    );
+    const result = financeSchema.safeParse(Object.fromEntries(formData.entries()));
     if (!result.success) {
       return { success: false, fieldErrors: result.error.flatten().fieldErrors };
     }
@@ -43,15 +38,27 @@ export async function saveTransactionAction(
     updateTag(`church-${churchId}`);
     return { success: true };
 
-  } catch (error: any) {
-    console.error("[SAVE_TRANSACTION_ERROR]:", error);
-    if (error.message === "UNAUTHORIZED")
+  } catch (error: unknown) {
+    const message = getErrorMessage(error);
+    if (message === "UNAUTHORIZED")
       return { success: false, error: "Não autenticado." };
-    return { success: false, error: "Falha ao registar transação." };
+    if (message === "CHURCH_ID_REQUIRED")
+      return { success: false, error: "Igreja não encontrada." };
+    if (message === "INVALID_AMOUNT")
+      return { success: false, error: "O valor deve ser maior que zero." };
+    if (message === "INVALID_CATEGORY")
+      return { success: false, error: "Categoria inválida para esta igreja." };
+    if (message === "CATEGORY_TYPE_MISMATCH")
+      return { success: false, error: "A categoria não corresponde ao tipo de transacção." };
+    if (message === "TRANSACTION_NOT_FOUND")
+      return { success: false, error: "Transacção não encontrada." };
+    if (isPrismaError(error) && error.code === "P2025")
+      return { success: false, error: "Registo não encontrado." };
+    console.error("[SAVE_TRANSACTION_ERROR]:", error);
+    return { success: false, error: "Falha ao registar transacção." };
   }
 }
 
-// --- ACTION DE DELETAR ---
 export async function deleteTransactionAction(
   id: string,
   targetChurchId?: string,
@@ -59,17 +66,22 @@ export async function deleteTransactionAction(
   try {
     const { churchId, actor } = await getAuthContext(targetChurchId);
 
-    await FinanceService.deleteTransaction(id, churchId, actor); // 👈 usa o service
+    await FinanceService.deleteTransaction(id, churchId, actor);
 
     revalidatePath(`/[slug]/financas`, "page");
     updateTag(`finances-${churchId}`);
     updateTag(`church-${churchId}`);
     return { success: true };
 
-  } catch (error: any) {
-    console.error("[DELETE_TRANSACTION_ERROR]:", error);
-    if (error.message === "UNAUTHORIZED")
+  } catch (error: unknown) {
+    const message = getErrorMessage(error);
+    if (message === "UNAUTHORIZED")
       return { success: false, error: "Não autenticado." };
+    if (message === "TRANSACTION_NOT_FOUND")
+      return { success: false, error: "Transacção não encontrada." };
+    if (isPrismaError(error) && error.code === "P2025")
+      return { success: false, error: "Transacção já foi eliminada." };
+    console.error("[DELETE_TRANSACTION_ERROR]:", error);
     return { success: false, error: "Não foi possível eliminar o registo." };
   }
 }

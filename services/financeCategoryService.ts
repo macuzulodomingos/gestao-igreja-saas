@@ -1,5 +1,4 @@
 import prisma from "@/lib/prisma";
-import { Prisma } from "@prisma/client";
 
 type TransactionType = "INCOME" | "EXPENSE";
 
@@ -11,9 +10,15 @@ export interface CreateCategoryDTO {
 export const FinanceCategoryService = {
 
   async getCategories(churchId: string, type?: TransactionType) {
-    return await prisma.financeCategory.findMany({
+    return prisma.financeCategory.findMany({
       where: { churchId, ...(type && { type }) },
-      include: { _count: { select: { transactions: true } } },
+      select: {
+        id: true,
+        name: true,
+        type: true,
+        churchId: true,
+        _count: { select: { transactions: true } },
+      },
       orderBy: [{ type: "asc" }, { name: "asc" }],
     });
   },
@@ -23,15 +28,17 @@ export const FinanceCategoryService = {
     actor: { userId: string; email: string },
     data: CreateCategoryDTO
   ) {
-    return await prisma.$transaction(async (tx) => {
+    return prisma.$transaction(async (tx) => {
+      // 🔒 Verifica duplicado
       const existing = await tx.financeCategory.findFirst({
         where: { churchId, name: data.name, type: data.type },
+        select: { id: true },
       });
-
-      if (existing) throw new Error("Já existe uma categoria com este nome e tipo.");
+      if (existing) throw new Error("CATEGORY_DUPLICATE");
 
       const category = await tx.financeCategory.create({
         data: { name: data.name, type: data.type, churchId },
+        select: { id: true, name: true, type: true },
       });
 
       await tx.auditLog.create({
@@ -39,10 +46,10 @@ export const FinanceCategoryService = {
           churchId,
           userId: actor.userId,
           userEmail: actor.email,
-          action: "CREATE_CATEGORY",
+          action: "CREATE_FINANCE_CATEGORY",
           entityName: "FinanceCategory",
           entityId: category.id,
-          newData: category as unknown as Prisma.InputJsonValue,
+          newData: { name: data.name, type: data.type },
         },
       });
 
@@ -56,23 +63,27 @@ export const FinanceCategoryService = {
     actor: { userId: string; email: string },
     data: CreateCategoryDTO
   ) {
-    return await prisma.$transaction(async (tx) => {
-      const existing = await tx.financeCategory.findFirst({
-        where: { id, churchId },
+    return prisma.$transaction(async (tx) => {
+      // 👈 findUnique porque id é @id
+      const existing = await tx.financeCategory.findUnique({
+        where: { id },
+        select: { id: true, name: true, type: true, churchId: true },
       });
 
-      if (!existing) throw new Error("Categoria não encontrada ou acesso negado.");
+      if (!existing) throw new Error("CATEGORY_NOT_FOUND");
+      if (existing.churchId !== churchId) throw new Error("CATEGORY_NOT_FOUND");
 
-      // Verifica duplicado (excluindo a própria)
+      // 🔒 Verifica duplicado excluindo a própria
       const duplicate = await tx.financeCategory.findFirst({
         where: { churchId, name: data.name, type: data.type, NOT: { id } },
+        select: { id: true },
       });
-
-      if (duplicate) throw new Error("Já existe uma categoria com este nome e tipo.");
+      if (duplicate) throw new Error("CATEGORY_DUPLICATE");
 
       const updated = await tx.financeCategory.update({
         where: { id },
         data: { name: data.name, type: data.type },
+        select: { id: true, name: true, type: true },
       });
 
       await tx.auditLog.create({
@@ -80,11 +91,11 @@ export const FinanceCategoryService = {
           churchId,
           userId: actor.userId,
           userEmail: actor.email,
-          action: "UPDATE_CATEGORY",
+          action: "UPDATE_FINANCE_CATEGORY",
           entityName: "FinanceCategory",
           entityId: id,
-          oldData: existing as unknown as Prisma.InputJsonValue,
-          newData: updated as unknown as Prisma.InputJsonValue,
+          oldData: { name: existing.name, type: existing.type },
+          newData: { name: data.name, type: data.type },
         },
       });
 
@@ -97,20 +108,24 @@ export const FinanceCategoryService = {
     churchId: string,
     actor: { userId: string; email: string }
   ) {
-    return await prisma.$transaction(async (tx) => {
-      const existing = await tx.financeCategory.findFirst({
-        where: { id, churchId },
-        include: { _count: { select: { transactions: true } } },
+    return prisma.$transaction(async (tx) => {
+      // 👈 findUnique porque id é @id
+      const existing = await tx.financeCategory.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          name: true,
+          type: true,
+          churchId: true,
+          _count: { select: { transactions: true } },
+        },
       });
 
-      if (!existing) throw new Error("Categoria não encontrada ou acesso negado.");
+      if (!existing) throw new Error("CATEGORY_NOT_FOUND");
+      if (existing.churchId !== churchId) throw new Error("CATEGORY_NOT_FOUND");
 
-      // Bloqueia eliminação se tiver transacções associadas
-      if (existing._count.transactions > 0) {
-        throw new Error(
-          `Não é possível eliminar: esta categoria tem ${existing._count.transactions} transacção(ões) associada(s).`
-        );
-      }
+      if (existing._count.transactions > 0)
+        throw new Error("CATEGORY_HAS_TRANSACTIONS");
 
       await tx.financeCategory.delete({ where: { id } });
 
@@ -119,14 +134,12 @@ export const FinanceCategoryService = {
           churchId,
           userId: actor.userId,
           userEmail: actor.email,
-          action: "DELETE_CATEGORY",
+          action: "DELETE_FINANCE_CATEGORY",
           entityName: "FinanceCategory",
           entityId: id,
-          oldData: existing as unknown as Prisma.InputJsonValue,
+          oldData: { name: existing.name, type: existing.type },
         },
       });
-
-      return { success: true };
     });
   },
 };

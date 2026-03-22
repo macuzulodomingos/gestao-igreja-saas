@@ -1,7 +1,6 @@
 "use server";
 
 import { DashboardService } from "@/services/dashboardService";
-import { auth } from "@/lib/auth";
 import { getErrorMessage } from "@/lib/errors";
 import { getAuthContext } from "@/lib/auth-context";
 

@@ -13,15 +13,17 @@ import { Badge } from "@/components/ui/badge";
 import { Search, Users, Loader2 } from "lucide-react";
 import { syncAttendeesAction } from "@/app/actions/event-actions";
 import { ChurchEvent, EventListMember } from "@/types/event";
+import { formatInTimeZone } from "date-fns-tz";
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   event: ChurchEvent;
   allMembers: EventListMember[];
+  timezone: string; // 👈 NOVO
 }
 
-export function EventAttendanceDialog({ open, onOpenChange, event, allMembers }: Props) {
+export function EventAttendanceDialog({ open, onOpenChange, event, allMembers, timezone }: Props) {
   const [isPending, startTransition] = useTransition();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -83,7 +85,9 @@ export function EventAttendanceDialog({ open, onOpenChange, event, allMembers }:
           <div className="text-sm text-muted-foreground">
             <span className="font-medium">{event.name}</span>
             <span className="mx-2">•</span>
-            {format(new Date(event.date), "dd 'de' MMM, yyyy", { locale: ptBR })} às {event.time}
+            {formatInTimeZone(new Date(event.startAt), timezone, "dd 'de' MMM, yyyy", { locale: ptBR })}
+            {" às "}
+            {formatInTimeZone(new Date(event.startAt), timezone, "HH:mm")}
           </div>
         </DialogHeader>
 

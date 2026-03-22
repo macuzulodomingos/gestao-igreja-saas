@@ -1,11 +1,12 @@
 "use server";
 
-import { auth } from "@/lib/auth";
 import { EventService } from "@/services/eventService";
 import { revalidatePath } from "next/cache";
 import { getErrorMessage, isPrismaError } from "@/lib/errors";
 import { eventSchema } from "@/lib/validations/event";
 import { getAuthContext } from "@/lib/auth-context";
+import { fromZonedTime } from "date-fns-tz";
+import prisma from "@/lib/prisma";
 
 
 
@@ -22,12 +23,26 @@ export async function saveEventAction(
       return { success: false, fieldErrors: result.error.flatten().fieldErrors };
     }
 
+    // 👈 Busca o timezone da igreja
+    const church = await prisma.church.findUnique({
+      where: { id: churchId },
+      select: { timezone: true },
+    });
+
+    const timezone = church?.timezone ?? "Africa/Luanda";
+
+    // 👈 Converte para UTC usando o timezone da igreja
+    const startAt = fromZonedTime(
+      `${result.data.date}T${result.data.time}:00`,
+      timezone
+    );
+
+
     const data = {
       name: result.data.name,
       description: result.data.description || undefined,
       categoryId: result.data.categoryId, // 👈
-      date: new Date(`${result.data.date}T12:00:00Z`),
-      time: result.data.time,
+      startAt,
       departmentId: result.data.departmentId === "none" || !result.data.departmentId
         ? undefined
         : result.data.departmentId,

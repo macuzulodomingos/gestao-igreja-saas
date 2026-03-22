@@ -5,6 +5,7 @@ import { MemberService } from "@/services/memberService";
 import { DepartmentService } from "@/services/departmentService";
 import EventsClient from "@/components/Events/EventsClient";
 import { EventCategoryService } from "@/services/eventCategoryService"; // 👈 NOVO
+import prisma from "@/lib/prisma";
 
 export default async function EventosPage() {
   const session = await auth();
@@ -12,12 +13,17 @@ export default async function EventosPage() {
 
   const { churchId } = session.user;
 
-  const [events, membersData, departments, categories] = await Promise.all([
+  const [events, membersData, departments, categories, church] = await Promise.all([
     EventService.getEvents(churchId),
     MemberService.getMembersByChurch(churchId, 1, 100),
     DepartmentService.getDepartments(churchId),
-    EventCategoryService.getCategories(churchId), // 👈 NOVO
+    EventCategoryService.getCategories(churchId),
+    prisma.church.findUnique({
+      where: { id: churchId },
+      select: { timezone: true },
+    }),
   ]);
+
 
   return (
     <EventsClient
@@ -25,6 +31,7 @@ export default async function EventosPage() {
       members={membersData.members}
       departments={departments}
       categories={categories} // 👈 NOVO
+      timezone={church?.timezone ?? "Africa/Luanda"} // 👈 NOVO
     />
   );
 }

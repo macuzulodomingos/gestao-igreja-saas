@@ -10,6 +10,7 @@ import {
 import { MoreHorizontal, Pencil, Trash2, Users, Calendar, Clock } from "lucide-react";
 import { format, isPast, isToday } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { formatInTimeZone } from "date-fns-tz";
 import { ChurchEvent } from "@/types/event";
 
 interface EventsListProps {
@@ -17,20 +18,25 @@ interface EventsListProps {
   onEdit: (event: ChurchEvent) => void;
   onDelete: (eventId: string) => void;
   onManageAttendance: (event: ChurchEvent) => void;
+  timezone: string; // 👈 NOVO
 }
 
-export function EventsList({ events, onEdit, onDelete, onManageAttendance }: EventsListProps) {
+export function EventsList({ events, onEdit, onDelete, onManageAttendance, timezone }: EventsListProps) {
   const sorted = [...events].sort((a, b) =>
-    new Date(a.date).getTime() - new Date(b.date).getTime()
+    new Date(a.startAt).getTime() - new Date(b.startAt).getTime()
   );
 
-  const upcomingEvents = sorted.filter(e => !isPast(new Date(e.date)) || isToday(new Date(e.date)));
-  const pastEvents = sorted.filter(e => isPast(new Date(e.date)) && !isToday(new Date(e.date)));
+  const upcomingEvents = sorted.filter(e => !isPast(new Date(e.startAt)) || isToday(new Date(e.startAt)));
+  const pastEvents = sorted.filter(e => isPast(new Date(e.startAt)) && !isToday(new Date(e.startAt)));
 
   const renderRow = (event: ChurchEvent) => {
-    const eventDate = new Date(event.date);
-    const isEventToday = isToday(eventDate);
-    const isEventPast = isPast(eventDate) && !isEventToday;
+    const startAt = new Date(event.startAt);
+    const isEventToday = isToday(startAt);
+    const isEventPast = isPast(startAt) && !isEventToday;
+
+    // 👈 mostra data e hora no timezone da igreja
+    const dateFormatted = formatInTimeZone(startAt, timezone, "dd 'de' MMM, yyyy", { locale: ptBR });
+    const timeFormatted = formatInTimeZone(startAt, timezone, "HH:mm");
 
     return (
       <TableRow key={event.id} className={isEventPast ? "opacity-60" : ""}>
@@ -45,7 +51,6 @@ export function EventsList({ events, onEdit, onDelete, onManageAttendance }: Eve
           </div>
         </TableCell>
         <TableCell>
-          {/* 👈 categoria dinâmica em vez de type fixo */}
           <Badge variant="secondary" className="bg-primary/10 text-primary">
             {event.category.name}
           </Badge>
@@ -54,14 +59,14 @@ export function EventsList({ events, onEdit, onDelete, onManageAttendance }: Eve
           <div className="flex items-center gap-2 text-sm">
             <Calendar className="h-4 w-4 text-muted-foreground" />
             <span className={isEventToday ? "font-medium text-primary" : ""}>
-              {isEventToday ? "Hoje" : format(eventDate, "dd 'de' MMM, yyyy", { locale: ptBR })}
+              {isEventToday ? "Hoje" : dateFormatted}
             </span>
           </div>
         </TableCell>
         <TableCell>
           <div className="flex items-center gap-2 text-sm">
             <Clock className="h-4 w-4 text-muted-foreground" />
-            {event.time}
+            {timeFormatted}
           </div>
         </TableCell>
         <TableCell>

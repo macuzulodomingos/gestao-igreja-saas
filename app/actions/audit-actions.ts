@@ -1,6 +1,5 @@
 "use server";
 
-import { auth } from "@/lib/auth";
 import { AuditService } from "@/services/auditService";
 import { MemberService } from "@/services/memberService";
 import { getErrorMessage } from "@/lib/errors";

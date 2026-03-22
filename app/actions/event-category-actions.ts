@@ -1,6 +1,5 @@
 "use server";
 
-import { auth } from "@/lib/auth";
 import { EventCategoryService } from "@/services/eventCategoryService";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -8,7 +7,7 @@ import { getErrorMessage, isPrismaError } from "@/lib/errors";
 import { getAuthContext } from "@/lib/auth-context";
 
 const categorySchema = z.object({
-  name: z.string().min(1, "Nome obrigatório").max(100),
+  name: z.string().min(1, "Nome obrigatório").max(100).trim(),
 });
 
 
@@ -27,10 +26,10 @@ export async function saveEventCategoryAction(
 
     if (categoryId) {
       await EventCategoryService.updateCategory(categoryId, churchId, actor, result.data);
-      revalidatePath(`/[slug]/configuracoes/categorias-eventos`, "page");
       return { success: true, id: categoryId }; // 👈 id real do banco
     } else {
       const category = await EventCategoryService.createCategory(churchId, actor, result.data);
+
       revalidatePath(`/[slug]/configuracoes/categorias-eventos`, "page");
       return { success: true, id: category.id }; // 👈 id real do banco
     }

@@ -1,14 +1,13 @@
 "use server";
 
-import { auth } from "@/lib/auth";
 import { FinanceCategoryService } from "@/services/financeCategoryService";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getAuthContext } from "@/lib/auth-context";
-
+import { getErrorMessage, isPrismaError } from "@/lib/errors";
 
 const categorySchema = z.object({
-  name: z.string().min(1, "Nome obrigatório").max(50, "Máximo 50 caracteres"),
+  name: z.string().min(1, "Nome obrigatório").max(50, "Máximo 50 caracteres").trim(),
   type: z.enum(["INCOME", "EXPENSE"]),
 });
 
@@ -20,10 +19,7 @@ export async function saveCategoryAction(
   try {
     const { churchId, actor } = await getAuthContext(targetChurchId);
 
-    const result = categorySchema.safeParse(
-      Object.fromEntries(formData.entries())
-    );
-
+    const result = categorySchema.safeParse(Object.fromEntries(formData.entries()));
     if (!result.success) {
       return { success: false, fieldErrors: result.error.flatten().fieldErrors };
     }
@@ -37,11 +33,20 @@ export async function saveCategoryAction(
     revalidatePath(`/[slug]/configuracoes/categorias`, "page");
     return { success: true };
 
-  } catch (error: any) {
-    console.error("[SAVE_CATEGORY_ERROR]:", error);
-    if (error.message === "UNAUTHORIZED")
+  } catch (error: unknown) {
+    const message = getErrorMessage(error);
+    if (message === "UNAUTHORIZED")
       return { success: false, error: "Não autenticado." };
-    return { success: false, error: error.message || "Erro ao salvar categoria." };
+    if (message === "CHURCH_ID_REQUIRED")
+      return { success: false, error: "Igreja não encontrada." };
+    if (message === "CATEGORY_NOT_FOUND")
+      return { success: false, error: "Categoria não encontrada." };
+    if (message === "CATEGORY_DUPLICATE")
+      return { success: false, fieldErrors: { name: ["Já existe uma categoria com este nome e tipo."] } };
+    if (isPrismaError(error) && error.code === "P2002")
+      return { success: false, fieldErrors: { name: ["Esta categoria já existe."] } };
+    console.error("[SAVE_CATEGORY_ERROR]:", error);
+    return { success: false, error: "Erro ao salvar categoria." };
   }
 }
 
@@ -57,10 +62,17 @@ export async function deleteCategoryAction(
     revalidatePath(`/[slug]/configuracoes/categorias`, "page");
     return { success: true };
 
-  } catch (error: any) {
-    console.error("[DELETE_CATEGORY_ERROR]:", error);
-    if (error.message === "UNAUTHORIZED")
+  } catch (error: unknown) {
+    const message = getErrorMessage(error);
+    if (message === "UNAUTHORIZED")
       return { success: false, error: "Não autenticado." };
-    return { success: false, error: error.message || "Erro ao eliminar categoria." };
+    if (message === "CATEGORY_NOT_FOUND")
+      return { success: false, error: "Categoria não encontrada." };
+    if (message === "CATEGORY_HAS_TRANSACTIONS")
+      return { success: false, error: "Não é possível eliminar uma categoria com transacções associadas." };
+    if (isPrismaError(error) && error.code === "P2025")
+      return { success: false, error: "Categoria já foi eliminada." };
+    console.error("[DELETE_CATEGORY_ERROR]:", error);
+    return { success: false, error: "Erro ao eliminar categoria." };
   }
 }

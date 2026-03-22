@@ -1,6 +1,5 @@
 "use server";
 
-import { auth } from "@/lib/auth";
 import { MemberService } from "@/services/memberService";
 import { revalidatePath } from "next/cache";
 import { memberSchema } from "@/lib/validations/member";

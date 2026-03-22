@@ -18,8 +18,7 @@ export interface ChurchEvent {
   description: string | null;
   categoryId: string;           // 👈 substitui type
   category: EventCategory;      // 👈 novo
-  date: Date;
-  time: string;
+  startAt: Date;        // 👈 substitui date + time
   departmentId: string | null;
   department: EventDepartment | null;
   attendees: EventAttendee[];

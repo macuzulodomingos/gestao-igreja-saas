@@ -19,6 +19,7 @@ interface EventsClientProps {
   members: EventListMember[];
   departments: EventListDepartment[];
   categories: EventCategory[]; // 👈 NOVO
+  timezone: string; // 👈 NOVO
 }
 
 export default function EventsClient({
@@ -26,6 +27,7 @@ export default function EventsClient({
   members,
   departments,
   categories, // 👈 NOVO
+  timezone, // 👈 NOVO
 }: EventsClientProps) {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isAttendanceOpen, setIsAttendanceOpen] = useState(false);
@@ -81,6 +83,7 @@ export default function EventsClient({
         onEdit={handleEdit}
         onDelete={handleDelete}
         onManageAttendance={handleManageAttendance}
+        timezone={timezone} // 👈 NOVO
       />
 
       <EventFormDialog
@@ -97,6 +100,7 @@ export default function EventsClient({
           onOpenChange={setIsAttendanceOpen}
           event={selectedEvent}
           allMembers={members}
+          timezone={timezone} // 👈 NOVO
         />
       )}
 

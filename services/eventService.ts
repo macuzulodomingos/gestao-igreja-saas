@@ -4,8 +4,7 @@ export interface CreateEventDTO {
   name: string;
   description?: string;
   categoryId: string;  // 👈 substitui type
-  date: Date;
-  time: string;
+  startAt: Date;        // 👈 substitui date + time
   departmentId?: string;
 }
 
@@ -20,8 +19,7 @@ export const EventService = {
         description: true,
         categoryId: true,           // 👈
         category: { select: { id: true, name: true } }, // 👈
-        date: true,
-        time: true,
+        startAt: true,  // 👈
         departmentId: true,
         department: { select: { id: true, name: true } },
         attendees: {
@@ -30,7 +28,7 @@ export const EventService = {
           },
         },
       },
-      orderBy: { date: "asc" },
+      orderBy: { startAt: "asc" },
     });
   },
 
@@ -62,12 +60,11 @@ export const EventService = {
           name: data.name,
           description: data.description || null,
           categoryId: data.categoryId, // 👈
-          date: data.date,
-          time: data.time,
+          startAt: data.startAt, // 👈
           departmentId: data.departmentId || null,
           churchId,
         },
-        select: { id: true, name: true, categoryId: true, date: true, time: true },
+        select: { id: true, name: true, categoryId: true, startAt: true },
       });
 
       await tx.auditLog.create({
@@ -81,7 +78,7 @@ export const EventService = {
           newData: {
             name: data.name,
             category: category.name,
-            date: data.date,
+            startAt: data.startAt,
             departmentId: data.departmentId ?? null,
           },
         },
@@ -100,7 +97,7 @@ export const EventService = {
     return prisma.$transaction(async (tx) => {
       const existing = await tx.event.findUnique({
         where: { id },
-        select: { id: true, name: true, categoryId: true, date: true, churchId: true },
+        select: { id: true, name: true, categoryId: true, startAt: true, churchId: true },
       });
 
       if (!existing) throw new Error("EVENT_NOT_FOUND");
@@ -129,11 +126,10 @@ export const EventService = {
           name: data.name,
           description: data.description || null,
           categoryId: data.categoryId, // 👈
-          date: data.date,
-          time: data.time,
+          startAt: data.startAt, // 👈
           departmentId: data.departmentId || null,
         },
-        select: { id: true, name: true, categoryId: true, date: true, time: true },
+        select: { id: true, name: true, categoryId: true, startAt: true },
       });
 
       await tx.auditLog.create({
@@ -144,8 +140,8 @@ export const EventService = {
           action: "UPDATE_EVENT",
           entityName: "Event",
           entityId: id,
-          oldData: { name: existing.name, categoryId: existing.categoryId, date: existing.date },
-          newData: { name: data.name, categoryId: data.categoryId, date: data.date },
+          oldData: { name: existing.name, categoryId: existing.categoryId, startAt: existing.startAt },
+          newData: { name: data.name, categoryId: data.categoryId, startAt: data.startAt },
         },
       });
 

@@ -17,7 +17,7 @@ export const ChurchService = {
     const church = await prisma.$transaction(
       async (tx) => {
         const church = await tx.church.create({
-          data: { name: data.churchName, slug: data.churchSlug, plan: "FREE" },
+          data: { name: data.churchName, slug: data.churchSlug, plan: "FREE", timezone: "Africa/Luanda",  },
           select: { id: true, slug: true, name: true },
         });
 
@@ -79,7 +79,7 @@ export const ChurchService = {
           action: "CREATE_CHURCH",
           entityName: "Church",
           entityId: church.id,
-          newData: { name: data.churchName, slug: data.churchSlug, plan: "FREE" },
+          newData: { name: data.churchName, slug: data.churchSlug, plan: "FREE", timezone: "Africa/Luanda" },
         },
       });
     } catch (auditError) {
