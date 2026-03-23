@@ -88,6 +88,16 @@ export const MemberService = {
     return prisma.$transaction(async (tx) => {
       const finalRoleId = data.roleId !== undefined ? data.roleId : null;
 
+      // 🔒 Valida que o cargo pertence à igreja, se fornecido
+    if (data.roleId) {
+      const role = await prisma.memberRole.findUnique({
+        where: { id: data.roleId },
+        select: { id: true, churchId: true },
+      });
+      if (!role || role.churchId !== churchId)
+        throw new Error("INVALID_ROLE");
+    }
+
       const newMember = await tx.member.create({
         data: {
           name: data.name,
@@ -138,10 +148,21 @@ export const MemberService = {
     // 👈 findUnique + verificação manual do churchId
     const currentMember = await prisma.member.findUnique({
       where: { id },
+      select: { id: true, churchId: true },
     });
 
     if (!currentMember) throw new Error("MEMBER_NOT_FOUND");
     if (currentMember.churchId !== churchId) throw new Error("MEMBER_NOT_FOUND");
+
+    // 🔒 Valida que o cargo pertence à igreja, se fornecido
+    if (data.roleId) {
+      const role = await prisma.memberRole.findUnique({
+        where: { id: data.roleId },
+        select: { id: true, churchId: true },
+      });
+      if (!role || role.churchId !== churchId)
+        throw new Error("INVALID_ROLE");
+    }
 
     return prisma.$transaction(async (tx) => {
       const finalRoleId = data.roleId !== undefined ? data.roleId : null;
@@ -193,6 +214,7 @@ export const MemberService = {
     // 👈 findUnique + verificação manual do churchId
     const memberToDelete = await prisma.member.findUnique({
       where: { id },
+      select: { churchId: true },
     });
 
     if (!memberToDelete) throw new Error("MEMBER_NOT_FOUND");

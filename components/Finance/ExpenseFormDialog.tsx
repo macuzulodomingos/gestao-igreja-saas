@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
 import { saveTransactionAction } from "@/app/actions/finance";
+import { FinanceTransaction } from "@/types/finance";
 
 const schema = z.object({
   date: z.string().min(1, "Data obrigatória"),
@@ -29,12 +30,11 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 type Category = { id: string; name: string };
-type Transaction = { id: string; description: string; amount: number; category: string; date: Date };
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  entry: Transaction | null;
+  entry: FinanceTransaction | null;
   categories: Category[];
 }
 

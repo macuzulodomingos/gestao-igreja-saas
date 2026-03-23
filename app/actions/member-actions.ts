@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { memberSchema } from "@/lib/validations/member";
 import { updateTag } from "next/cache";
 import { getAuthContext } from "@/lib/auth-context";
+import { getErrorMessage, isPrismaError } from "@/lib/errors"; // 👈 Teu padrão
 
 /**
  * Helper privado para garantir segurança e auditoria em todas as ações.
@@ -49,12 +50,26 @@ export async function createMemberAction(
     updateTag(`church-${churchId}`);
 
     return { success: true };
-  } catch (error: any) {
-    if (error.message === "UNAUTHORIZED")
+  } catch (error: unknown) {
+    const message = getErrorMessage(error);
+
+    if (message === "UNAUTHORIZED")
       return { success: false, error: "Não autenticado." };
-    if (error.code === "P2002")
-      return { success: false, error: "E-mail já cadastrado nesta igreja." };
-    return { success: false, error: "Erro interno ao salvar membro." };
+    if (message === "CHURCH_ID_REQUIRED")
+      return { success: false, error: "Igreja não encontrada." };
+    
+    // 2. Lógica de Negócio do Service
+    if (message === "INVALID_ROLE")
+      return { success: false, error: "O cargo selecionado não pertence a esta igreja." };
+
+    // 3. Prisma (Banco de Dados)
+    if (isPrismaError(error)) {
+      if (error.code === "P2002")
+        return { success: false, error: "Este e-mail já está em uso nesta igreja." };
+    }
+
+    console.error("[CREATE_MEMBER_ERROR]:", error);
+    return { success: false, error: "Falha ao realizar o cadastro do membro." };
   }
 }
 
@@ -99,11 +114,31 @@ export async function updateMemberAction(
     updateTag(`church-${churchId}`);
 
     return { success: true };
-  } catch (error: any) {
-    console.error("Erro ao editar:", error);
-    return {
-      success: false,
-      error: "Erro ao atualizar dados ou acesso negado.",
+  } catch (error: unknown) {
+    const message = getErrorMessage(error);
+
+    // 1. Erros de Permissão / Auth
+    if (message === "UNAUTHORIZED")
+      return { success: false, error: "Não autenticado." };
+    if (message === "CHURCH_ID_REQUIRED")
+      return { success: false, error: "Igreja não identificada." };
+
+    // 2. Erros vindos diretamente do teu MemberService (Lógica de Negócio)
+    if (message === "MEMBER_NOT_FOUND")
+      return { success: false, error: "Membro não encontrado ou acesso negado." };
+    if (message === "INVALID_ROLE")
+      return { success: false, error: "O cargo selecionado é inválido para esta igreja." };
+
+    // 3. Erros do Banco de Dados (Prisma)
+    if (isPrismaError(error)) {
+      if (error.code === "P2002") 
+        return { success: false, error: "Este e-mail já está em uso nesta igreja." };
+    }
+
+    console.error("[UPDATE_MEMBER_ERROR]:", error);
+    return { 
+      success: false, 
+      error: "Falha ao atualizar dados do membro. Tente novamente." 
     };
   }
 }
@@ -123,10 +158,21 @@ export async function deleteMemberAction(
     updateTag(`church-${churchId}`);
     
     return { success: true };
-  } catch (error: any) {
-    return {
-      success: false,
-      error: "Falha na exclusão: Registro não encontrado ou sem permissão.",
-    };
+  } catch (error: unknown) {
+    const message = getErrorMessage(error);
+    if (message === "UNAUTHORIZED") 
+      return { success: false, error: "Não autenticado." };
+    if (message === "MEMBER_NOT_FOUND")
+      return { success: false, error: "Membro não encontrado ou você não tem permissão." };
+    if (isPrismaError(error)) {
+      if (error.code === "P2003")
+        return { 
+          success: false, 
+          error: "Não é possível excluir este membro pois ele possui registros (financeiros ou históricos) vinculados." 
+        };
+    }
+
+    console.error("[DELETE_MEMBER_ERROR]:", error);
+    return { success: false, error: "Erro ao tentar remover o membro." };
   }
 }

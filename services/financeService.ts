@@ -1,7 +1,7 @@
 import prisma from "@/lib/prisma";
 import { TransactionType } from "@prisma/client";
 import { FinanceTransaction } from "@/types/finance";
-import { centsToAmount, amountToCents } from "@/lib/money";
+import { centsToAmount, amountToCents, getMonthRangeInTimezone } from "@/lib/money";
 import { fromZonedTime } from "date-fns-tz";
 
 export interface CreateTransactionDTO {
@@ -12,22 +12,6 @@ export interface CreateTransactionDTO {
   date: string | Date;
 }
 
-function getMonthRangeInTimezone(year: number, month: number, timezone: string) {
-  // 👈 usa strings ISO para evitar interpretação do timezone da máquina
-  const startOfMonth = fromZonedTime(
-    `${year}-${String(month).padStart(2, "0")}-01T00:00:00`,
-    timezone
-  );
-
-  // último dia do mês
-  const lastDay = new Date(year, month, 0).getDate();
-  const endOfMonth = fromZonedTime(
-    `${year}-${String(month).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}T23:59:59.999`,
-    timezone
-  );
-
-  return { startOfMonth, endOfMonth };
-}
 
 
 export const FinanceService = {

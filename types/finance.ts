@@ -8,9 +8,6 @@ export interface FinanceTransaction {
   type: TransactionType; // INCOME ou EXPENSE
   category: string;      // Dízimo, Oferta, Aluguel, etc.
   date: Date | string;   // Date no back, string (ISO) no front
-  churchId: string;
-  createdAt?: Date | string;
-  updatedAt?: Date | string;
 }
 
 // Para facilitar no formulário e listas específicas
@@ -22,4 +19,7 @@ export interface FinanceStats {
   totalIncomes: number;
   totalExpenses: number;
   netBalance: number;
+  monthlyIncomes: number;
+  monthlyExpenses: number;
+  monthlyBalance: number;
 }

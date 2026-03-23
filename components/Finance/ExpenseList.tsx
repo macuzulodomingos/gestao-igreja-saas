@@ -6,20 +6,13 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { FinanceTransaction } from "@/types/finance";
 
-type Transaction = {
-  id: string;
-  description: string;
-  amount: number;
-  category: string;
-  date: Date;
-  type: "INCOME" | "EXPENSE";
-  churchId: string;
-};
+
 
 interface ExpenseListProps {
-  entries: Transaction[];
-  onEdit: (entry: Transaction) => void;
+  entries: FinanceTransaction[];
+  onEdit: (entry: FinanceTransaction) => void;
   onDelete: (id: string) => void;
 }
 

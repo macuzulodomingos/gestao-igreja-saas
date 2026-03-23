@@ -1,5 +1,5 @@
 import prisma from "@/lib/prisma";
-import { Prisma } from "@/app/generated/prisma";
+import { Prisma } from "@prisma/client";
 
 export interface CreateRoleDTO {
   name: string;

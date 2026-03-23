@@ -18,21 +18,12 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { DownloadPDFButton } from "./DownloadPDFButton";
+import { FinanceTransaction, FinanceStats } from "@/types/finance";
 
 const MONTHS = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
   "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
 ];
-
-type Transaction = {
-  id: string;
-  description: string;
-  amount: number;
-  type: "INCOME" | "EXPENSE";
-  category: string;
-  date: Date;
-  churchId: string;
-};
 
 type Category = {
   id: string;
@@ -40,16 +31,9 @@ type Category = {
 };
 
 interface FinanceClientProps {
-  initialIncome: Transaction[];
-  initialExpenses: Transaction[];
-  stats: {
-    totalIncomes: number;
-    totalExpenses: number;
-    netBalance: number;
-    monthlyIncomes: number;
-    monthlyExpenses: number;
-    monthlyBalance: number;
-  };
+  initialIncome: FinanceTransaction[];
+  initialExpenses: FinanceTransaction[];
+  stats: FinanceStats;
   incomeCategories: Category[];
   expenseCategories: Category[];
   currentMonth: number;
@@ -72,9 +56,9 @@ export default function FinanceClientPage({
 
   const [isIncomeFormOpen, setIsIncomeFormOpen] = useState(false);
   const [isExpenseFormOpen, setIsExpenseFormOpen] = useState(false);
-  const [editingEntry, setEditingEntry] = useState<Transaction | null>(null);
+  const [editingEntry, setEditingEntry] = useState<FinanceTransaction | null>(null);
   const [activeTab, setActiveTab] = useState("income");
-  const [entryToDelete, setEntryToDelete] = useState<Transaction | null>(null);
+  const [entryToDelete, setEntryToDelete] = useState<FinanceTransaction | null>(null);
 
   const navigateToMonth = (month: number, year: number) => {
     router.push(`${pathname}?month=${month}&year=${year}`);
@@ -106,7 +90,7 @@ export default function FinanceClientPage({
     else setIsExpenseFormOpen(true);
   };
 
-  const handleEdit = (entry: Transaction) => {
+  const handleEdit = (entry: FinanceTransaction) => {
     setEditingEntry(entry);
     if (entry.type === "INCOME") setIsIncomeFormOpen(true);
     else setIsExpenseFormOpen(true);

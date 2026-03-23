@@ -4,6 +4,7 @@ import { MemberRoleService } from "@/services/memberRoleService";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getAuthContext } from "@/lib/auth-context";
+import { getErrorMessage, isPrismaError } from "@/lib/errors"; // 👈 Teu padrão
 
 
 
@@ -36,11 +37,22 @@ export async function saveRoleAction(
     revalidatePath(`/[slug]/configuracoes/cargos`, "page");
     return { success: true };
 
-  } catch (error: any) {
-    console.error("[SAVE_ROLE_ERROR]:", error);
-    if (error.message === "UNAUTHORIZED")
+  } catch (error: unknown) {
+    const message = getErrorMessage(error);
+    if (message === "UNAUTHORIZED")
       return { success: false, error: "Não autenticado." };
-    return { success: false, error: error.message || "Erro ao salvar cargo." };
+    if (message === "CHURCH_ID_REQUIRED")
+      return { success: false, error: "Igreja não identificada." };
+    if (isPrismaError(error)) {
+      if (error.code === "P2002")
+        return { success: false, error: "Já existe um cargo com este nome nesta igreja." };
+    }
+
+    console.error("[SAVE_ROLE_ERROR]:", error);
+    return { 
+      success: false, 
+      error: message || "Erro ao processar dados do cargo." 
+    };
   }
 }
 
@@ -56,10 +68,24 @@ export async function deleteRoleAction(
     revalidatePath(`/[slug]/configuracoes/cargos`, "page");
     return { success: true };
 
-  } catch (error: any) {
-    console.error("[DELETE_ROLE_ERROR]:", error);
-    if (error.message === "UNAUTHORIZED")
+  } catch (error: unknown) {
+    const message = getErrorMessage(error);
+
+    if (message === "UNAUTHORIZED")
       return { success: false, error: "Não autenticado." };
-    return { success: false, error: error.message || "Erro ao eliminar cargo." };
+    if (message.includes("Não é possível eliminar")) {
+      return { success: false, error: message };
+    }
+
+    if (isPrismaError(error)) {
+      if (error.code === "P2003")
+        return { success: false, error: "Existem registros vinculados a este cargo." };
+    }
+
+    console.error("[DELETE_ROLE_ERROR]:", error);
+    return { 
+      success: false, 
+      error: message || "Erro ao eliminar cargo." 
+    };
   }
 }
