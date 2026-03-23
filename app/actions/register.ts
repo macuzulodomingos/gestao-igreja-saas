@@ -4,6 +4,16 @@ import { z } from "zod";
 import { ChurchService } from "@/services/churchService";
 import { Prisma } from "@prisma/client";
 
+const VALID_TIMEZONES = [
+  "Africa/Luanda",
+  "Africa/Kinshasa",
+  "Africa/Lubumbashi",
+  "America/Sao_Paulo",
+  "America/Manaus",
+  "Europe/Lisbon",
+  "Africa/Maputo",
+] as const;
+
 
 const registerSchema = z.object({
   churchName: z.string().min(3, "Nome da igreja obrigatório").max(100),
@@ -14,6 +24,7 @@ const registerSchema = z.object({
   adminName: z.string().min(2, "Nome obrigatório").max(100),
   adminEmail: z.string().email("E-mail inválido"),
   adminPassword: z.string().min(6, "Mínimo 6 caracteres"),
+  timezone: z.enum(VALID_TIMEZONES),
 });
 
 export async function registerChurchAction(formData: FormData) {

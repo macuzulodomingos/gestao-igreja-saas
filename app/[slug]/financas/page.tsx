@@ -17,17 +17,20 @@ export default async function FinancasPage({ searchParams }: FinancasPageProps) 
 
   const church = await prisma.church.findUnique({
     where: { id: churchId },
-    select: { name: true },
+    select: { name: true, timezone: true }, // 👈 adiciona timezone
   });
+
+  const timezone = church?.timezone ?? "Africa/Luanda"; // 👈
+
   const now = new Date();
   const month = Number(sParams.month) || now.getMonth() + 1;
   const year = Number(sParams.year) || now.getFullYear();
 
   const [incomeList, expenseList, stats, incomeCategories, expenseCategories] =
     await Promise.all([
-      FinanceService.getTransactions(churchId, 50, "INCOME", month, year),
-      FinanceService.getTransactions(churchId, 50, "EXPENSE", month, year),
-      FinanceService.getFinanceStats(churchId, month, year),
+      FinanceService.getTransactions(churchId, 50, "INCOME", month, year, timezone),
+      FinanceService.getTransactions(churchId, 50, "EXPENSE", month, year, timezone),
+      FinanceService.getFinanceStats(churchId, timezone, month, year), // 👈 passa timezone
       FinanceService.getCategories(churchId, "INCOME"),
       FinanceService.getCategories(churchId, "EXPENSE"),
     ]);

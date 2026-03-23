@@ -7,6 +7,7 @@ interface RegisterChurchDTO {
   adminName: string;
   adminEmail: string;
   adminPassword: string;
+  timezone: string;
 }
 
 export const ChurchService = {
@@ -17,7 +18,7 @@ export const ChurchService = {
     const church = await prisma.$transaction(
       async (tx) => {
         const church = await tx.church.create({
-          data: { name: data.churchName, slug: data.churchSlug, plan: "FREE", timezone: "Africa/Luanda",  },
+          data: { name: data.churchName, slug: data.churchSlug, plan: "FREE", timezone: data.timezone, },
           select: { id: true, slug: true, name: true },
         });
 
@@ -79,7 +80,7 @@ export const ChurchService = {
           action: "CREATE_CHURCH",
           entityName: "Church",
           entityId: church.id,
-          newData: { name: data.churchName, slug: data.churchSlug, plan: "FREE", timezone: "Africa/Luanda" },
+          newData: { name: data.churchName, slug: data.churchSlug, plan: "FREE", timezone: data.timezone, },
         },
       });
     } catch (auditError) {

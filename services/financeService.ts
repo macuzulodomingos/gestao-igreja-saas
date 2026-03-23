@@ -2,6 +2,7 @@ import prisma from "@/lib/prisma";
 import { TransactionType } from "@prisma/client";
 import { FinanceTransaction } from "@/types/finance";
 import { centsToAmount, amountToCents } from "@/lib/money";
+import { fromZonedTime } from "date-fns-tz";
 
 export interface CreateTransactionDTO {
   description: string;
@@ -9,6 +10,23 @@ export interface CreateTransactionDTO {
   type: TransactionType;
   categoryId: string;
   date: string | Date;
+}
+
+function getMonthRangeInTimezone(year: number, month: number, timezone: string) {
+  // 👈 usa strings ISO para evitar interpretação do timezone da máquina
+  const startOfMonth = fromZonedTime(
+    `${year}-${String(month).padStart(2, "0")}-01T00:00:00`,
+    timezone
+  );
+
+  // último dia do mês
+  const lastDay = new Date(year, month, 0).getDate();
+  const endOfMonth = fromZonedTime(
+    `${year}-${String(month).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}T23:59:59.999`,
+    timezone
+  );
+
+  return { startOfMonth, endOfMonth };
 }
 
 
@@ -40,7 +58,7 @@ export const FinanceService = {
           amount: amountInCents,
           type: data.type,
           categoryId: data.categoryId,
-          date: new Date(data.date),
+          date: data.date instanceof Date ? data.date : new Date(data.date),
           churchId,
         },
         select: {
@@ -63,7 +81,7 @@ export const FinanceService = {
           entityId: transaction.id,
           newData: {
             description: data.description,
-            amount: centsToAmount(amountInCents),
+            amount: amountInCents.toString(), // "15000" = 150.00 AOA
             type: data.type,
             category: category.name,
             date: data.date,
@@ -134,13 +152,13 @@ export const FinanceService = {
           entityId: id,
           oldData: {
             description: existing.description,
-            amount: centsToAmount(existing.amount),
+            amount: existing.amount.toString(),
             type: existing.type,
             date: existing.date,
           },
           newData: {
             description: data.description,
-            amount: centsToAmount(amountInCents),
+            amount: amountInCents.toString(),
             type: data.type,
             category: category.name,
             date: data.date,
@@ -188,14 +206,13 @@ export const FinanceService = {
     });
   },
 
-  async getFinanceStats(churchId: string, month?: number, year?: number) {
+  async getFinanceStats(churchId: string, timezone: string, month?: number, year?: number) {
     const now = new Date();
-    const m = month || now.getUTCMonth() + 1;
-    const y = year || now.getUTCFullYear();
+    const m = month || now.getMonth() + 1;
+    const y = year || now.getFullYear();
 
-    // 👈 UTC para evitar bugs na Vercel
-    const startOfMonth = new Date(Date.UTC(y, m - 1, 1));
-    const endOfMonth = new Date(Date.UTC(y, m, 0, 23, 59, 59, 999));
+    // 👈 calcula início e fim do mês no timezone da igreja
+    const { startOfMonth, endOfMonth } = getMonthRangeInTimezone(y, m, timezone);
 
     const [allTotals, monthlyTotals] = await Promise.all([
       prisma.financeTransaction.groupBy({
@@ -230,13 +247,20 @@ export const FinanceService = {
     limit = 50,
     type?: TransactionType,
     month?: number,
-    year?: number
+    year?: number,
+    timezone = "Africa/Luanda"
   ) {
-    // 👈 UTC para evitar bugs na Vercel
+
     const dateFilter = month && year ? {
       date: {
-        gte: new Date(Date.UTC(year, month - 1, 1)),
-        lte: new Date(Date.UTC(year, month, 0, 23, 59, 59, 999)),
+        gte: fromZonedTime(
+          `${year}-${String(month).padStart(2, "0")}-01T00:00:00`,
+          timezone
+        ),
+        lte: fromZonedTime(
+          `${year}-${String(month).padStart(2, "0")}-${String(new Date(year, month, 0).getDate()).padStart(2, "0")}T23:59:59.999`,
+          timezone
+        ),
       }
     } : {};
 

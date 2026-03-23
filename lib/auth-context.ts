@@ -12,23 +12,9 @@ export async function getAuthContext(targetChurchId?: string) {
 
   if (!churchId) throw new Error("CHURCH_ID_REQUIRED");
 
-  // 👈 SUPER_ADMIN sem targetChurchId não tem timezone
-  const church = isSuperAdmin && !targetChurchId
-    ? null
-    : await prisma.church.findUnique({
-        where: { id: churchId },
-        select: { timezone: true },
-      });
-
-  // 👈 SUPER_ADMIN usa o seu próprio timezone
-  // ADMIN usa o timezone da igreja
-  const timezone = isSuperAdmin && !targetChurchId
-    ? (session.user.timezone ?? "Africa/Luanda")
-    : (church?.timezone ?? "Africa/Luanda");
 
   return {
     churchId,
-    timezone,
     actor: { userId: session.user.id, email: session.user.email! },
     isSuperAdmin,
   };

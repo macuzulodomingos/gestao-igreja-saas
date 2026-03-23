@@ -3,17 +3,29 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Church, Loader2, CheckCircle, ArrowLeft } from "lucide-react";
+import { Church, Loader2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { registerChurchAction } from "@/app/actions/register";
 import { toast } from "sonner";
+
+const TIMEZONES = [
+  { label: "🇦🇴 Angola (UTC+1)", value: "Africa/Luanda" },
+  { label: "🇧🇷 Brasil - São Paulo (UTC-3)", value: "America/Sao_Paulo" },
+  { label: "🇧🇷 Brasil - Manaus (UTC-4)", value: "America/Manaus" },
+  { label: "🇵🇹 Portugal (UTC+0)", value: "Europe/Lisbon" },
+  { label: "🇲🇿 Moçambique (UTC+2)", value: "Africa/Maputo" },
+  { label: "🇨🇩 Congo - Kinshasa (UTC+1)", value: "Africa/Kinshasa" },
+  { label: "🇨🇩 Congo - Lubumbashi (UTC+2)", value: "Africa/Lubumbashi" },
+];
 
 export default function RegistarPage() {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
   const [slugPreview, setSlugPreview] = useState("");
+  const [timezone, setTimezone] = useState("Africa/Luanda");
 
   const generateSlug = (name: string) =>
     name
@@ -35,6 +47,7 @@ export default function RegistarPage() {
     e.preventDefault();
     setFieldErrors({});
     const formData = new FormData(e.currentTarget);
+    formData.set("timezone", timezone); // 👈 adiciona timezone ao formData
 
     startTransition(async () => {
       const result = await registerChurchAction(formData);
@@ -55,7 +68,6 @@ export default function RegistarPage() {
     <div className="min-h-screen bg-muted/40 flex items-center justify-center p-6">
       <div className="w-full max-w-lg space-y-6">
 
-        {/* Header */}
         <div className="flex flex-col items-center space-y-2 text-center">
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground">
             <Church className="h-6 w-6" />
@@ -66,10 +78,8 @@ export default function RegistarPage() {
           </p>
         </div>
 
-        {/* Formulário */}
         <form onSubmit={handleSubmit} className="rounded-lg border bg-card p-8 shadow-sm space-y-6">
 
-          {/* Dados da Igreja */}
           <div className="space-y-4">
             <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
               Dados da Igreja
@@ -113,6 +123,32 @@ export default function RegistarPage() {
               ) : (
                 <p className="text-xs text-muted-foreground">
                   Apenas letras minúsculas, números e hífens
+                </p>
+              )}
+            </div>
+
+            {/* 👈 NOVO — Fuso Horário */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">
+                Fuso Horário
+              </label>
+              <Select value={timezone} onValueChange={setTimezone}>
+                <SelectTrigger className={fieldErrors.timezone ? "border-destructive" : ""}>
+                  <SelectValue placeholder="Selecione o fuso horário" />
+                </SelectTrigger>
+                <SelectContent>
+                  {TIMEZONES.map(tz => (
+                    <SelectItem key={tz.value} value={tz.value}>
+                      {tz.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {fieldErrors.timezone ? (
+                <p className="text-xs text-destructive">{fieldErrors.timezone[0]}</p>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Define como as datas e horas serão exibidas
                 </p>
               )}
             </div>

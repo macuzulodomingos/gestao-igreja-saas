@@ -6,7 +6,7 @@ import { getErrorMessage, isPrismaError } from "@/lib/errors";
 import { eventSchema } from "@/lib/validations/event";
 import { getAuthContext } from "@/lib/auth-context";
 import { fromZonedTime } from "date-fns-tz";
-import prisma from "@/lib/prisma";
+import { getTimezone } from "@/lib/get-timezone";
 
 
 
@@ -23,13 +23,7 @@ export async function saveEventAction(
       return { success: false, fieldErrors: result.error.flatten().fieldErrors };
     }
 
-    // 👈 Busca o timezone da igreja
-    const church = await prisma.church.findUnique({
-      where: { id: churchId },
-      select: { timezone: true },
-    });
-
-    const timezone = church?.timezone ?? "Africa/Luanda";
+    const timezone = await getTimezone(churchId);
 
     // 👈 Converte para UTC usando o timezone da igreja
     const startAt = fromZonedTime(
