@@ -1,9 +1,8 @@
 "use server";
 
 import { MemberService } from "@/services/memberService";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { memberSchema } from "@/lib/validations/member";
-import { updateTag } from "next/cache";
 import { getAuthContext } from "@/lib/auth-context";
 import { getErrorMessage, isPrismaError } from "@/lib/errors"; // 👈 Teu padrão
 
@@ -36,7 +35,7 @@ export async function createMemberAction(
     // Garante que a data de criação também tenha o "offset" de segurança
     const joinDateUTC = result.data.joinDate
       ? new Date(`${result.data.joinDate}T12:00:00Z`)
-      : new Date(); // Se não houver data, usa agora
+      : new Date(new Date().toISOString().split("T")[0] + "T12:00:00Z");
 
     await MemberService.createMember(churchId, actor, {
       ...result.data,
@@ -169,13 +168,6 @@ export async function deleteMemberAction(
       return { success: false, error: "Não autenticado." };
     if (message === "MEMBER_NOT_FOUND")
       return { success: false, error: "Membro não encontrado ou você não tem permissão." };
-    if (isPrismaError(error)) {
-      if (error.code === "P2003")
-        return { 
-          success: false, 
-          error: "Não é possível excluir este membro pois ele possui registros (financeiros ou históricos) vinculados." 
-        };
-    }
 
     console.error("[DELETE_MEMBER_ERROR]:", error);
     return { success: false, error: "Erro ao tentar remover o membro." };

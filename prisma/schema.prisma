@@ -114,6 +114,8 @@ model Member {
   phone    String?
   status   MemberStatus @default(ATIVO) // 👈 Mudou para Enum
   joinDate DateTime @default(now())
+  deletedAt DateTime? // 👈 NOVO
+
 
   // Relação com o cargo (FK)
   roleId    String?
@@ -135,6 +137,7 @@ model Member {
   @@index([churchId, name])
   @@index([churchId, email])
   @@index([churchId, status, joinDate]) // 👈 NOVO — acelera o gráfico de membros
+  @@index([churchId, deletedAt]) // 👈 índice para filtrar activos
 }
 
 enum MemberStatus {
