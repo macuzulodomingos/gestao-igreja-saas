@@ -61,6 +61,9 @@ export async function createMemberAction(
     // 2. Lógica de Negócio do Service
     if (message === "INVALID_ROLE")
       return { success: false, error: "O cargo selecionado não pertence a esta igreja." };
+    if (message === "INVALID_JOIN_DATE_TYPE") {
+      return { success: false, error: "O formato da data de entrada é inválido." };
+    }
 
     // 3. Prisma (Banco de Dados)
     if (isPrismaError(error)) {
@@ -106,7 +109,6 @@ export async function updateMemberAction(
       roleId: result.data.role || null,
       joinDate: joinDateUTC, // Passamos a data tratada
       phone: sanitizedPhone,
-      status: result.data.status, // 👈 ADICIONA ISTO
     });
 
     revalidatePath(`/[slug]/membros`, "page");
@@ -128,6 +130,9 @@ export async function updateMemberAction(
       return { success: false, error: "Membro não encontrado ou acesso negado." };
     if (message === "INVALID_ROLE")
       return { success: false, error: "O cargo selecionado é inválido para esta igreja." };
+    if (message === "INVALID_JOIN_DATE_TYPE") {
+      return { success: false, error: "O formato da data de entrada é inválido." };
+    }
 
     // 3. Erros do Banco de Dados (Prisma)
     if (isPrismaError(error)) {

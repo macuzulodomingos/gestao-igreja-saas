@@ -6,7 +6,7 @@ type UpdateMemberDTO = {
   email?: string | null;
   phone?: string | null;
   roleId?: string | null;
-  joinDate?: Date | string;
+  joinDate?: Date;
   status?: "ATIVO" | "INATIVO" | "TRANSFERIDO" | "FALECIDO";
 };
 
@@ -15,7 +15,7 @@ type CreateMemberDTO = {
   email?: string | null;
   phone?: string | null;
   roleId?: string | null;
-  joinDate?: Date | string;
+  joinDate?: Date;
   status?: "ATIVO" | "INATIVO" | "TRANSFERIDO" | "FALECIDO";
 };
 
@@ -24,11 +24,18 @@ interface Actor {
   email: string;
 }
 
-// 👈 tipo seguro em vez de any
+// 👈 controle explícito dos campos — sem vazar dados internos
 const sanitizeForLog = (data: Record<string, unknown> | null) => {
-  if (!data) return undefined; // 👈 undefined em vez de null
-  const { churchId, updatedAt, createdAt, ...importantData } = data;
-  return importantData as Prisma.InputJsonValue;  // 👈 cast aqui no helper
+  if (!data) return undefined;
+  return {
+    id: data.id,
+    name: data.name,
+    email: data.email,
+    phone: data.phone,
+    status: data.status,
+    joinDate: data.joinDate,
+    roleId: data.roleId,
+  } as Prisma.InputJsonValue;
 };
 
 export const MemberService = {
@@ -63,7 +70,7 @@ export const MemberService = {
           churchId: true,
           createdAt: true,
           updatedAt: true,
-          role: { select: { id: true, name: true } }, // 👈 select em vez de include
+          role: { select: { id: true, name: true } },
         },
         orderBy: { name: "asc" },
         skip: (safePage - 1) * safeLimit,
@@ -72,39 +79,42 @@ export const MemberService = {
       prisma.member.count({ where: whereClause }),
     ]);
 
-    const totalPages = Math.ceil(total / safeLimit);
+    const totalPages = Math.max(1, Math.ceil(total / safeLimit)); // 👈 mínimo 1 página
 
     return {
       members,
       metadata: {
         totalMembers: total,
         totalPages,
-        currentPage: Math.min(safePage, totalPages || 1),
+        currentPage: Math.min(safePage, totalPages),
       },
     };
   },
 
   async createMember(churchId: string, actor: Actor, data: CreateMemberDTO) {
-    return prisma.$transaction(async (tx) => {
-      const finalRoleId = data.roleId !== undefined ? data.roleId : null;
 
-      // 🔒 Valida que o cargo pertence à igreja, se fornecido
-    if (data.roleId) {
-      const role = await prisma.memberRole.findUnique({
-        where: { id: data.roleId },
-        select: { id: true, churchId: true },
-      });
-      if (!role || role.churchId !== churchId)
-        throw new Error("INVALID_ROLE");
-    }
+    if (data.joinDate !== undefined && !(data.joinDate instanceof Date)) {
+    throw new Error("INVALID_JOIN_DATE_TYPE");
+  }
+
+    return prisma.$transaction(async (tx) => {
+      
+      if (data.roleId != null) { // 👈 cobre null e undefined mas não string vazia
+        const role = await tx.memberRole.findUnique({
+          where: { id: data.roleId },
+          select: { id: true, churchId: true },
+        });
+        if (!role || role.churchId !== churchId)
+          throw new Error("INVALID_ROLE");
+      }
 
       const newMember = await tx.member.create({
         data: {
           name: data.name,
           email: data.email ?? undefined,
           phone: data.phone ?? undefined,
-          roleId: finalRoleId ?? undefined,
-          joinDate: data.joinDate ? new Date(data.joinDate) : new Date(),
+          roleId: data.roleId ?? undefined,
+          joinDate: data.joinDate ?? new Date(),
           status: data.status ?? "ATIVO",
           churchId,
         },
@@ -140,43 +150,51 @@ export const MemberService = {
   },
 
   async updateMember(id: string, churchId: string, actor: Actor, data: UpdateMemberDTO) {
-    const validJoinDate =
-      data.joinDate && !isNaN(new Date(data.joinDate).getTime())
-        ? new Date(data.joinDate)
-        : undefined;
 
-    // 👈 findUnique + verificação manual do churchId
-    const currentMember = await prisma.member.findUnique({
-      where: { id },
-      select: { id: true, churchId: true },
-    });
-
-    if (!currentMember) throw new Error("MEMBER_NOT_FOUND");
-    if (currentMember.churchId !== churchId) throw new Error("MEMBER_NOT_FOUND");
-
-    // 🔒 Valida que o cargo pertence à igreja, se fornecido
-    if (data.roleId) {
-      const role = await prisma.memberRole.findUnique({
-        where: { id: data.roleId },
-        select: { id: true, churchId: true },
-      });
-      if (!role || role.churchId !== churchId)
-        throw new Error("INVALID_ROLE");
-    }
+    // 1. Validação de Contrato (O "Segurança" do Service)
+  if (data.joinDate !== undefined && !(data.joinDate instanceof Date)) {
+    throw new Error("INVALID_JOIN_DATE_TYPE");
+  }
 
     return prisma.$transaction(async (tx) => {
-      const finalRoleId = data.roleId !== undefined ? data.roleId : null;
+      // 👈 select explícito — sem overfetch
+      const currentMember = await tx.member.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone: true,
+          status: true,
+          joinDate: true,
+          roleId: true,
+          churchId: true,
+        },
+      });
 
-      // 👈 update em vez de updateMany
+      if (!currentMember || currentMember.churchId !== churchId)
+        throw new Error("MEMBER_NOT_FOUND");
+
+      // 👈 cobre null e undefined mas não string vazia
+      if (data.roleId != null) {
+        const role = await tx.memberRole.findUnique({
+          where: { id: data.roleId },
+          select: { churchId: true },
+        });
+        if (!role || role.churchId !== churchId)
+          throw new Error("INVALID_ROLE");
+      }
+
       const updatedMember = await tx.member.update({
         where: { id },
         data: {
-          name: data.name,
-          email: data.email,
-          phone: data.phone,
-          roleId: finalRoleId,
-          status: data.status,
-          joinDate: validJoinDate,
+          ...(data.name !== undefined && { name: data.name }),
+          ...(data.email !== undefined && { email: data.email }),
+          ...(data.phone !== undefined && { phone: data.phone }),
+          ...(data.status !== undefined && { status: data.status }),
+          // 👈 garante que joinDate é sempre Date
+          ...(data.joinDate !== undefined && { joinDate: data.joinDate }),
+          ...(data.roleId !== undefined && { roleId: data.roleId }),
         },
         select: {
           id: true,
@@ -187,16 +205,13 @@ export const MemberService = {
           joinDate: true,
           roleId: true,
           churchId: true,
-          createdAt: true,
-          updatedAt: true,
-          role: { select: { id: true, name: true } },
         },
       });
 
       await tx.auditLog.create({
         data: {
           churchId,
-          userId: actor.userId || null,
+          userId: actor.userId,
           userEmail: actor.email,
           action: "UPDATE_MEMBER",
           entityName: "Member",
@@ -211,17 +226,24 @@ export const MemberService = {
   },
 
   async deleteMember(id: string, churchId: string, actor: Actor) {
-    // 👈 findUnique + verificação manual do churchId
     const memberToDelete = await prisma.member.findUnique({
       where: { id },
-      select: { churchId: true },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        status: true,
+        joinDate: true,
+        roleId: true,
+        churchId: true,
+      },
     });
 
     if (!memberToDelete) throw new Error("MEMBER_NOT_FOUND");
     if (memberToDelete.churchId !== churchId) throw new Error("MEMBER_NOT_FOUND");
 
     return prisma.$transaction(async (tx) => {
-      // 👈 delete em vez de deleteMany
       await tx.member.delete({ where: { id } });
 
       await tx.auditLog.create({

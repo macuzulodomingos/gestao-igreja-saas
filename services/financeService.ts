@@ -114,7 +114,7 @@ export const FinanceService = {
           amount: amountInCents,
           type: data.type,
           categoryId: data.categoryId,
-          date: new Date(data.date),
+          date: data.date instanceof Date ? data.date : new Date(data.date),
         },
         select: {
           id: true,
@@ -181,7 +181,7 @@ export const FinanceService = {
           entityId: id,
           oldData: {
             description: existing.description,
-            amount: centsToAmount(existing.amount),
+            amount: existing.amount.toString(),
             type: existing.type,
             date: existing.date,
           },
