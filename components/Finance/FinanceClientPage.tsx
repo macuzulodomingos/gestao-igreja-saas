@@ -39,6 +39,7 @@ interface FinanceClientProps {
   currentMonth: number;
   currentYear: number;
   churchName: string; // 👈 NOVO
+  canExportPdf: boolean; // 👈 NOVO
 }
 
 export default function FinanceClientPage({
@@ -50,6 +51,7 @@ export default function FinanceClientPage({
   currentMonth,
   currentYear,
   churchName,
+  canExportPdf,
 }: FinanceClientProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -139,6 +141,7 @@ export default function FinanceClientPage({
             income={initialIncome}
             expenses={initialExpenses}
             stats={stats}
+            canExportPdf={canExportPdf} // 👈 NOVO
           />
           <Button
             variant="outline"

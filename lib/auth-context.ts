@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { PlanType } from "@/lib/plans";
 
 export async function getAuthContext(targetChurchId?: string) {
   const session = await auth();
@@ -12,9 +13,16 @@ export async function getAuthContext(targetChurchId?: string) {
 
   if (!churchId) throw new Error("CHURCH_ID_REQUIRED");
 
+  // 👈 busca plan junto com churchId — uma única query
+  const church = await prisma.church.findUnique({
+    where: { id: churchId },
+    select: { plan: true },
+  });
+
 
   return {
     churchId,
+    plan: (church?.plan ?? "FREE") as PlanType, // 👈 NOVO
     actor: { userId: session.user.id, email: session.user.email! },
     isSuperAdmin,
   };

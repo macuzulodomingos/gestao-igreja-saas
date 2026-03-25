@@ -202,11 +202,11 @@ export const MemberService = {
         data: {
           ...(data.name !== undefined && { name: data.name }),
           ...(data.email !== undefined && { email: data.email?.trim() || null }),
-          ...(data.phone !== undefined && { phone: data.phone?.trim() || null}),
+          ...(data.phone !== undefined && { phone: data.phone?.trim() || null }),
           ...(data.status !== undefined && { status: data.status }),
           // 👈 garante que joinDate é sempre Date
           ...(data.joinDate !== undefined && { joinDate: data.joinDate }),
-          ...(roleId !== undefined && { roleId }), 
+          ...(roleId !== undefined && { roleId }),
         },
         select: {
           id: true,
@@ -217,6 +217,7 @@ export const MemberService = {
           joinDate: true,
           roleId: true,
           churchId: true,
+          deletedAt: true,
         },
       });
 
@@ -239,30 +240,45 @@ export const MemberService = {
 
   async deleteMember(id: string, churchId: string, actor: Actor) {
 
-    const memberToDelete = await prisma.member.findUnique({
-      where: { id },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        phone: true,
-        status: true,
-        joinDate: true,
-        roleId: true,
-        churchId: true,
-        deletedAt: true, // 👈 importante
-      },
-    });
-
-    if (!memberToDelete || memberToDelete.churchId !== churchId || memberToDelete.deletedAt) {
-      throw new Error("MEMBER_NOT_FOUND");
-    }
-
     return prisma.$transaction(async (tx) => {
+
+      const memberToDelete = await tx.member.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone: true,
+          status: true,
+          joinDate: true,
+          roleId: true,
+          churchId: true,
+          deletedAt: true, // 👈 importante
+        },
+      });
+
+      if (!memberToDelete || memberToDelete.churchId !== churchId) {
+        throw new Error("MEMBER_NOT_FOUND");
+      }
+
+      if (memberToDelete.deletedAt)
+        throw new Error("MEMBER_ALREADY_DELETED");
+
       const deletedMember = await tx.member.update({
         where: { id },
         data: {
           deletedAt: new Date(),
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone: true,
+          status: true,
+          joinDate: true,
+          roleId: true,
+          churchId: true,
+          deletedAt: true,
         },
       });
 

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { FinanceService } from "@/services/financeService";
 import FinanceClientPage from "@/components/Finance/FinanceClientPage";
 import prisma from "@/lib/prisma";
+import { getPlanLimits, PlanType } from "@/lib/plans";
 
 interface FinancasPageProps {
   searchParams: Promise<{ month?: string; year?: string }>;
@@ -17,14 +18,18 @@ export default async function FinancasPage({ searchParams }: FinancasPageProps) 
 
   const church = await prisma.church.findUnique({
     where: { id: churchId },
-    select: { name: true, timezone: true }, // 👈 adiciona timezone
+    select: { name: true, timezone: true, plan: true }, // 👈 adiciona timezone
   });
+
+  if (!church) redirect("/login"); // 👈 protege contra null
 
   const timezone = church?.timezone ?? "Africa/Luanda"; // 👈
 
   const now = new Date();
   const month = Number(sParams.month) || now.getMonth() + 1;
   const year = Number(sParams.year) || now.getFullYear();
+
+  const planLimits = getPlanLimits(church.plan as PlanType);
 
   const [incomeList, expenseList, stats, incomeCategories, expenseCategories] =
     await Promise.all([
@@ -45,6 +50,7 @@ export default async function FinancasPage({ searchParams }: FinancasPageProps) 
       currentMonth={month}
       currentYear={year}
       churchName={church?.name ?? "Igreja"}
+      canExportPdf={planLimits.pdfExport} // 👈 NOVO
     />
   );
 }

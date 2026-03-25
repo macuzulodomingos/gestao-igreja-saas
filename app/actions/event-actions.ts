@@ -7,6 +7,7 @@ import { eventSchema } from "@/lib/validations/event";
 import { getAuthContext } from "@/lib/auth-context";
 import { fromZonedTime } from "date-fns-tz";
 import { getTimezone } from "@/lib/get-timezone";
+import { checkEventMonthlyLimit } from "@/lib/plan-guard";
 
 
 
@@ -16,7 +17,9 @@ export async function saveEventAction(
   targetChurchId?: string,
 ) {
   try {
-    const { churchId, actor } = await getAuthContext(targetChurchId);
+    const { churchId, actor, plan } = await getAuthContext(targetChurchId);
+
+    await checkEventMonthlyLimit(churchId, plan);
 
     const result = eventSchema.safeParse(Object.fromEntries(formData.entries()));
     if (!result.success) {
@@ -61,6 +64,8 @@ export async function saveEventAction(
       return { success: false, error: "Departamento inválido para esta igreja." };
     if (message === "INVALID_CATEGORY")
       return { success: false, error: "Categoria inválida para esta igreja." };
+    if (message === "PLAN_LIMIT_EVENTS")
+      return { success: false, error: "Limite de eventos mensais atingido. Actualize o seu plano.", upgrade: true };
     if (isPrismaError(error) && error.code === "P2002")
       return { success: false, error: "Já existe um evento com estes dados." };
     if (isPrismaError(error) && error.code === "P2025")

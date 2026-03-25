@@ -4,6 +4,9 @@ import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { UserService } from "@/services/userService";
 import { revalidatePath } from "next/cache";
+import { checkUserLimit } from "@/lib/plan-guard";
+import prisma from "@/lib/prisma";
+import { PlanType } from "@/lib/plans";
 
 const ALLOWED_ROLES = ["TREASURER", "SECRETARY", "OPERATOR"] as const;
 
@@ -35,8 +38,15 @@ async function getAuthContext(targetChurchId?: string) {
     throw new Error("FORBIDDEN");
   }
 
+  // 👈 busca plan junto com churchId — uma única query
+  const church = await prisma.church.findUnique({
+    where: { id: churchId },
+    select: { plan: true },
+  });
+
   return {
     churchId,
+    plan: (church?.plan ?? "FREE") as PlanType, // 👈 NOVO
     actor: {
       userId: session.user.id,
       email: session.user.email!,
@@ -47,7 +57,9 @@ async function getAuthContext(targetChurchId?: string) {
 
 export async function createUserAction(formData: FormData, targetChurchId?: string) {
   try {
-    const { churchId, actor } = await getAuthContext(targetChurchId);
+    const { churchId, actor, plan } = await getAuthContext(targetChurchId);
+
+    await checkUserLimit(churchId, plan);
 
     const result = createUserSchema.safeParse(Object.fromEntries(formData.entries()));
     if (!result.success) {
@@ -65,6 +77,8 @@ export async function createUserAction(formData: FormData, targetChurchId?: stri
       return { success: false, error: "Sem permissão." };
     if (error.code === "P2002")
       return { success: false, fieldErrors: { email: ["Este e-mail já está registado."] } };
+    if (message === "PLAN_LIMIT_USERS")
+      return { success: false, error: "Limite de utilizadores atingido. Actualize o seu plano.", upgrade: true };
     console.error("[CREATE_USER_ERROR]:", error);
     return { success: false, error: "Erro ao criar utilizador." };
   }

@@ -3,7 +3,8 @@
 import { PDFDownloadLink } from "@react-pdf/renderer";
 import { FinanceReport } from "./FinanceReport";
 import { Button } from "@/components/ui/button";
-import { FileDown, Loader2 } from "lucide-react";
+import { FileDown, Loader2, Lock } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@radix-ui/react-tooltip";
 
 const MONTHS = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
@@ -33,6 +34,7 @@ interface DownloadPDFButtonProps {
     totalExpenses: number;
     netBalance: number;
   };
+  canExportPdf: boolean; // 👈 NOVO
 }
 
 export function DownloadPDFButton({
@@ -41,10 +43,29 @@ export function DownloadPDFButton({
   year,
   income,
   expenses,
-  stats,
+  stats,  canExportPdf,
 }: DownloadPDFButtonProps) {
   const monthName = MONTHS[month - 1];
   const fileName = `relatorio-financeiro-${monthName.toLowerCase()}-${year}.pdf`;
+
+  // 👈 plano FREE — mostra botão bloqueado com tooltip
+  if (!canExportPdf) {
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="outline" className="gap-2" disabled>
+              <Lock className="h-4 w-4" />
+              Exportar PDF
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Disponível no plano PRO. Actualize o seu plano.</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
 
   return (
     <PDFDownloadLink

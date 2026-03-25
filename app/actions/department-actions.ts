@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getErrorMessage } from "@/lib/errors";
 import { getAuthContext } from "@/lib/auth-context";
+import { checkDepartmentLimit } from "@/lib/plan-guard";
 
 const departmentSchema = z.object({
   name: z.string().min(1, "Nome obrigatório").max(100),
@@ -20,7 +21,9 @@ export async function saveDepartmentAction(
   targetChurchId?: string,
 ) {
   try {
-    const { churchId, actor } = await getAuthContext(targetChurchId);
+    const { churchId, actor, plan } = await getAuthContext(targetChurchId);
+
+    await checkDepartmentLimit(churchId, plan);
 
     const result = departmentSchema.safeParse(Object.fromEntries(formData.entries()));
     if (!result.success) {
@@ -52,6 +55,8 @@ export async function saveDepartmentAction(
       return { success: false, error: "Igreja não encontrada." };
     if (message === "INVALID_LEADER")
       return { success: false, error: "Líder inválido para esta igreja." };
+    if (message === "PLAN_LIMIT_DEPARTMENTS")
+      return { success: false, error: "Limite de departamentos atingido. Actualize o seu plano.", upgrade: true };
     console.error("[SAVE_DEPARTMENT_ERROR]:", error);
     return { success: false, error: "Erro ao salvar departamento." };
   }

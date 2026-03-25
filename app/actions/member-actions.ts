@@ -5,6 +5,7 @@ import { revalidatePath, updateTag } from "next/cache";
 import { memberSchema } from "@/lib/validations/member";
 import { getAuthContext } from "@/lib/auth-context";
 import { getErrorMessage, isPrismaError } from "@/lib/errors"; // 👈 Teu padrão
+import { checkMemberLimit } from "@/lib/plan-guard";
 
 /**
  * Helper privado para garantir segurança e auditoria em todas as ações.
@@ -18,7 +19,10 @@ export async function createMemberAction(
   targetChurchId?: string,
 ) {
   try {
-    const { churchId, actor } = await getAuthContext(targetChurchId);
+    const { churchId, actor, plan } = await getAuthContext(targetChurchId);
+
+    // 👈 verifica limite antes de criar
+    await checkMemberLimit(churchId, plan);
 
     const result = memberSchema.safeParse(
       Object.fromEntries(formData.entries()),
@@ -56,6 +60,8 @@ export async function createMemberAction(
       return { success: false, error: "Não autenticado." };
     if (message === "CHURCH_ID_REQUIRED")
       return { success: false, error: "Igreja não encontrada." };
+    if (message === "PLAN_LIMIT_MEMBERS")
+      return { success: false, error: "Limite de membros atingido. Actualize o seu plano.", upgrade: true };
     
     // 2. Lógica de Negócio do Service
     if (message === "INVALID_ROLE")
@@ -131,7 +137,7 @@ export async function updateMemberAction(
       return { success: false, error: "O cargo selecionado é inválido para esta igreja." };
     if (message === "INVALID_JOIN_DATE_TYPE") {
       return { success: false, error: "O formato da data de entrada é inválido." };
-    }
+    } 
 
     // 3. Erros do Banco de Dados (Prisma)
     if (isPrismaError(error)) {
@@ -168,6 +174,8 @@ export async function deleteMemberAction(
       return { success: false, error: "Não autenticado." };
     if (message === "MEMBER_NOT_FOUND")
       return { success: false, error: "Membro não encontrado ou você não tem permissão." };
+    if (message === "MEMBER_ALREADY_DELETED")
+      return { success: false, error: "Membro já está excluído." };
 
     console.error("[DELETE_MEMBER_ERROR]:", error);
     return { success: false, error: "Erro ao tentar remover o membro." };

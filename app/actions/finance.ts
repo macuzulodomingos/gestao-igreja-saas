@@ -6,7 +6,8 @@ import { revalidatePath, updateTag } from "next/cache";
 import { getAuthContext } from "@/lib/auth-context";
 import { getErrorMessage, isPrismaError } from "@/lib/errors";
 import { fromZonedTime } from "date-fns-tz";
-import { getTimezone } from "@/lib/get-timezone"; 
+import { getTimezone } from "@/lib/get-timezone";
+import { checkTransactionMonthlyLimit } from "@/lib/plan-guard";
 
 export async function saveTransactionAction(
   formData: FormData,
@@ -14,7 +15,9 @@ export async function saveTransactionAction(
   targetChurchId?: string,
 ) {
   try {
-    const { churchId, actor } = await getAuthContext(targetChurchId);
+    const { churchId, actor, plan } = await getAuthContext(targetChurchId);
+
+    await checkTransactionMonthlyLimit(churchId, plan);
 
     const result = financeSchema.safeParse(Object.fromEntries(formData.entries()));
     if (!result.success) {
@@ -60,6 +63,8 @@ export async function saveTransactionAction(
       return { success: false, error: "A categoria não corresponde ao tipo de transacção." };
     if (message === "TRANSACTION_NOT_FOUND")
       return { success: false, error: "Transacção não encontrada." };
+    if (message === "PLAN_LIMIT_TRANSACTIONS")
+      return { success: false, error: "Limite de transacções mensais atingido. Actualize o seu plano.", upgrade: true };
     if (isPrismaError(error) && error.code === "P2025")
       return { success: false, error: "Registo não encontrado." };
     console.error("[SAVE_TRANSACTION_ERROR]:", error);
