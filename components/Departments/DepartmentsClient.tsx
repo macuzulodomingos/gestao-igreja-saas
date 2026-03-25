@@ -13,6 +13,8 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Department, DepartmentListMember } from "@/types/department";
+import { UpgradeModal } from "@/components/UpgradeModal";
+import { useUpgradeModal } from "@/hooks/useUpgradeModal";
 
 interface DepartmentsClientProps {
   initialDepartments: Department[];
@@ -25,6 +27,7 @@ export default function DepartmentsClient({ initialDepartments, members }: Depar
   const [editingDepartment, setEditingDepartment] = useState<Department | null>(null);
   const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null);
   const [departmentToDelete, setDepartmentToDelete] = useState<Department | null>(null);
+  const upgrade = useUpgradeModal();
 
   const handleAdd = () => {
     setEditingDepartment(null);

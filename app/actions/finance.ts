@@ -17,7 +17,6 @@ export async function saveTransactionAction(
   try {
     const { churchId, actor, plan } = await getAuthContext(targetChurchId);
 
-    await checkTransactionMonthlyLimit(churchId, plan);
 
     const result = financeSchema.safeParse(Object.fromEntries(formData.entries()));
     if (!result.success) {
@@ -38,6 +37,7 @@ export async function saveTransactionAction(
         date: dateUTC,
       });
     } else {
+      await checkTransactionMonthlyLimit(churchId, plan);
       await FinanceService.createTransaction(churchId, actor, {
         ...result.data,
         date: dateUTC,

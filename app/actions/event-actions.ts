@@ -19,8 +19,6 @@ export async function saveEventAction(
   try {
     const { churchId, actor, plan } = await getAuthContext(targetChurchId);
 
-    await checkEventMonthlyLimit(churchId, plan);
-
     const result = eventSchema.safeParse(Object.fromEntries(formData.entries()));
     if (!result.success) {
       return { success: false, fieldErrors: result.error.flatten().fieldErrors };
@@ -48,6 +46,7 @@ export async function saveEventAction(
     if (eventId) {
       await EventService.updateEvent(eventId, churchId, actor, data);
     } else {
+      await checkEventMonthlyLimit(churchId, plan);
       await EventService.createEvent(churchId, actor, data);
     }
 

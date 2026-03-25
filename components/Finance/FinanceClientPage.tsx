@@ -19,6 +19,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { DownloadPDFButton } from "./DownloadPDFButton";
 import { FinanceTransaction, FinanceStats } from "@/types/finance";
+import { UpgradeModal } from "@/components/UpgradeModal";
+import { useUpgradeModal } from "@/hooks/useUpgradeModal";
 
 const MONTHS = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
@@ -61,6 +63,7 @@ export default function FinanceClientPage({
   const [editingEntry, setEditingEntry] = useState<FinanceTransaction | null>(null);
   const [activeTab, setActiveTab] = useState("income");
   const [entryToDelete, setEntryToDelete] = useState<FinanceTransaction | null>(null);
+  const upgrade = useUpgradeModal();
 
   const navigateToMonth = (month: number, year: number) => {
     router.push(`${pathname}?month=${month}&year=${year}`);

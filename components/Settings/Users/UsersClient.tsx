@@ -18,6 +18,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { UpgradeModal } from "@/components/UpgradeModal";
+import { useUpgradeModal } from "@/hooks/useUpgradeModal";
 
 type User = {
   id: string;
@@ -52,6 +54,7 @@ export default function UsersClient({ initialUsers, currentUserId }: UsersClient
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const [isPending, startTransition] = useTransition();
+  const upgrade = useUpgradeModal();
 
   const handleDelete = () => {
     if (!userToDelete) return;

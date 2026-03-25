@@ -62,6 +62,8 @@ import {
 import { useDebounce } from "@/hooks/use-debounce";
 import { MemberHistorySheet } from "@/components/Member/MemberHistorySheet";
 import { Member, MemberRole } from "@/types/member";
+import { UpgradeModal } from "@/components/UpgradeModal";
+import { useUpgradeModal } from "@/hooks/useUpgradeModal";
 
 const roleColors: Record<string, string> = {
   Pastor: "bg-primary/10 text-primary",
@@ -130,6 +132,7 @@ export default function MemberClient({
     searchParams.get("search") || "",
   );
   const debouncedSearch = useDebounce(searchQuery, 500);
+  const upgrade = useUpgradeModal(); // 👈 NOVO
 
   useEffect(() => {
     const currentQuery = searchParams.toString();
@@ -183,8 +186,10 @@ export default function MemberClient({
         editingMember ? "Membro atualizado!" : "Membro adicionado!",
       );
       (event.target as HTMLFormElement).reset();
-    } else {
-      if (result.fieldErrors) {
+    } else if ("upgrade" in result && result.upgrade) {
+      // 👈 mostra modal de upgrade
+      upgrade.showUpgrade(result.error || "Limite do plano atingido.");
+    } else if (result.fieldErrors) {
         setFieldErrors(result.fieldErrors);
         toast.error("Verifique os erros no formulário.");
       } else {
@@ -196,7 +201,7 @@ export default function MemberClient({
         toast.error(result.error || fallbackError);
       }
     }
-  }
+  
 
   return (
     <div className="space-y-6">
@@ -388,6 +393,12 @@ export default function MemberClient({
         </Dialog>
       </div>
 
+      <UpgradeModal
+        open={upgrade.isOpen}
+        onOpenChange={upgrade.onOpenChange}
+        limitMessage={upgrade.message}
+      />
+
       <Card className="border-none shadow-sm">
         <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-4">
           <CardTitle className="text-base font-medium">
@@ -536,6 +547,7 @@ export default function MemberClient({
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancelar</AlertDialogCancel>
                 <AlertDialogAction
+                  disabled={isPending} // 👈 Adicione isso
                   className="bg-destructive text-white hover:bg-destructive/90"
                   onClick={async () => {
                     if (!memberToDelete) return;
@@ -549,7 +561,7 @@ export default function MemberClient({
                     setMemberToDelete(null);
                   }}
                 >
-                  Confirmar Exclusão
+                  {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Confirmar Exclusão"}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>

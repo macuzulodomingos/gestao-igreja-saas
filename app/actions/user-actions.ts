@@ -7,6 +7,7 @@ import { revalidatePath } from "next/cache";
 import { checkUserLimit } from "@/lib/plan-guard";
 import prisma from "@/lib/prisma";
 import { PlanType } from "@/lib/plans";
+import { getErrorMessage, isPrismaError } from "@/lib/errors";
 
 const ALLOWED_ROLES = ["TREASURER", "SECRETARY", "OPERATOR"] as const;
 
@@ -14,7 +15,9 @@ const createUserSchema = z.object({
   name: z.string().min(2, "Nome obrigatório").max(100),
   email: z.string().email("E-mail inválido"),
   password: z.string().min(6, "Mínimo 6 caracteres"),
-  role: z.enum(ALLOWED_ROLES, { errorMap: () => ({ message: "Cargo inválido" }) }),
+  role: z.enum(ALLOWED_ROLES, {
+    message: "Cargo inválido",
+  }),
 });
 
 const updateUserSchema = z.object({
@@ -70,15 +73,17 @@ export async function createUserAction(formData: FormData, targetChurchId?: stri
 
     revalidatePath(`/[slug]/configuracoes/utilizadores`, "page");
     return { success: true };
-  } catch (error: any) {
-    if (error.message === "UNAUTHORIZED")
+  } catch (error: unknown) {
+    const message = getErrorMessage(error);
+    if (message === "UNAUTHORIZED")
       return { success: false, error: "Não autenticado." };
-    if (error.message === "FORBIDDEN")
+    if (message === "FORBIDDEN")
       return { success: false, error: "Sem permissão." };
-    if (error.code === "P2002")
-      return { success: false, fieldErrors: { email: ["Este e-mail já está registado."] } };
     if (message === "PLAN_LIMIT_USERS")
       return { success: false, error: "Limite de utilizadores atingido. Actualize o seu plano.", upgrade: true };
+    if (isPrismaError(error) && error.code === "P2002")
+      return { success: false, fieldErrors: { email: ["Este e-mail já está registado."] } };
+
     console.error("[CREATE_USER_ERROR]:", error);
     return { success: false, error: "Erro ao criar utilizador." };
   }
@@ -101,14 +106,15 @@ export async function updateUserAction(
 
     revalidatePath(`/[slug]/configuracoes/utilizadores`, "page");
     return { success: true };
-  } catch (error: any) {
-    if (error.message === "UNAUTHORIZED")
+  } catch (error: unknown) {
+    const message = getErrorMessage(error);
+    if (message === "UNAUTHORIZED")
       return { success: false, error: "Não autenticado." };
-    if (error.message === "FORBIDDEN")
+    if (message === "FORBIDDEN")
       return { success: false, error: "Sem permissão." };
-    if (error.message === "CANNOT_EDIT_SELF")
+    if (message === "CANNOT_EDIT_SELF")
       return { success: false, error: "Não pode editar a sua própria conta aqui." };
-    if (error.message === "USER_NOT_FOUND")
+    if (message === "USER_NOT_FOUND")
       return { success: false, error: "Utilizador não encontrado." };
     console.error("[UPDATE_USER_ERROR]:", error);
     return { success: false, error: "Erro ao actualizar utilizador." };
@@ -123,18 +129,19 @@ export async function deleteUserAction(userId: string, targetChurchId?: string) 
 
     revalidatePath(`/[slug]/configuracoes/utilizadores`, "page");
     return { success: true };
-  } catch (error: any) {
-    if (error.message === "UNAUTHORIZED")
+  } catch (error: unknown) {
+    const message = getErrorMessage(error);
+    if (message === "UNAUTHORIZED")
       return { success: false, error: "Não autenticado." };
-    if (error.message === "FORBIDDEN")
+    if (message === "FORBIDDEN")
       return { success: false, error: "Sem permissão." };
-    if (error.message === "CANNOT_DELETE_SELF")
+    if (message === "CANNOT_DELETE_SELF")
       return { success: false, error: "Não pode eliminar a sua própria conta." };
-    if (error.message === "CANNOT_DELETE_ADMIN")
+    if (message === "CANNOT_DELETE_ADMIN")
       return { success: false, error: "Não pode eliminar o administrador." };
-    if (error.message === "CANNOT_DELETE_LAST_SUPER_ADMIN")
+    if (message === "CANNOT_DELETE_LAST_SUPER_ADMIN")
       return { success: false, error: "Não pode eliminar o único Super Admin do sistema." };
-    if (error.message === "USER_NOT_FOUND")
+    if (message === "USER_NOT_FOUND")
       return { success: false, error: "Utilizador não encontrado." };
     console.error("[DELETE_USER_ERROR]:", error);
     return { success: false, error: "Erro ao eliminar utilizador." };

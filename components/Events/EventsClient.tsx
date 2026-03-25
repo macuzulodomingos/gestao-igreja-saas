@@ -13,6 +13,8 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { ChurchEvent, EventCategory, EventListMember, EventListDepartment } from "@/types/event";
+import { UpgradeModal } from "@/components/UpgradeModal";
+import { useUpgradeModal } from "@/hooks/useUpgradeModal";
 
 interface EventsClientProps {
   initialEvents: ChurchEvent[];
@@ -34,6 +36,7 @@ export default function EventsClient({
   const [editingEvent, setEditingEvent] = useState<ChurchEvent | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<ChurchEvent | null>(null);
   const [eventToDelete, setEventToDelete] = useState<ChurchEvent | null>(null);
+  const upgrade = useUpgradeModal();
 
   const handleAdd = () => {
     setEditingEvent(null);

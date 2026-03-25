@@ -23,8 +23,6 @@ export async function saveDepartmentAction(
   try {
     const { churchId, actor, plan } = await getAuthContext(targetChurchId);
 
-    await checkDepartmentLimit(churchId, plan);
-
     const result = departmentSchema.safeParse(Object.fromEntries(formData.entries()));
     if (!result.success) {
       return { success: false, fieldErrors: result.error.flatten().fieldErrors };
@@ -38,9 +36,11 @@ export async function saveDepartmentAction(
         : result.data.leaderId,
     };
 
+
     if (departmentId) {
       await DepartmentService.updateDepartment(departmentId, churchId, actor, data);
     } else {
+      await checkDepartmentLimit(churchId, plan);
       await DepartmentService.createDepartment(churchId, actor, data);
     }
 
