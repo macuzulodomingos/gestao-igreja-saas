@@ -27,9 +27,10 @@ interface UserFormDialogProps {
   onOpenChange: (open: boolean) => void;
   editingUser: User | null;
   onSuccess: (user: User) => void;
+  onUpgrade?: (message: string) => void; // 👈 NOVO
 }
 
-export function UserFormDialog({ open, onOpenChange, editingUser, onSuccess }: UserFormDialogProps) {
+export function UserFormDialog({ open, onOpenChange, editingUser, onSuccess, onUpgrade }: UserFormDialogProps) {
   const [isPending, startTransition] = useTransition();
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
   const isEditing = !!editingUser;
@@ -56,6 +57,10 @@ export function UserFormDialog({ open, onOpenChange, editingUser, onSuccess }: U
           role: role || editingUser?.role || "OPERATOR",
           createdAt: editingUser?.createdAt ?? new Date(),
         });
+      } else if ("upgrade" in result && result.upgrade) {
+        // 👈 fecha o form e mostra modal de upgrade
+        onOpenChange(false);
+        onUpgrade?.(result.error || "Limite do plano atingido.");
       } else if (result.fieldErrors) {
         setFieldErrors(result.fieldErrors); // 👈 mostra erros por campo
         toast.error("Verifique os erros no formulário.");

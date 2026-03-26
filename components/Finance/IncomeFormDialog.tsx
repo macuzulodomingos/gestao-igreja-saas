@@ -36,9 +36,10 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   entry: FinanceTransaction | null;
   categories: Category[];
+  onUpgrade?: (message: string) => void; // 👈 NOVO
 }
 
-export function IncomeFormDialog({ open, onOpenChange, entry, categories }: Props) {
+export function IncomeFormDialog({ open, onOpenChange, entry, categories, onUpgrade }: Props) {
   const [isPending, startTransition] = useTransition();
 
   const form = useForm<FormData>({
@@ -96,6 +97,10 @@ export function IncomeFormDialog({ open, onOpenChange, entry, categories }: Prop
       if (result.success) {
         toast.success(entry ? "Receita actualizada!" : "Receita registada!");
         onOpenChange(false);
+      } else if ("upgrade" in result && result.upgrade) {
+        // 👈 fecha o form e mostra modal de upgrade
+        onOpenChange(false);
+        onUpgrade?.(result.error || "Limite do plano atingido.");
       } else {
         toast.error(result.error || "Erro ao registar receita.");
       }

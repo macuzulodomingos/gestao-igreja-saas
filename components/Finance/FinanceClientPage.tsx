@@ -234,6 +234,7 @@ export default function FinanceClientPage({
         onOpenChange={setIsIncomeFormOpen}
         entry={editingEntry}
         categories={incomeCategories}
+        onUpgrade={(message) => upgrade.showUpgrade(message)} // 👈 NOVO
       />
 
       <ExpenseFormDialog
@@ -241,6 +242,7 @@ export default function FinanceClientPage({
         onOpenChange={setIsExpenseFormOpen}
         entry={editingEntry}
         categories={expenseCategories}
+        onUpgrade={(message) => upgrade.showUpgrade(message)} // 👈 NOVO
       />
 
       <AlertDialog
@@ -270,6 +272,13 @@ export default function FinanceClientPage({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* 👈 NOVO — adiciona antes do último </div> */}
+      <UpgradeModal
+        open={upgrade.isOpen}
+        onOpenChange={upgrade.onOpenChange}
+        limitMessage={upgrade.message}
+      />
     </div>
   );
 }

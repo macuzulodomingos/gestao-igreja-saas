@@ -40,9 +40,10 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   department: Department | null;
   members: Member[];
+  onUpgrade?: (message: string) => void; // 👈 NOVO
 }
 
-export function DepartmentFormDialog({ open, onOpenChange, department, members }: Props) {
+export function DepartmentFormDialog({ open, onOpenChange, department, members, onUpgrade }: Props) {
   const [isPending, startTransition] = useTransition();
 
   const form = useForm<FormData>({
@@ -79,6 +80,10 @@ export function DepartmentFormDialog({ open, onOpenChange, department, members }
       if (result.success) {
         toast.success(department ? "Departamento actualizado!" : "Departamento criado!");
         onOpenChange(false);
+      } else if ("upgrade" in result && result.upgrade) {
+        // 👈 fecha o form e mostra modal de upgrade
+        onOpenChange(false);
+        onUpgrade?.(result.error || "Limite do plano atingido.");
       } else {
         toast.error(result.error || "Erro ao salvar departamento.");
       }

@@ -154,6 +154,7 @@ export default function UsersClient({ initialUsers, currentUserId }: UsersClient
         open={isFormOpen}
         onOpenChange={setIsFormOpen}
         editingUser={editingUser}
+        onUpgrade={(message) => upgrade.showUpgrade(message)} // 👈 NOVO
         onSuccess={(updatedUser) => {
           if (editingUser) {
             setUsers((prev) => prev.map((u) => u.id === updatedUser.id ? updatedUser : u));
@@ -162,6 +163,13 @@ export default function UsersClient({ initialUsers, currentUserId }: UsersClient
           }
           setIsFormOpen(false);
         }}
+      />
+
+      {/* 👈 NOVO — adiciona no fim */}
+      <UpgradeModal
+        open={upgrade.isOpen}
+        onOpenChange={upgrade.onOpenChange}
+        limitMessage={upgrade.message}
       />
 
       <AlertDialog open={!!userToDelete} onOpenChange={(open) => !open && setUserToDelete(null)}>

@@ -24,9 +24,10 @@ interface Props {
   event: ChurchEvent | null;
   departments: EventListDepartment[];
   categories: EventCategory[]; // 👈 novo
+  onUpgrade?: (message: string) => void; // 👈 NOVO
 }
 
-export function EventFormDialog({ open, onOpenChange, event, departments, categories }: Props) {
+export function EventFormDialog({ open, onOpenChange, event, departments, categories, onUpgrade }: Props) {
   const [isPending, startTransition] = useTransition();
 
   const form = useForm<FormData>({
@@ -89,6 +90,10 @@ export function EventFormDialog({ open, onOpenChange, event, departments, catego
       if (result.success) {
         toast.success(event ? "Evento actualizado!" : "Evento criado!");
         onOpenChange(false);
+      } else if ("upgrade" in result && result.upgrade) {
+        // 👈 fecha o form e mostra modal de upgrade
+        onOpenChange(false);
+        onUpgrade?.(result.error || "Limite do plano atingido.");
       } else if (result.fieldErrors) {
         toast.error("Verifique os erros no formulário.");
       } else {

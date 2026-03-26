@@ -212,6 +212,8 @@ model Subscription {
   church       Church             @relation(fields: [churchId], references: [id], onDelete: Cascade)
   
   status       SubscriptionStatus @default(TRIALING)
+  plan             Plan               @default(FREE)        // 👈 NOVO
+  billingCycle     BillingCycle       @default(MONTHLY)     // 👈 NOVO
   startDate    DateTime           @default(now())
   endDate      DateTime?          
   
@@ -219,6 +221,16 @@ model Subscription {
   currentPeriodEnd DateTime       // 👈 Útil para saber quando vence a mensalidade
   
   paymentProvider  String?        // "Stripe", "Multicaixa", "Transferencia"
+
+  // 👈 NOVOS campos para transferência manual
+  pendingPlan      Plan?              // plano pedido mas ainda não confirmado
+  pendingCycle     BillingCycle?      // ciclo pedido
+  proofOfPayment   String?            // URL do comprovativo
+  proofUploadedAt  DateTime?          // quando foi submetido
+  confirmedBy      String?            // userId do SUPER_ADMIN que confirmou
+  confirmedAt      DateTime?          // quando foi confirmado
+  rejectedAt       DateTime?          // quando foi rejeitado
+  rejectionReason  String?            // motivo da rejeição
   
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt // 👈 Importante para saber quando o plano mudou
@@ -229,6 +241,11 @@ enum SubscriptionStatus {
   PAST_DUE
   CANCELED
   TRIALING
+}
+
+enum BillingCycle {
+  MONTHLY
+  ANNUAL
 }
 
 

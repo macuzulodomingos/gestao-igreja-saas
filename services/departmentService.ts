@@ -1,10 +1,18 @@
 import prisma from "@/lib/prisma";
+import { getDiff } from "@/lib/utils";
 
 export interface CreateDepartmentDTO {
   name: string;
   description?: string;
   leaderId?: string;
 }
+
+type UpdateDepartmentDTO = {
+  name?: string;
+  description?: string;
+  leaderId?: string;
+};
+
 
 export const DepartmentService = {
 
@@ -57,7 +65,7 @@ export const DepartmentService = {
       const department = await tx.department.create({
         data: {
           name: data.name,
-          description: data.description || null,
+          description: data.description?.trim() || null,
           leaderId: data.leaderId || null,
           churchId,
         },
@@ -84,12 +92,12 @@ export const DepartmentService = {
     id: string,
     churchId: string,
     actor: { userId: string; email: string },
-    data: CreateDepartmentDTO
+    data: UpdateDepartmentDTO
   ) {
     return prisma.$transaction(async (tx) => {
       const existing = await tx.department.findUnique({
         where: { id },
-        select: { id: true, name: true, churchId: true, leaderId: true },
+        select: { id: true, name: true, description: true, churchId: true, leaderId: true },
       });
 
       if (!existing) throw new Error("DEPARTMENT_NOT_FOUND");
@@ -107,25 +115,37 @@ export const DepartmentService = {
       const updated = await tx.department.update({
         where: { id },
         data: {
-          name: data.name,
-          description: data.description || null,
-          leaderId: data.leaderId || null,
+          ...(data.name !== undefined && { name: data.name }),
+          ...(data.description !== undefined && {
+            description: data.description?.trim() || null,
+          }),
+          ...(data.leaderId !== undefined && {
+            leaderId: data.leaderId || null,
+          }),
         },
         select: { id: true, name: true, description: true, leaderId: true },
       });
 
-      await tx.auditLog.create({
-        data: {
-          churchId,
-          userId: actor.userId,
-          userEmail: actor.email,
-          action: "UPDATE_DEPARTMENT",
-          entityName: "Department",
-          entityId: id,
-          oldData: { name: existing.name, leaderId: existing.leaderId },
-          newData: { name: data.name, leaderId: data.leaderId ?? null },
-        },
-      });
+      const changes = getDiff(
+        { id: existing.id,name: existing.name, description: existing.description, leaderId: existing.leaderId },
+        updated
+      );
+
+      // Só grava o log se houver alguma diferença real
+      if (Object.keys(changes.new).length > 0) {
+        await tx.auditLog.create({
+          data: {
+            churchId,
+            userId: actor.userId,
+            userEmail: actor.email,
+            action: "UPDATE_DEPARTMENT",
+            entityName: "Department",
+            entityId: id,
+            oldData: changes.old, // Ex: { name: "Antigo" }
+            newData: changes.new, // Ex: { name: "Novo" }
+          },
+        });
+      }
 
       return updated;
     });

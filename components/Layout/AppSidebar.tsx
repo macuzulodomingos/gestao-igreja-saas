@@ -8,6 +8,7 @@ import {
   Wallet,
   Building2,
   ShieldCheck,
+  CreditCard,
   Settings
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
@@ -68,6 +69,12 @@ export function AppSidebar({ slug, initialRole }: AppSidebarProps) {
       url: `/${slug}/departamentos`,
       roles: ["SUPER_ADMIN", "ADMIN", "SECRETARY"],
       icon: Building2,
+    },
+    {
+      title: "Faturamento",
+      url: `/${slug}/billing`,
+      roles: ["SUPER_ADMIN", "ADMIN"],
+      icon: CreditCard,
     },
     {
       title: "Configurações",

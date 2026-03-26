@@ -82,6 +82,7 @@ export default function DepartmentsClient({ initialDepartments, members }: Depar
         onOpenChange={setIsFormOpen}
         department={editingDepartment}
         members={members}
+        onUpgrade={(message) => upgrade.showUpgrade(message)} // 👈 NOVO
       />
 
       {selectedDepartment && (
@@ -117,6 +118,13 @@ export default function DepartmentsClient({ initialDepartments, members }: Depar
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* 👈 NOVO — adiciona no fim */}
+      <UpgradeModal
+        open={upgrade.isOpen}
+        onOpenChange={upgrade.onOpenChange}
+        limitMessage={upgrade.message}
+      />
     </div>
   );
 }

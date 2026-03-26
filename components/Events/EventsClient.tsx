@@ -95,6 +95,7 @@ export default function EventsClient({
         event={editingEvent}
         departments={departments}
         categories={categories} // 👈 NOVO
+        onUpgrade={(message) => upgrade.showUpgrade(message)} // 👈 NOVO
       />
 
       {selectedEvent && (
@@ -131,6 +132,13 @@ export default function EventsClient({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* 👈 NOVO — adiciona no fim */}
+      <UpgradeModal
+        open={upgrade.isOpen}
+        onOpenChange={upgrade.onOpenChange}
+        limitMessage={upgrade.message}
+      />
     </div>
   );
 }
