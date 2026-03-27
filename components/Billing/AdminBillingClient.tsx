@@ -100,7 +100,7 @@ export function AdminBillingClient({ pendingPayments }: { pendingPayments: Pendi
                   <div>
                     <p className="text-muted-foreground">Comprovativo</p>
                     {payment.proofOfPayment ? (
-                      
+                      <a  // 👈 adiciona esta linha
                         href={payment.proofOfPayment}
                         target="_blank"
                         rel="noopener noreferrer"

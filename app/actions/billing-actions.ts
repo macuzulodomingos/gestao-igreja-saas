@@ -18,6 +18,8 @@ const submitProofSchema = z.object({
 export async function submitPaymentProofAction(formData: FormData) {
   try {
     const { churchId, actor } = await getAuthContext();
+    // 👈 TEMPORÁRIO — ver o que está a chegar
+    console.log("[SUBMIT_PROOF] formData entries:", Object.fromEntries(formData.entries()));
 
     const result = submitProofSchema.safeParse(
       Object.fromEntries(formData.entries())
@@ -28,7 +30,7 @@ export async function submitPaymentProofAction(formData: FormData) {
 
     await BillingService.submitPaymentProof(churchId, actor, result.data);
 
-    revalidatePath(`/[slug]/billing`);
+    revalidatePath(`/[slug]/billing`, "page");
     return { success: true };
   } catch (error: unknown) {
     const message = getErrorMessage(error);

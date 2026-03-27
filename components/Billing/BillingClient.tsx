@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { format } from "date-fns";
 import { pt } from "date-fns/locale";
-import { supabaseClient } from "@/lib/supabase-client";
+import { uploadPaymentProofAction } from "@/app/actions/upload-actions";
 
 const PLAN_FEATURES = {
   FREE: ["Até 50 membros", "1 utilizador", "3 departamentos", "10 eventos/mês", "50 transacções/mês"],
@@ -84,32 +84,22 @@ export function BillingClient({ currentPlan, subscription, prices, churchName }:
 
     setIsUploading(true);
 
-    // 👈 Upload directo para Supabase Storage
-    const fileExt = proofFile.name.split(".").pop();
-    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+    // 👈 Upload via Server Action com service role
+    const uploadFormData = new FormData();
+    uploadFormData.append("file", proofFile);
+    const uploadResult = await uploadPaymentProofAction(uploadFormData);
 
-    const { data, error } = await supabaseClient.storage
-      .from("payment-proofs")
-      .upload(fileName, proofFile, {
-        contentType: proofFile.type,
-        cacheControl: "3600",
-      });
-
-    if (error) {
+    if (!uploadResult.success) {
       setIsUploading(false);
-      toast.error("Erro ao fazer upload do comprovativo.");
+      toast.error(uploadResult.error || "Erro ao fazer upload.");
       return;
     }
 
-    // 👈 Gera URL assinada válida por 7 dias para o SUPER_ADMIN ver
-    const { data: signedUrl } = await supabaseClient.storage
-      .from("payment-proofs")
-      .createSignedUrl(data.path, 60 * 60 * 24 * 7); // 7 dias
-
+    // 👈 Submete o comprovativo com a URL
     const formData = new FormData();
     formData.append("plan", selectedPlan);
     formData.append("billingCycle", billingCycle);
-    formData.append("proofOfPayment", signedUrl?.signedUrl ?? data.path);
+    formData.append("proofOfPayment", uploadResult.url!);
 
     const result = await submitPaymentProofAction(formData);
     setIsUploading(false);
