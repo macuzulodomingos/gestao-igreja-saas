@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { FinanceSummary } from "./FinanceSummary";
 import { IncomeList } from "./IncomeList";
@@ -10,8 +10,8 @@ import { ExpenseFormDialog } from "./ExpenseFormDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, TrendingUp, TrendingDown, ChevronLeft, ChevronRight } from "lucide-react";
-import { deleteTransactionAction } from "@/app/actions/finance";
+import { Plus, TrendingUp, TrendingDown, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { deleteTransactionAction, loadMoreTransactionsAction } from "@/app/actions/finance";
 import { toast } from "sonner";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -35,18 +35,26 @@ type Category = {
 interface FinanceClientProps {
   initialIncome: FinanceTransaction[];
   initialExpenses: FinanceTransaction[];
+  initialIncomeCursor: string | null;
+  initialExpenseCursor: string | null;
+  hasMoreIncome: boolean;
+  hasMoreExpenses: boolean;
   stats: FinanceStats;
   incomeCategories: Category[];
   expenseCategories: Category[];
   currentMonth: number;
   currentYear: number;
-  churchName: string; // 👈 NOVO
-  canExportPdf: boolean; // 👈 NOVO
+  churchName: string;
+  canExportPdf: boolean;
 }
 
 export default function FinanceClientPage({
   initialIncome,
   initialExpenses,
+  initialIncomeCursor,
+  initialExpenseCursor,
+  hasMoreIncome,
+  hasMoreExpenses,
   stats,
   incomeCategories,
   expenseCategories,
@@ -57,13 +65,32 @@ export default function FinanceClientPage({
 }: FinanceClientProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const upgrade = useUpgradeModal();
 
   const [isIncomeFormOpen, setIsIncomeFormOpen] = useState(false);
   const [isExpenseFormOpen, setIsExpenseFormOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<FinanceTransaction | null>(null);
   const [activeTab, setActiveTab] = useState("income");
   const [entryToDelete, setEntryToDelete] = useState<FinanceTransaction | null>(null);
-  const upgrade = useUpgradeModal();
+
+  // Estados para paginação
+  const [incomeList, setIncomeList] = useState(initialIncome);
+  const [expenseList, setExpenseList] = useState(initialExpenses);
+  const [incomeCursor, setIncomeCursor] = useState(initialIncomeCursor);
+  const [expenseCursor, setExpenseCursor] = useState(initialExpenseCursor);
+  const [hasMoreInc, setHasMoreInc] = useState(hasMoreIncome);
+  const [hasMoreExp, setHasMoreExp] = useState(hasMoreExpenses);
+  const [loadingMore, setLoadingMore] = useState(false);
+
+  // Reset quando mês/ano muda
+  useEffect(() => {
+    setIncomeList(initialIncome);
+    setExpenseList(initialExpenses);
+    setIncomeCursor(initialIncomeCursor);
+    setExpenseCursor(initialExpenseCursor);
+    setHasMoreInc(hasMoreIncome);
+    setHasMoreExp(hasMoreExpenses);
+  }, [initialIncome, initialExpenses, initialIncomeCursor, initialExpenseCursor, hasMoreIncome, hasMoreExpenses]);
 
   const navigateToMonth = (month: number, year: number) => {
     router.push(`${pathname}?month=${month}&year=${year}`);
@@ -81,13 +108,37 @@ export default function FinanceClientPage({
     const now = new Date();
     const isCurrentMonth = currentMonth === now.getMonth() + 1 && currentYear === now.getFullYear();
     if (isCurrentMonth) return;
-
     if (currentMonth === 12) {
       navigateToMonth(1, currentYear + 1);
     } else {
       navigateToMonth(currentMonth + 1, currentYear);
     }
   };
+
+  const handleLoadMore = async (type: "INCOME" | "EXPENSE") => {
+  const cursor = type === "INCOME" ? incomeCursor : expenseCursor;
+  if (!cursor) return;
+
+  setLoadingMore(true);
+  const result = await loadMoreTransactionsAction(type, currentMonth, currentYear, cursor);
+  setLoadingMore(false);
+
+  if (!result.success || !result.data) {
+    toast.error("Erro ao carregar mais.");
+    return;
+  }
+
+  // 👈 TypeScript já sabe que result.data existe aqui
+  if (type === "INCOME") {
+    setIncomeList(prev => [...prev, ...result.data]);
+    setIncomeCursor(result.nextCursor ?? null);
+    setHasMoreInc(result.hasMore ?? false);
+  } else {
+    setExpenseList(prev => [...prev, ...result.data]);
+    setExpenseCursor(result.nextCursor ?? null);
+    setHasMoreExp(result.hasMore ?? false);
+  }
+};
 
   const handleAdd = () => {
     setEditingEntry(null);
@@ -103,8 +154,8 @@ export default function FinanceClientPage({
 
   const handleDelete = (id: string) => {
     const entry =
-      initialIncome.find(e => e.id === id) ||
-      initialExpenses.find(e => e.id === id);
+      incomeList.find(e => e.id === id) ||
+      expenseList.find(e => e.id === id);
     if (entry) setEntryToDelete(entry);
   };
 
@@ -119,7 +170,6 @@ export default function FinanceClientPage({
   const now = new Date();
   const isCurrentMonth = currentMonth === now.getMonth() + 1 && currentYear === now.getFullYear();
 
-  // Anos disponíveis (5 anos atrás até ao ano actual)
   const years = Array.from(
     { length: 6 },
     (_, i) => now.getFullYear() - 5 + i
@@ -135,22 +185,17 @@ export default function FinanceClientPage({
           </p>
         </div>
 
-        {/* Selector de mês/ano */}
         <div className="flex items-center gap-2">
           <DownloadPDFButton
             churchName={churchName}
             month={currentMonth}
             year={currentYear}
-            income={initialIncome}
-            expenses={initialExpenses}
+            income={incomeList}
+            expenses={expenseList}
             stats={stats}
-            canExportPdf={canExportPdf} // 👈 NOVO
+            canExportPdf={canExportPdf}
           />
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={handlePrevMonth}
-          >
+          <Button variant="outline" size="icon" onClick={handlePrevMonth}>
             <ChevronLeft className="h-4 w-4" />
           </Button>
 
@@ -201,10 +246,10 @@ export default function FinanceClientPage({
         <div className="flex justify-between items-center mb-4">
           <TabsList>
             <TabsTrigger value="income">
-              <TrendingUp className="mr-2 h-4 w-4" /> Receitas ({initialIncome.length})
+              <TrendingUp className="mr-2 h-4 w-4" /> Receitas ({incomeList.length})
             </TabsTrigger>
             <TabsTrigger value="expenses">
-              <TrendingDown className="mr-2 h-4 w-4" /> Despesas ({initialExpenses.length})
+              <TrendingDown className="mr-2 h-4 w-4" /> Despesas ({expenseList.length})
             </TabsTrigger>
           </TabsList>
           <Button onClick={handleAdd} className="gap-2">
@@ -215,17 +260,48 @@ export default function FinanceClientPage({
 
         <TabsContent value="income">
           <IncomeList
-            entries={initialIncome}
+            entries={incomeList}
             onEdit={handleEdit}
             onDelete={handleDelete}
           />
+          {hasMoreInc && (
+            <div className="flex justify-center mt-4">
+              <Button
+                variant="outline"
+                onClick={() => handleLoadMore("INCOME")}
+                disabled={loadingMore}
+              >
+                {loadingMore ? (
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> A carregar...</>
+                ) : (
+                  "Carregar mais receitas"
+                )}
+              </Button>
+            </div>
+          )}
         </TabsContent>
+
         <TabsContent value="expenses">
           <ExpenseList
-            entries={initialExpenses}
+            entries={expenseList}
             onEdit={handleEdit}
             onDelete={handleDelete}
           />
+          {hasMoreExp && (
+            <div className="flex justify-center mt-4">
+              <Button
+                variant="outline"
+                onClick={() => handleLoadMore("EXPENSE")}
+                disabled={loadingMore}
+              >
+                {loadingMore ? (
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> A carregar...</>
+                ) : (
+                  "Carregar mais despesas"
+                )}
+              </Button>
+            </div>
+          )}
         </TabsContent>
       </Tabs>
 
@@ -234,7 +310,7 @@ export default function FinanceClientPage({
         onOpenChange={setIsIncomeFormOpen}
         entry={editingEntry}
         categories={incomeCategories}
-        onUpgrade={(message) => upgrade.showUpgrade(message)} // 👈 NOVO
+        onUpgrade={(message) => upgrade.showUpgrade(message)}
       />
 
       <ExpenseFormDialog
@@ -242,7 +318,7 @@ export default function FinanceClientPage({
         onOpenChange={setIsExpenseFormOpen}
         entry={editingEntry}
         categories={expenseCategories}
-        onUpgrade={(message) => upgrade.showUpgrade(message)} // 👈 NOVO
+        onUpgrade={(message) => upgrade.showUpgrade(message)}
       />
 
       <AlertDialog
@@ -273,7 +349,6 @@ export default function FinanceClientPage({
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* 👈 NOVO — adiciona antes do último </div> */}
       <UpgradeModal
         open={upgrade.isOpen}
         onOpenChange={upgrade.onOpenChange}

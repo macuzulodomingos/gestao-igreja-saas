@@ -8,6 +8,11 @@ import { getErrorMessage, isPrismaError } from "@/lib/errors";
 import { fromZonedTime } from "date-fns-tz";
 import { getTimezone } from "@/lib/get-timezone";
 import { checkTransactionMonthlyLimit } from "@/lib/plan-guard";
+import { FinanceTransaction } from "@/types/finance";
+
+type LoadMoreResult =
+  | { success: true; data: FinanceTransaction[]; nextCursor: string | null; hasMore: boolean }
+  | { success: false; error: string };
 
 export async function saveTransactionAction(
   formData: FormData,
@@ -96,5 +101,39 @@ export async function deleteTransactionAction(
       return { success: false, error: "Transacção já foi eliminada." };
     console.error("[DELETE_TRANSACTION_ERROR]:", error);
     return { success: false, error: "Não foi possível eliminar o registo." };
+  }
+}
+
+
+export async function loadMoreTransactionsAction(
+  type: "INCOME" | "EXPENSE",
+  month: number,
+  year: number,
+  cursor: string,
+  targetChurchId?: string,
+): Promise<LoadMoreResult> {
+  try {
+    const { churchId } = await getAuthContext(targetChurchId);
+    const timezone = await getTimezone(churchId);
+
+    const result = await FinanceService.getTransactions(
+      churchId,
+      20,
+      type,
+      month,
+      year,
+      timezone,
+      cursor
+    );
+
+    return {
+      success: true,
+      data: result.data,
+      nextCursor: result.nextCursor,
+      hasMore: result.hasMore,
+    };
+  } catch (error: unknown) {
+    console.error("[LOAD_MORE_ERROR]:", error);
+    return { success: false, error: "Erro ao carregar mais transacções." };
   }
 }

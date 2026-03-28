@@ -228,11 +228,12 @@ export const FinanceService = {
 
   async getTransactions(
     churchId: string,
-    limit = 50,
+    limit = 20,
     type?: TransactionType,
     month?: number,
     year?: number,
-    timezone = "Africa/Luanda"
+    timezone = "Africa/Luanda",
+    cursor?: string  // 👈 id da última transacção carregada
   ) {
 
     const dateFilter = month && year ? {
@@ -259,16 +260,27 @@ export const FinanceService = {
         category: { select: { id: true, name: true } },
       },
       orderBy: { date: "desc" },
-      take: limit,
+      take: limit + 1, // 👈 busca 1 a mais para saber se há próxima página
+      ...(cursor && {
+        cursor: { id: cursor },
+        skip: 1, // 👈 skip o cursor
+      }),
     });
 
-    return records.map(r => ({
+    const hasMore = records.length > limit;
+    const data = hasMore ? records.slice(0, limit) : records;
+    const nextCursor = hasMore ? data[data.length - 1].id : null;
+
+    return {
+    data: data.map(r => ({
       ...r,
       amount: centsToAmount(r.amount),
       category: r.category.name,
-    }));
-  },
-
+    })),
+    nextCursor,
+    hasMore,
+  };
+},
   async getCategories(churchId: string, type?: TransactionType) {
     return prisma.financeCategory.findMany({
       where: { churchId, ...(type && { type }) },

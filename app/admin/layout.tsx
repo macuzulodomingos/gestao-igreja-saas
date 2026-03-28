@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Church, LayoutDashboard, LogOut, ShieldCheck } from "lucide-react";
+import { Church, LayoutDashboard, LogOut, ShieldCheck, Wallet } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AdminLogoutButton } from "@/components/Admin/AdminLogoutButton";
 
@@ -36,16 +36,16 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <LayoutDashboard className="h-4 w-4" /> Painel Global
           </Link>
           <Link
-            href="/admin/igrejas"
-            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm hover:bg-accent transition-colors"
-          >
-            <Church className="h-4 w-4" /> Igrejas
-          </Link>
-          <Link
             href="/admin/auditoria"
             className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm hover:bg-accent transition-colors"
           >
             <ShieldCheck className="h-4 w-4" /> Auditoria Global
+          </Link>
+          <Link
+            href="/admin/billing"
+            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm hover:bg-accent transition-colors"
+          >
+            <Wallet className="h-4 w-4" /> Pagamentos
           </Link>
         </nav>
 
