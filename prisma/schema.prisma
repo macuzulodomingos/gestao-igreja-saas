@@ -52,6 +52,7 @@ model User {
   emailVerified DateTime? // ADICIONADO: Exigido pelo Auth.js
   image         String?   // ADICIONADO: Exigido pelo Auth.js
   role     UserRole @default(OPERATOR)
+  locale String @default("pt") // 👈 NOVO — "pt" ou "fr"
   churchId String? // 👈 Transformamos em OPCIONAL
   church   Church?   @relation(fields: [churchId], references: [id], onDelete: Cascade)
 

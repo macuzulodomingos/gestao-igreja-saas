@@ -21,10 +21,16 @@ import { DownloadPDFButton } from "./DownloadPDFButton";
 import { FinanceTransaction, FinanceStats } from "@/types/finance";
 import { UpgradeModal } from "@/components/UpgradeModal";
 import { useUpgradeModal } from "@/hooks/useUpgradeModal";
+import { useTranslations } from "next-intl";
 
-const MONTHS = [
+const MONTHS_PT = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
   "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
+];
+
+const MONTHS_FR = [
+  "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+  "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre",
 ];
 
 type Category = {
@@ -66,6 +72,11 @@ export default function FinanceClientPage({
   const router = useRouter();
   const pathname = usePathname();
   const upgrade = useUpgradeModal();
+  const t = useTranslations("finance");
+
+  // 👈 detecta locale pelo pathname
+  const locale = pathname.startsWith("/fr") ? "fr" : "pt";
+  const MONTHS = locale === "fr" ? MONTHS_FR : MONTHS_PT;
 
   const [isIncomeFormOpen, setIsIncomeFormOpen] = useState(false);
   const [isExpenseFormOpen, setIsExpenseFormOpen] = useState(false);
@@ -73,7 +84,6 @@ export default function FinanceClientPage({
   const [activeTab, setActiveTab] = useState("income");
   const [entryToDelete, setEntryToDelete] = useState<FinanceTransaction | null>(null);
 
-  // Estados para paginação
   const [incomeList, setIncomeList] = useState(initialIncome);
   const [expenseList, setExpenseList] = useState(initialExpenses);
   const [incomeCursor, setIncomeCursor] = useState(initialIncomeCursor);
@@ -82,7 +92,6 @@ export default function FinanceClientPage({
   const [hasMoreExp, setHasMoreExp] = useState(hasMoreExpenses);
   const [loadingMore, setLoadingMore] = useState(false);
 
-  // Reset quando mês/ano muda
   useEffect(() => {
     setIncomeList(initialIncome);
     setExpenseList(initialExpenses);
@@ -116,29 +125,28 @@ export default function FinanceClientPage({
   };
 
   const handleLoadMore = async (type: "INCOME" | "EXPENSE") => {
-  const cursor = type === "INCOME" ? incomeCursor : expenseCursor;
-  if (!cursor) return;
+    const cursor = type === "INCOME" ? incomeCursor : expenseCursor;
+    if (!cursor) return;
 
-  setLoadingMore(true);
-  const result = await loadMoreTransactionsAction(type, currentMonth, currentYear, cursor);
-  setLoadingMore(false);
+    setLoadingMore(true);
+    const result = await loadMoreTransactionsAction(type, currentMonth, currentYear, cursor);
+    setLoadingMore(false);
 
-  if (!result.success || !result.data) {
-    toast.error("Erro ao carregar mais.");
-    return;
-  }
+    if (!result.success || !result.data) {
+      toast.error(t("loading"));
+      return;
+    }
 
-  // 👈 TypeScript já sabe que result.data existe aqui
-  if (type === "INCOME") {
-    setIncomeList(prev => [...prev, ...result.data]);
-    setIncomeCursor(result.nextCursor ?? null);
-    setHasMoreInc(result.hasMore ?? false);
-  } else {
-    setExpenseList(prev => [...prev, ...result.data]);
-    setExpenseCursor(result.nextCursor ?? null);
-    setHasMoreExp(result.hasMore ?? false);
-  }
-};
+    if (type === "INCOME") {
+      setIncomeList(prev => [...prev, ...result.data]);
+      setIncomeCursor(result.nextCursor ?? null);
+      setHasMoreInc(result.hasMore ?? false);
+    } else {
+      setExpenseList(prev => [...prev, ...result.data]);
+      setExpenseCursor(result.nextCursor ?? null);
+      setHasMoreExp(result.hasMore ?? false);
+    }
+  };
 
   const handleAdd = () => {
     setEditingEntry(null);
@@ -153,36 +161,28 @@ export default function FinanceClientPage({
   };
 
   const handleDelete = (id: string) => {
-    const entry =
-      incomeList.find(e => e.id === id) ||
-      expenseList.find(e => e.id === id);
+    const entry = incomeList.find(e => e.id === id) || expenseList.find(e => e.id === id);
     if (entry) setEntryToDelete(entry);
   };
 
   const confirmDelete = async () => {
     if (!entryToDelete) return;
     const result = await deleteTransactionAction(entryToDelete.id);
-    if (result.success) toast.success("Eliminado com sucesso!");
-    else toast.error("Erro ao eliminar.");
+    if (result.success) toast.success(t("deleted"));
+    else toast.error(t("errorDelete"));
     setEntryToDelete(null);
   };
 
   const now = new Date();
   const isCurrentMonth = currentMonth === now.getMonth() + 1 && currentYear === now.getFullYear();
-
-  const years = Array.from(
-    { length: 6 },
-    (_, i) => now.getFullYear() - 5 + i
-  );
+  const years = Array.from({ length: 6 }, (_, i) => now.getFullYear() - 5 + i);
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Finanças</h1>
-          <p className="text-muted-foreground">
-            Acompanhe as receitas e despesas da sua igreja.
-          </p>
+          <h1 className="text-3xl font-bold tracking-tight">{t("title")}</h1>
+          <p className="text-muted-foreground">{t("subtitle")}</p>
         </div>
 
         <div className="flex items-center gap-2">
@@ -229,12 +229,7 @@ export default function FinanceClientPage({
             </SelectContent>
           </Select>
 
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={handleNextMonth}
-            disabled={isCurrentMonth}
-          >
+          <Button variant="outline" size="icon" onClick={handleNextMonth} disabled={isCurrentMonth}>
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
@@ -246,59 +241,41 @@ export default function FinanceClientPage({
         <div className="flex justify-between items-center mb-4">
           <TabsList>
             <TabsTrigger value="income">
-              <TrendingUp className="mr-2 h-4 w-4" /> Receitas ({incomeList.length})
+              <TrendingUp className="mr-2 h-4 w-4" /> {t("income")} ({incomeList.length})
             </TabsTrigger>
             <TabsTrigger value="expenses">
-              <TrendingDown className="mr-2 h-4 w-4" /> Despesas ({expenseList.length})
+              <TrendingDown className="mr-2 h-4 w-4" /> {t("expenses")} ({expenseList.length})
             </TabsTrigger>
           </TabsList>
           <Button onClick={handleAdd} className="gap-2">
             <Plus className="h-4 w-4" />
-            Adicionar {activeTab === "income" ? "Receita" : "Despesa"}
+            {activeTab === "income" ? t("addIncome") : t("addExpense")}
           </Button>
         </div>
 
         <TabsContent value="income">
-          <IncomeList
-            entries={incomeList}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-          />
+          <IncomeList entries={incomeList} onEdit={handleEdit} onDelete={handleDelete} />
           {hasMoreInc && (
             <div className="flex justify-center mt-4">
-              <Button
-                variant="outline"
-                onClick={() => handleLoadMore("INCOME")}
-                disabled={loadingMore}
-              >
-                {loadingMore ? (
-                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> A carregar...</>
-                ) : (
-                  "Carregar mais receitas"
-                )}
+              <Button variant="outline" onClick={() => handleLoadMore("INCOME")} disabled={loadingMore}>
+                {loadingMore
+                  ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t("loading")}</>
+                  : t("loadMoreIncome")
+                }
               </Button>
             </div>
           )}
         </TabsContent>
 
         <TabsContent value="expenses">
-          <ExpenseList
-            entries={expenseList}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-          />
+          <ExpenseList entries={expenseList} onEdit={handleEdit} onDelete={handleDelete} />
           {hasMoreExp && (
             <div className="flex justify-center mt-4">
-              <Button
-                variant="outline"
-                onClick={() => handleLoadMore("EXPENSE")}
-                disabled={loadingMore}
-              >
-                {loadingMore ? (
-                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> A carregar...</>
-                ) : (
-                  "Carregar mais despesas"
-                )}
+              <Button variant="outline" onClick={() => handleLoadMore("EXPENSE")} disabled={loadingMore}>
+                {loadingMore
+                  ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t("loading")}</>
+                  : t("loadMoreExpenses")
+                }
               </Button>
             </div>
           )}
@@ -327,23 +304,23 @@ export default function FinanceClientPage({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Tens a certeza?</AlertDialogTitle>
+            <AlertDialogTitle>{t("confirmDelete")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Deseja realmente eliminar este registo de{" "}
+              {t("confirmDeleteDesc")}{" "}
               <strong>
-                {entryToDelete?.type === "INCOME" ? "receita" : "despesa"}
+                {entryToDelete?.type === "INCOME" ? t("income").toLowerCase() : t("expenses").toLowerCase()}
               </strong>{" "}
-              da categoria <strong>{entryToDelete?.category}</strong>?{" "}
-              Esta acção é irreversível.
+              {t("category")} <strong>{entryToDelete?.category}</strong>?{" "}
+              {t("irreversible")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-white hover:bg-destructive/90"
               onClick={confirmDelete}
             >
-              Confirmar Eliminação
+              {t("confirmAction")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

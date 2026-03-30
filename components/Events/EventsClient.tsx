@@ -15,21 +15,22 @@ import {
 import { ChurchEvent, EventCategory, EventListMember, EventListDepartment } from "@/types/event";
 import { UpgradeModal } from "@/components/UpgradeModal";
 import { useUpgradeModal } from "@/hooks/useUpgradeModal";
+import { useTranslations } from "next-intl";
 
 interface EventsClientProps {
   initialEvents: ChurchEvent[];
   members: EventListMember[];
   departments: EventListDepartment[];
-  categories: EventCategory[]; // 👈 NOVO
-  timezone: string; // 👈 NOVO
+  categories: EventCategory[];
+  timezone: string;
 }
 
 export default function EventsClient({
   initialEvents,
   members,
   departments,
-  categories, // 👈 NOVO
-  timezone, // 👈 NOVO
+  categories,
+  timezone,
 }: EventsClientProps) {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isAttendanceOpen, setIsAttendanceOpen] = useState(false);
@@ -37,6 +38,7 @@ export default function EventsClient({
   const [selectedEvent, setSelectedEvent] = useState<ChurchEvent | null>(null);
   const [eventToDelete, setEventToDelete] = useState<ChurchEvent | null>(null);
   const upgrade = useUpgradeModal();
+  const t = useTranslations("events");
 
   const handleAdd = () => {
     setEditingEvent(null);
@@ -61,8 +63,8 @@ export default function EventsClient({
   const confirmDelete = async () => {
     if (!eventToDelete) return;
     const result = await deleteEventAction(eventToDelete.id);
-    if (result.success) toast.success("Evento eliminado!");
-    else toast.error(result.error || "Erro ao eliminar.");
+    if (result.success) toast.success(t("title") + " eliminado!");
+    else toast.error(result.error || t("confirm"));
     setEventToDelete(null);
   };
 
@@ -70,14 +72,12 @@ export default function EventsClient({
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground">Eventos</h1>
-          <p className="text-muted-foreground mt-1">
-            Gere as actividades da sua igreja e controla a frequência.
-          </p>
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground">{t("title")}</h1>
+          <p className="text-muted-foreground mt-1">{t("subtitle")}</p>
         </div>
         <Button onClick={handleAdd} className="gap-2">
           <Plus className="h-4 w-4" />
-          Adicionar Evento
+          {t("addEvent")}
         </Button>
       </div>
 
@@ -86,7 +86,7 @@ export default function EventsClient({
         onEdit={handleEdit}
         onDelete={handleDelete}
         onManageAttendance={handleManageAttendance}
-        timezone={timezone} // 👈 NOVO
+        timezone={timezone}
       />
 
       <EventFormDialog
@@ -94,8 +94,8 @@ export default function EventsClient({
         onOpenChange={setIsFormOpen}
         event={editingEvent}
         departments={departments}
-        categories={categories} // 👈 NOVO
-        onUpgrade={(message) => upgrade.showUpgrade(message)} // 👈 NOVO
+        categories={categories}
+        onUpgrade={(message) => upgrade.showUpgrade(message)}
       />
 
       {selectedEvent && (
@@ -104,7 +104,7 @@ export default function EventsClient({
           onOpenChange={setIsAttendanceOpen}
           event={selectedEvent}
           allMembers={members}
-          timezone={timezone} // 👈 NOVO
+          timezone={timezone}
         />
       )}
 
@@ -114,26 +114,24 @@ export default function EventsClient({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Tens a certeza?</AlertDialogTitle>
+            <AlertDialogTitle>{t("confirmDelete")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Deseja realmente eliminar o evento{" "}
+              {t("confirmDeleteDesc")}{" "}
               <strong>{eventToDelete?.name}</strong>?{" "}
-              Esta acção é irreversível.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-white hover:bg-destructive/90"
               onClick={confirmDelete}
             >
-              Confirmar Eliminação
+              {t("confirm")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* 👈 NOVO — adiciona no fim */}
       <UpgradeModal
         open={upgrade.isOpen}
         onOpenChange={upgrade.onOpenChange}

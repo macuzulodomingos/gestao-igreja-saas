@@ -2,7 +2,9 @@
 import "./globals.css";
 import { Playfair_Display, Inter } from "next/font/google";
 import { Toaster } from "sonner";
-import { Providers } from "@/components/Providers"; // ✅ Importamos o wrapper
+import { Providers } from "@/components/Providers";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale, getMessages } from "next-intl/server";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -17,30 +19,25 @@ const playfair = Playfair_Display({
 });
 
 export const metadata = {
-  title: "ChurchOS - Gestão de Igrejas",
+  title: "Ngunga - Gestão de Igrejas",
   description:
     "Plataforma completa para gestão de igrejas: membros, ministérios, eventos, finanças e comunicação em um só lugar.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+
+
   return (
-    <html 
-      lang="pt-BR" 
+    <html
       className={`${inter.variable} ${playfair.variable}`}
-      suppressHydrationWarning // ✅ Evita avisos de conflito com o ThemeProvider
+      suppressHydrationWarning
     >
       <body className="min-h-screen bg-background font-sans antialiased">
-        {/* ✅ O Providers envolve toda a aplicação */}
-        <Providers>
-          {children}
-          
-          {/* Toaster posicionado para não sobrepor elementos da UI */}
-          <Toaster richColors closeButton position="top-right" />
-        </Providers>
+       {children}
       </body>
     </html>
   );

@@ -15,6 +15,7 @@ import { Loader2 } from "lucide-react";
 import { eventSchema } from "@/lib/validations/event";
 import { saveEventAction } from "@/app/actions/event-actions";
 import { ChurchEvent, EventCategory, EventListDepartment } from "@/types/event";
+import { useTranslations } from "next-intl";
 
 type FormData = z.infer<typeof eventSchema>;
 
@@ -23,12 +24,14 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   event: ChurchEvent | null;
   departments: EventListDepartment[];
-  categories: EventCategory[]; // 👈 novo
-  onUpgrade?: (message: string) => void; // 👈 NOVO
+  categories: EventCategory[];
+  onUpgrade?: (message: string) => void;
 }
 
 export function EventFormDialog({ open, onOpenChange, event, departments, categories, onUpgrade }: Props) {
   const [isPending, startTransition] = useTransition();
+  const t = useTranslations("events.form");
+  const tc = useTranslations("common");
 
   const form = useForm<FormData>({
     resolver: zodResolver(eventSchema),
@@ -45,15 +48,13 @@ export function EventFormDialog({ open, onOpenChange, event, departments, catego
   useEffect(() => {
     if (open) {
       if (event) {
-        // 👈 extrai date e time do startAt usando timezone do navegador
         const startAt = new Date(event.startAt);
-        const date = startAt.toLocaleDateString("en-CA"); // formato YYYY-MM-DD
+        const date = startAt.toLocaleDateString("en-CA");
         const time = startAt.toLocaleTimeString("pt-AO", {
           hour: "2-digit",
           minute: "2-digit",
           hour12: false,
         });
-
         form.reset({
           name: event.name,
           description: event.description || "",
@@ -88,16 +89,15 @@ export function EventFormDialog({ open, onOpenChange, event, departments, catego
       const result = await saveEventAction(formData, event?.id ?? undefined);
 
       if (result.success) {
-        toast.success(event ? "Evento actualizado!" : "Evento criado!");
+        toast.success(event ? t("updated") : t("created"));
         onOpenChange(false);
       } else if ("upgrade" in result && result.upgrade) {
-        // 👈 fecha o form e mostra modal de upgrade
         onOpenChange(false);
-        onUpgrade?.(result.error || "Limite do plano atingido.");
+        onUpgrade?.(result.error || tc("upgrade"));
       } else if (result.fieldErrors) {
-        toast.error("Verifique os erros no formulário.");
+        toast.error(t("checkErrors"));
       } else {
-        toast.error(result.error || "Erro ao salvar evento.");
+        toast.error(result.error || t("error"));
       }
     });
   };
@@ -106,35 +106,34 @@ export function EventFormDialog({ open, onOpenChange, event, departments, catego
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{event ? "Editar Evento" : "Adicionar Evento"}</DialogTitle>
+          <DialogTitle>{event ? t("editTitle") : t("addTitle")}</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
 
             <FormField control={form.control} name="name" render={({ field }) => (
               <FormItem>
-                <FormLabel>Nome do Evento</FormLabel>
+                <FormLabel>{t("name")}</FormLabel>
                 <FormControl>
-                  <Input placeholder="Ex: Culto de Domingo" {...field} />
+                  <Input placeholder={t("namePlaceholder")} {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )} />
 
-            {/* 👈 Categoria dinâmica em vez de type fixo */}
             <FormField control={form.control} name="categoryId" render={({ field }) => (
               <FormItem>
-                <FormLabel>Categoria</FormLabel>
+                <FormLabel>{t("category")}</FormLabel>
                 <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecione a categoria" />
+                      <SelectValue placeholder={t("categoryPlaceholder")} />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
                     {categories.length === 0 ? (
                       <SelectItem value="no-categories" disabled>
-                        Nenhuma categoria — crie em Configurações
+                        {t("noCategories")}
                       </SelectItem>
                     ) : (
                       categories.map(cat => (
@@ -152,14 +151,14 @@ export function EventFormDialog({ open, onOpenChange, event, departments, catego
             <div className="grid grid-cols-2 gap-4">
               <FormField control={form.control} name="date" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Data</FormLabel>
+                  <FormLabel>{t("date")}</FormLabel>
                   <FormControl><Input type="date" {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
               <FormField control={form.control} name="time" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Hora</FormLabel>
+                  <FormLabel>{t("time")}</FormLabel>
                   <FormControl><Input type="time" {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
@@ -168,15 +167,15 @@ export function EventFormDialog({ open, onOpenChange, event, departments, catego
 
             <FormField control={form.control} name="departmentId" render={({ field }) => (
               <FormItem>
-                <FormLabel>Departamento (Opcional)</FormLabel>
+                <FormLabel>{t("department")}</FormLabel>
                 <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecione o departamento" />
+                      <SelectValue placeholder={t("departmentPlaceholder")} />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="none">Sem departamento</SelectItem>
+                    <SelectItem value="none">{t("noDepartment")}</SelectItem>
                     {departments.map(dept => (
                       <SelectItem key={dept.id} value={dept.id}>{dept.name}</SelectItem>
                     ))}
@@ -188,10 +187,10 @@ export function EventFormDialog({ open, onOpenChange, event, departments, catego
 
             <FormField control={form.control} name="description" render={({ field }) => (
               <FormItem>
-                <FormLabel>Descrição (Opcional)</FormLabel>
+                <FormLabel>{t("description")}</FormLabel>
                 <FormControl>
                   <Textarea
-                    placeholder="Breve descrição do evento..."
+                    placeholder={t("descriptionPlaceholder")}
                     className="resize-none"
                     rows={3}
                     {...field}
@@ -203,12 +202,12 @@ export function EventFormDialog({ open, onOpenChange, event, departments, catego
 
             <div className="flex justify-end gap-3 pt-4">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                Cancelar
+                {tc("cancel")}
               </Button>
               <Button type="submit" disabled={isPending}>
                 {isPending
                   ? <Loader2 className="h-4 w-4 animate-spin" />
-                  : event ? "Salvar alterações" : "Adicionar Evento"
+                  : event ? t("save") : t("add")
                 }
               </Button>
             </div>

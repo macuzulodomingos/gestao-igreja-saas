@@ -15,6 +15,7 @@ import {
 import { Department, DepartmentListMember } from "@/types/department";
 import { UpgradeModal } from "@/components/UpgradeModal";
 import { useUpgradeModal } from "@/hooks/useUpgradeModal";
+import { useTranslations } from "next-intl";
 
 interface DepartmentsClientProps {
   initialDepartments: Department[];
@@ -28,6 +29,7 @@ export default function DepartmentsClient({ initialDepartments, members }: Depar
   const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null);
   const [departmentToDelete, setDepartmentToDelete] = useState<Department | null>(null);
   const upgrade = useUpgradeModal();
+  const t = useTranslations("departments");
 
   const handleAdd = () => {
     setEditingDepartment(null);
@@ -52,8 +54,8 @@ export default function DepartmentsClient({ initialDepartments, members }: Depar
   const confirmDelete = async () => {
     if (!departmentToDelete) return;
     const result = await deleteDepartmentAction(departmentToDelete.id);
-    if (result.success) toast.success("Departamento eliminado!");
-    else toast.error(result.error || "Erro ao eliminar.");
+    if (result.success) toast.success(t("title") + " eliminado!");
+    else toast.error(result.error || t("confirm"));
     setDepartmentToDelete(null);
   };
 
@@ -61,12 +63,12 @@ export default function DepartmentsClient({ initialDepartments, members }: Depar
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground">Departamentos</h1>
-          <p className="text-muted-foreground mt-1">Organizar ministérios e responsabilidades</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground">{t("title")}</h1>
+          <p className="text-muted-foreground mt-1">{t("subtitle")}</p>
         </div>
         <Button onClick={handleAdd} className="gap-2">
           <Plus className="h-4 w-4" />
-          Adicionar Departamento
+          {t("addDepartment")}
         </Button>
       </div>
 
@@ -82,7 +84,7 @@ export default function DepartmentsClient({ initialDepartments, members }: Depar
         onOpenChange={setIsFormOpen}
         department={editingDepartment}
         members={members}
-        onUpgrade={(message) => upgrade.showUpgrade(message)} // 👈 NOVO
+        onUpgrade={(message) => upgrade.showUpgrade(message)}
       />
 
       {selectedDepartment && (
@@ -100,7 +102,7 @@ export default function DepartmentsClient({ initialDepartments, members }: Depar
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Tens a certeza?</AlertDialogTitle>
+            <AlertDialogTitle>{t("confirmDelete")}</AlertDialogTitle>
             <AlertDialogDescription>
               Deseja realmente eliminar o departamento{" "}
               <strong>{departmentToDelete?.name}</strong>?{" "}
@@ -108,18 +110,17 @@ export default function DepartmentsClient({ initialDepartments, members }: Depar
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-white hover:bg-destructive/90"
               onClick={confirmDelete}
             >
-              Confirmar Eliminação
+              {t("confirm")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* 👈 NOVO — adiciona no fim */}
       <UpgradeModal
         open={upgrade.isOpen}
         onOpenChange={upgrade.onOpenChange}

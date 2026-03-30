@@ -5,6 +5,7 @@ import { MembersChart } from "@/components/Dashboard/MembersChart";
 import { FinanceChart } from "@/components/Dashboard/FinanceChart";
 import { RecentMembers } from "@/components/Dashboard/RecentMembers";
 import { RecentTransactions } from "@/components/Dashboard/RecentTransactions";
+import { useTranslations } from "next-intl";
 
 type Stats = {
   totalMembers: number;
@@ -38,8 +39,8 @@ interface DashboardShellProps {
   stats: Stats;
   recentMembers: RecentMember[];
   recentTransactions: RecentTransaction[];
-  membersChart: MembersChartPoint[]; // 👈
-  financeChart: FinanceChartPoint[];  // 👈
+  membersChart: MembersChartPoint[];
+  financeChart: FinanceChartPoint[];
 }
 
 export default function DashboardShell({
@@ -49,13 +50,13 @@ export default function DashboardShell({
   membersChart,
   financeChart,
 }: DashboardShellProps) {
+  const t = useTranslations("dashboard");
+
   return (
     <div className="space-y-6 md:space-y-8">
       <div>
-        <h1 className="text-2xl md:text-3xl font-bold text-foreground">Painel Principal</h1>
-        <p className="text-muted-foreground mt-1">
-          Bem-vindo de volta! Aqui está o que está acontecendo com a sua igreja.
-        </p>
+        <h1 className="text-2xl md:text-3xl font-bold text-foreground">{t("title")}</h1>
+        <p className="text-muted-foreground mt-1">{t("welcome")}</p>
       </div>
 
       <StatsGrid stats={stats} />

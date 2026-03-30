@@ -3,61 +3,35 @@
 import { useState, useTransition, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
-  Search,
-  MoreHorizontal,
-  Mail,
-  Phone,
-  Loader2,
-  UserPlus,
-  Calendar,
-  ChevronLeft,
-  ChevronRight,
+  Search, MoreHorizontal, Mail, Phone, Loader2,
+  UserPlus, Calendar, ChevronLeft, ChevronRight,
 } from "lucide-react";
 import { toast } from "sonner";
-import { format } from "date-fns";
-
+import { useTranslations } from "next-intl"; // 👈 NOVO
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead,
+  TableHeader, TableRow,
 } from "@/components/ui/table";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
+  DropdownMenu, DropdownMenuContent,
+  DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
+  Dialog, DialogContent, DialogHeader,
+  DialogTitle, DialogTrigger, DialogFooter,
 } from "@/components/ui/dialog";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
+  AlertDialog, AlertDialogAction, AlertDialogCancel,
+  AlertDialogContent, AlertDialogDescription,
+  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-
 import {
-  createMemberAction,
-  deleteMemberAction,
-  updateMemberAction,
+  createMemberAction, deleteMemberAction, updateMemberAction,
 } from "@/app/actions/member-actions";
 import { useDebounce } from "@/hooks/use-debounce";
 import { MemberHistorySheet } from "@/components/Member/MemberHistorySheet";
@@ -69,7 +43,7 @@ const roleColors: Record<string, string> = {
   Pastor: "bg-primary/10 text-primary",
   Ancião: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
   Diácono: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
-  default: "bg-muted text-muted-foreground", // 👈 fallback para qualquer outro cargo
+  default: "bg-muted text-muted-foreground",
 };
 
 const statusColors: Record<string, string> = {
@@ -88,34 +62,23 @@ interface MemberClientProps {
     totalMembers: number;
   };
   roles: MemberRole[];
-
 }
 
-
-// Esta função extrai o dia, mês e ano "puros" (UTC)
 const formatarDataSemFuso = (
   dataInput: string | Date,
   formato: "input" | "exibicao" = "exibicao",
 ) => {
   if (!dataInput) return "";
   const d = new Date(dataInput);
-
   const dia = String(d.getUTCDate()).padStart(2, "0");
-  const mes = String(d.getUTCMonth() + 1).padStart(2, "0"); // +1 porque janeiro é 0
+  const mes = String(d.getUTCMonth() + 1).padStart(2, "0");
   const ano = d.getUTCFullYear();
-
-  // O <input type="date"> exige o formato AAAA-MM-DD
   if (formato === "input") return `${ano}-${mes}-${dia}`;
-
-  // Na tabela queremos DD/MM/AAAA
   return `${dia}/${mes}/${ano}`;
 };
 
 export default function MemberClient({
-  initialMembers,
-  slug,
-  metadata,
-  roles,
+  initialMembers, slug, metadata, roles,
 }: MemberClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -123,34 +86,24 @@ export default function MemberClient({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<Member | null>(null);
   const [memberToDelete, setMemberToDelete] = useState<Member | null>(null);
-
-  // Estado para erros de validação do Zod
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
-
-  // Lógica de Busca
-  const [searchQuery, setSearchQuery] = useState(
-    searchParams.get("search") || "",
-  );
+  const [searchQuery, setSearchQuery] = useState(searchParams.get("search") || "");
   const debouncedSearch = useDebounce(searchQuery, 500);
-  const upgrade = useUpgradeModal(); // 👈 NOVO
+  const upgrade = useUpgradeModal();
+  const t = useTranslations("members"); // 👈 NOVO
+  const tc = useTranslations("common"); // 👈 NOVO
 
   useEffect(() => {
     const currentQuery = searchParams.toString();
     const params = new URLSearchParams(currentQuery);
-
     if (debouncedSearch) {
       params.set("search", debouncedSearch);
       params.set("page", "1");
     } else {
       params.delete("search");
     }
-
     const newQuery = params.toString();
-
-    // Se a URL pretendida for igual à atual, não faz nada
     if (newQuery === currentQuery) return;
-
-    // Use replace para a busca não poluir o histórico do navegador
     router.replace(`/${slug}/membros?${newQuery}`);
   }, [debouncedSearch, searchParams, slug, router]);
 
@@ -165,8 +118,6 @@ export default function MemberClient({
     setFieldErrors({});
     const formData = new FormData(event.currentTarget);
 
-    // 1. Chamada de rede FORA do startTransition
-    // (Aqui você usaria um setState manual de loading se não quiser o useTransition)
     let result;
     if (editingMember) {
       result = await updateMemberAction(editingMember.id, formData, slug);
@@ -174,42 +125,30 @@ export default function MemberClient({
       result = await createMemberAction(formData);
     }
 
-    // 2. Tratamento do resultado
     if (result.success) {
-      // Transição de UI: O que acontece APÓS o sucesso
       startTransition(() => {
         setIsModalOpen(false);
         setEditingMember(null);
       });
-
-      toast.success(
-        editingMember ? "Membro atualizado!" : "Membro adicionado!",
-      );
+      toast.success(editingMember ? t("save") : t("register"));
       (event.target as HTMLFormElement).reset();
     } else if ("upgrade" in result && result.upgrade) {
-      // 👈 mostra modal de upgrade
-      upgrade.showUpgrade(result.error || "Limite do plano atingido.");
+      upgrade.showUpgrade(result.error || tc("upgrade"));
     } else if (result.fieldErrors) {
-        setFieldErrors(result.fieldErrors);
-        toast.error("Verifique os erros no formulário.");
-      } else {
-        // Ajuste aqui: Mensagem dinâmica baseada no modo (Edição ou Criação)
-        const fallbackError = editingMember
-          ? "Erro ao atualizar os dados do membro."
-          : "Erro ao realizar o cadastro do membro.";
-
-        toast.error(result.error || fallbackError);
-      }
+      setFieldErrors(result.fieldErrors);
+      toast.error(tc("error"));
+    } else {
+      toast.error(result.error || tc("error"));
     }
-  
+  }
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Membros</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t("title")}</h1>
           <p className="text-muted-foreground">
-            Listagem oficial de membros da /{slug}
+            {t("subtitle")} /{slug}
           </p>
         </div>
 
@@ -226,122 +165,79 @@ export default function MemberClient({
           <DialogTrigger asChild>
             <Button className="gap-2">
               <UserPlus className="h-4 w-4" />
-              Novo Membro
+              {t("newMember")}
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
               <DialogTitle>
-                {editingMember ? "Editar Membro" : "Cadastrar Membro"}
+                {editingMember ? t("editMember") : t("addMember")}
               </DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="grid gap-4 py-4">
-              {/* Nome */}
               <div className="grid gap-2">
-                <label
-                  htmlFor="name"
-                  className={`text-sm font-medium ${fieldErrors.name ? "text-destructive" : ""}`}
-                >
-                  Nome
+                <label htmlFor="name" className={`text-sm font-medium ${fieldErrors.name ? "text-destructive" : ""}`}>
+                  {t("fullName")}
                 </label>
                 <Input
-                  id="name"
-                  name="name"
-                  defaultValue={editingMember?.name || ""} // Adicione isso
-                  placeholder="Nome completo"
+                  id="name" name="name"
+                  defaultValue={editingMember?.name || ""}
+                  placeholder={t("fullName")}
                   className={fieldErrors.name ? "border-destructive" : ""}
                 />
-                {fieldErrors.name && (
-                  <p className="text-xs text-destructive">
-                    {fieldErrors.name[0]}
-                  </p>
-                )}
+                {fieldErrors.name && <p className="text-xs text-destructive">{fieldErrors.name[0]}</p>}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                {/* Email */}
                 <div className="grid gap-2">
-                  <label
-                    htmlFor="email"
-                    className={`text-sm font-medium ${fieldErrors.email ? "text-destructive" : ""}`}
-                  >
-                    Email
+                  <label htmlFor="email" className={`text-sm font-medium ${fieldErrors.email ? "text-destructive" : ""}`}>
+                    {t("email")}
                   </label>
                   <Input
-                    id="email"
-                    name="email"
+                    id="email" name="email" type="email"
                     defaultValue={editingMember?.email || ""}
-                    type="email"
                     placeholder="ex@email.com"
                     className={fieldErrors.email ? "border-destructive" : ""}
                   />
-                  {fieldErrors.email && (
-                    <p className="text-xs text-destructive">
-                      {fieldErrors.email[0]}
-                    </p>
-                  )}
+                  {fieldErrors.email && <p className="text-xs text-destructive">{fieldErrors.email[0]}</p>}
                 </div>
-                {/* Telefone */}
                 <div className="grid gap-2">
-                  <label
-                    htmlFor="phone"
-                    className={`text-sm font-medium ${fieldErrors.phone ? "text-destructive" : ""}`}
-                  >
-                    Telefone
+                  <label htmlFor="phone" className={`text-sm font-medium ${fieldErrors.phone ? "text-destructive" : ""}`}>
+                    {t("phone")}
                   </label>
                   <Input
-                    id="phone"
-                    name="phone"
+                    id="phone" name="phone"
                     defaultValue={editingMember?.phone || ""}
                     placeholder="9xx xxx xxx"
                     className={fieldErrors.phone ? "border-destructive" : ""}
                   />
-                  {fieldErrors.phone && (
-                    <p className="text-xs text-destructive">
-                      {fieldErrors.phone[0]}
-                    </p>
-                  )}
+                  {fieldErrors.phone && <p className="text-xs text-destructive">{fieldErrors.phone[0]}</p>}
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                {/* Função */}
                 <div className="grid gap-2">
-                  <label
-                    htmlFor="role"
-                    className={`text-sm font-medium ${fieldErrors.role ? "text-destructive" : ""}`}
-                  >
-                    Cargo
+                  <label htmlFor="role" className={`text-sm font-medium ${fieldErrors.role ? "text-destructive" : ""}`}>
+                    {t("position")}
                   </label>
                   <select
-                    id="role"
-                    name="role"
+                    id="role" name="role"
                     defaultValue={editingMember?.role?.id || ""}
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
-                    <option value="">Sem cargo</option>
+                    <option value="">{t("noRole")}</option>
                     {roles.map(role => (
-                      <option key={role.id} value={role.id}>
-                        {role.name}
-                      </option>
+                      <option key={role.id} value={role.id}>{role.name}</option>
                     ))}
                   </select>
-                  {fieldErrors.role && (
-                    <p className="text-xs text-destructive">{fieldErrors.role[0]}</p>
-                  )}
+                  {fieldErrors.role && <p className="text-xs text-destructive">{fieldErrors.role[0]}</p>}
                 </div>
-                {/* Data */}
                 <div className="grid gap-2">
-                  <label
-                    htmlFor="joinDate"
-                    className={`text-sm font-medium ${fieldErrors.joinDate ? "text-destructive" : ""}`}
-                  >
-                    Ingresso
+                  <label htmlFor="joinDate" className={`text-sm font-medium ${fieldErrors.joinDate ? "text-destructive" : ""}`}>
+                    {t("admission")}
                   </label>
                   <Input
-                    id="joinDate"
-                    name="joinDate"
-                    type="date"
+                    id="joinDate" name="joinDate" type="date"
                     className={fieldErrors.joinDate ? "border-destructive" : ""}
                     defaultValue={
                       editingMember?.joinDate
@@ -349,30 +245,24 @@ export default function MemberClient({
                         : new Date().toISOString().split("T")[0]
                     }
                   />
-                  {fieldErrors.joinDate && (
-                    <p className="text-xs text-destructive">
-                      {fieldErrors.joinDate[0]}
-                    </p>
-                  )}
+                  {fieldErrors.joinDate && <p className="text-xs text-destructive">{fieldErrors.joinDate[0]}</p>}
                 </div>
               </div>
 
-              {/* 👇 ADICIONA AQUI */}
               {editingMember && (
                 <div className="grid gap-2">
                   <label htmlFor="status" className="text-sm font-medium">
-                    Status
+                    {t("status")}
                   </label>
                   <select
-                    id="status"
-                    name="status"
+                    id="status" name="status"
                     defaultValue={editingMember?.status || "ATIVO"}
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
-                    <option value="ATIVO">Ativo</option>
-                    <option value="INATIVO">Inativo</option>
-                    <option value="TRANSFERIDO">Transferido</option>
-                    <option value="FALECIDO">Falecido</option>
+                    <option value="ATIVO">{t("active")}</option>
+                    <option value="INATIVO">{t("inactive")}</option>
+                    <option value="TRANSFERIDO">{t("transferred")}</option>
+                    <option value="FALECIDO">{t("deceased")}</option>
                   </select>
                 </div>
               )}
@@ -382,9 +272,9 @@ export default function MemberClient({
                   {isPending ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   ) : editingMember ? (
-                    "Salvar Alterações"
+                    t("save")
                   ) : (
-                    "Confirmar Cadastro"
+                    t("register")
                   )}
                 </Button>
               </DialogFooter>
@@ -402,13 +292,13 @@ export default function MemberClient({
       <Card className="border-none shadow-sm">
         <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-4">
           <CardTitle className="text-base font-medium">
-            Total ({metadata.totalMembers})
+            {t("total")} ({metadata.totalMembers})
           </CardTitle>
           <div className="relative w-full max-w-sm">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
-              placeholder="Buscar no servidor..."
+              placeholder={t("search")}
               className="pl-8"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -419,22 +309,19 @@ export default function MemberClient({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Membro</TableHead>
-                <TableHead className="hidden md:table-cell">Contato</TableHead>
-                <TableHead>Cargo</TableHead>
-                <TableHead className="hidden lg:table-cell">Ingresso</TableHead>
-                <TableHead className="hidden sm:table-cell">Status</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
+                <TableHead>{t("name")}</TableHead>
+                <TableHead className="hidden md:table-cell">{t("contact")}</TableHead>
+                <TableHead>{t("role")}</TableHead>
+                <TableHead className="hidden lg:table-cell">{t("joinDate")}</TableHead>
+                <TableHead className="hidden sm:table-cell">{t("status")}</TableHead>
+                <TableHead className="text-right">{t("actions")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {initialMembers.length === 0 ? (
                 <TableRow>
-                  <TableCell
-                    colSpan={6}
-                    className="text-center py-10 text-muted-foreground"
-                  >
-                    Nenhum membro encontrado.
+                  <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">
+                    {t("noMembers")}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -450,7 +337,7 @@ export default function MemberClient({
                         <div className="flex flex-col">
                           <span>{member.name}</span>
                           <span className="text-[10px] text-muted-foreground lg:hidden">
-                            {format(new Date(member.joinDate), "dd/MM/yy")}
+                            {formatarDataSemFuso(member.joinDate)}
                           </span>
                         </div>
                       </div>
@@ -468,7 +355,7 @@ export default function MemberClient({
                         className={roleColors[member.role?.name || ""] || roleColors.default}
                         variant="secondary"
                       >
-                        {member.role?.name || "Sem cargo"}
+                        {member.role?.name || t("noRole")}
                       </Badge>
                     </TableCell>
                     <TableCell className="hidden lg:table-cell text-xs text-muted-foreground">
@@ -480,7 +367,7 @@ export default function MemberClient({
                     <TableCell className="hidden sm:table-cell">
                       <Badge
                         variant="outline"
-                        className={`font-medium ${statusColors[member.status] || statusColors.Inativo}`}
+                        className={`font-medium ${statusColors[member.status] || statusColors.INATIVO}`}
                       >
                         {member.status}
                       </Badge>
@@ -493,14 +380,13 @@ export default function MemberClient({
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem>Ver Perfil</DropdownMenuItem>
-                          {/* ADICIONE ISSO AQUI: */}
+                          <DropdownMenuItem>{t("profile")}</DropdownMenuItem>
                           <DropdownMenuItem asChild>
                             <MemberHistorySheet
                               member={member}
                               trigger={
                                 <div className="flex w-full cursor-pointer items-center">
-                                  <span>Ver Histórico</span>
+                                  <span>{t("history")}</span>
                                 </div>
                               }
                             />
@@ -511,16 +397,16 @@ export default function MemberClient({
                               setIsModalOpen(true);
                             }}
                           >
-                            Editar
+                            {t("edit")}
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             className="text-destructive"
                             onSelect={(e) => {
-                              e.preventDefault(); // Impede o dropdown de fechar e "matar" o modal
+                              e.preventDefault();
                               setMemberToDelete(member);
                             }}
                           >
-                            Excluir
+                            {t("delete")}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -537,31 +423,32 @@ export default function MemberClient({
           >
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                <AlertDialogTitle>{t("confirmDelete")}</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Deseja realmente remover{" "}
-                  <strong>{memberToDelete?.name}</strong>? Esta ação é
-                  irreversível e removerá todos os dados deste membro.
+                  {t("confirmDeleteDesc")}{" "}
+                  <strong>{memberToDelete?.name}</strong>?
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
                 <AlertDialogAction
-                  disabled={isPending} // 👈 Adicione isso
+                  disabled={isPending}
                   className="bg-destructive text-white hover:bg-destructive/90"
                   onClick={async () => {
                     if (!memberToDelete) return;
-
                     const result = await deleteMemberAction(memberToDelete.id);
                     if (result.success) {
-                      toast.success("Membro removido com sucesso!");
+                      toast.success(tc("success"));
                     } else {
                       toast.error(result.error);
                     }
                     setMemberToDelete(null);
                   }}
                 >
-                  {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Confirmar Exclusão"}
+                  {isPending
+                    ? <Loader2 className="h-4 w-4 animate-spin" />
+                    : t("confirm")
+                  }
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
@@ -569,26 +456,22 @@ export default function MemberClient({
 
           <div className="flex items-center justify-between mt-6">
             <p className="text-sm text-muted-foreground">
-              Página {metadata.currentPage} de {metadata.totalPages}
+              {t("page")} {metadata.currentPage} {t("of")} {metadata.totalPages}
             </p>
             <div className="flex items-center gap-2">
               <Button
-                variant="outline"
-                size="sm"
+                variant="outline" size="sm"
                 onClick={() => handlePageChange(metadata.currentPage - 1)}
                 disabled={metadata.currentPage <= 1 || isPending}
               >
-                <ChevronLeft className="h-4 w-4 mr-1" /> Anterior
+                <ChevronLeft className="h-4 w-4 mr-1" /> {t("previous")}
               </Button>
               <Button
-                variant="outline"
-                size="sm"
+                variant="outline" size="sm"
                 onClick={() => handlePageChange(metadata.currentPage + 1)}
-                disabled={
-                  metadata.currentPage >= metadata.totalPages || isPending
-                }
+                disabled={metadata.currentPage >= metadata.totalPages || isPending}
               >
-                Próximo <ChevronRight className="h-4 w-4 ml-1" />
+                {t("next")} <ChevronRight className="h-4 w-4 ml-1" />
               </Button>
             </div>
           </div>

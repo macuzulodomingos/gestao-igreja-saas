@@ -4,13 +4,13 @@ import { getChurchBySlug } from "@/lib/tenant";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { TenantClientWrapper } from "@/components/Layout/TenantClientWrapper";
+import { setRequestLocale } from "next-intl/server";
 
-// ✅ Isso impede o cache de mostrar o menu vazio
 export const dynamic = "force-dynamic";
 
 interface TenantLayoutProps {
   children: React.ReactNode;
-  params: Promise<{ slug: string }>;
+  params: Promise<{ slug: string; locale: string }>;
 }
 
 export default async function TenantLayout({
@@ -18,10 +18,13 @@ export default async function TenantLayout({
   params,
 }: TenantLayoutProps) {
   const session = await auth();
-  const { slug } = await params;
+  const { slug, locale } = await params;
+
+  // 👈 configura locale imediatamente após receber dos params
+  setRequestLocale(locale);
 
   if (!session?.user) {
-    redirect("/login");
+    redirect(`/${locale}/login`);
   }
 
   const isSuperAdmin = session.user.role === "SUPER_ADMIN";
@@ -29,9 +32,9 @@ export default async function TenantLayout({
 
   if (!isCorrectChurch && !isSuperAdmin) {
     if (session.user.churchSlug) {
-      redirect(`/${session.user.churchSlug}/painel`);
+      redirect(`/${locale}/${session.user.churchSlug}/painel`);
     } else {
-      redirect("/login");
+      redirect(`/${locale}/login`);
     }
   }
 
@@ -43,10 +46,8 @@ export default async function TenantLayout({
 
   return (
     <TenantClientWrapper>
-      {/* O suppressHydrationWarning evita que extensões de terceiros quebrem o app */}
       <div className="min-h-screen flex w-full bg-background" suppressHydrationWarning>
         <AppSidebar slug={slug} initialRole={session.user.role} />
-
         <div className="flex-1 flex flex-col min-w-0">
           <DashboardHeader church={church} user={session.user} />
           <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-auto">
@@ -57,3 +58,9 @@ export default async function TenantLayout({
     </TenantClientWrapper>
   );
 }
+
+
+
+
+
+

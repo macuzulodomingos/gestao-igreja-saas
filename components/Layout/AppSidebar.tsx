@@ -25,65 +25,66 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useSession } from "next-auth/react";
+import { useTranslations } from "next-intl"; // 👈 NOVO
 
 interface AppSidebarProps {
   slug: string;
-  initialRole?: string; // ✅ Adicionado para evitar o sumiço
+  initialRole?: string;
 }
 
 export function AppSidebar({ slug, initialRole }: AppSidebarProps) {
   const { state } = useSidebar();
   const { data: session } = useSession();
   const isCollapsed = state === "collapsed";
+  const t = useTranslations("nav"); // 👈 NOVO
 
-  // ✅ Se o session ainda não carregou, usamos o initialRole que veio do servidor
   const userRole = session?.user?.role || initialRole;
 
   const navigationItems = [
     {
-      title: "Painel",
+      title: t("dashboard"), // 👈 traduzido
       url: `/${slug}/painel`,
       roles: ["SUPER_ADMIN", "ADMIN", "TREASURER", "SECRETARY", "OPERATOR"],
       icon: LayoutDashboard,
     },
     {
-      title: "Membros",
+      title: t("members"),
       url: `/${slug}/membros`,
       roles: ["SUPER_ADMIN", "ADMIN", "SECRETARY"],
       icon: Users,
     },
     {
-      title: "Eventos",
+      title: t("events"),
       url: `/${slug}/eventos`,
       roles: ["SUPER_ADMIN", "ADMIN", "SECRETARY", "OPERATOR"],
       icon: Calendar,
     },
     {
-      title: "Finanças",
+      title: t("finance"),
       url: `/${slug}/financas`,
       roles: ["SUPER_ADMIN", "ADMIN", "TREASURER"],
       icon: Wallet,
     },
     {
-      title: "Departamentos",
+      title: t("departments"),
       url: `/${slug}/departamentos`,
       roles: ["SUPER_ADMIN", "ADMIN", "SECRETARY"],
       icon: Building2,
     },
     {
-      title: "Faturamento",
+      title: t("billing"),
       url: `/${slug}/billing`,
       roles: ["SUPER_ADMIN", "ADMIN"],
       icon: CreditCard,
     },
     {
-      title: "Configurações",
+      title: t("settings"),
       url: `/${slug}/configuracoes`,
       roles: ["SUPER_ADMIN", "ADMIN"],
       icon: Settings,
     },
     {
-      title: "Configurações SaaS",
+      title: t("admin"),
       url: `/admin`,
       roles: ["SUPER_ADMIN"],
       icon: ShieldCheck,
@@ -115,7 +116,9 @@ export function AppSidebar({ slug, initialRole }: AppSidebarProps) {
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Navegação</SidebarGroupLabel>
+          <SidebarGroupLabel>
+            {userRole === "SUPER_ADMIN" ? "SaaS Admin" : "Navegação"}
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {filteredItems.map((item) => (
