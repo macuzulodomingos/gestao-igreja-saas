@@ -1,4 +1,3 @@
-//middleware.ts
 import NextAuth from "next-auth";
 import { authConfig } from "@/lib/auth.config";
 import createMiddleware from "next-intl/middleware";
@@ -9,11 +8,18 @@ const { auth } = NextAuth(authConfig);
 const handleI18nRouting = createMiddleware(routing);
 
 export default auth((req: any) => {
-  const session = req.auth;
   const { nextUrl } = req;
+
+  // 👈 ignora /api completamente — NextAuth precisa de gerir /api/auth/*
+  if (nextUrl.pathname.startsWith("/api")) {
+    return NextResponse.next();
+  }
+
+  const session = req.auth;
   const isLoggedIn = !!session;
   const role = session?.user?.role;
   const slug = session?.user?.churchSlug;
+  const userLocale = session?.user?.locale as "pt" | "fr" | undefined;
 
   // 1. Ignora arquivos estáticos
   if (nextUrl.pathname.includes(".")) return NextResponse.next();
@@ -24,7 +30,15 @@ export default auth((req: any) => {
     : null;
 
   const localeFromCookie = req.cookies.get("NEXT_LOCALE")?.value as "pt" | "fr" | undefined;
-  const locale = localeFromUrl ?? localeFromCookie ?? "pt";
+  // 👈 prioridade: locale do utilizador (DB) > URL > cookie > padrão
+  const locale = userLocale ?? localeFromUrl ?? localeFromCookie ?? "pt";
+
+  // Se pathname não tem prefixo — adiciona locale correcto
+  if (!localeFromUrl) {
+    const newUrl = new URL(`/${locale}${nextUrl.pathname}`, nextUrl);
+    newUrl.search = nextUrl.search;
+    return NextResponse.redirect(newUrl);
+  }
 
   // 3. Extrai pathname sem prefixo de locale
   const pathnameWithoutLocale =
@@ -61,12 +75,9 @@ export default auth((req: any) => {
     return NextResponse.redirect(new URL(`/${locale}/login`, nextUrl));
   }
 
-  // 7. Se está em /pt mas o cookie diz /fr — redireciona
-  if (localeFromUrl && localeFromCookie && localeFromUrl !== localeFromCookie) {
-    const newUrl = new URL(
-      `/${localeFromCookie}${pathnameWithoutLocale}`,
-      nextUrl
-    );
+  // 👈 utilizador logado com locale errado na URL — corrige automaticamente
+  if (isLoggedIn && userLocale && localeFromUrl !== userLocale) {
+    const newUrl = new URL(`/${userLocale}${pathnameWithoutLocale}`, nextUrl);
     return NextResponse.redirect(newUrl);
   }
 

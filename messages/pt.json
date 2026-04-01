@@ -81,7 +81,74 @@
     "errorDelete": "Erro ao eliminar.",
     "totalIncome": "Total de entradas",
     "totalExpenses": "Total de saídas",
-    "incomeMinusExpenses": "Receitas menos despesas"
+    "incomeMinusExpenses": "Receitas menos despesas",
+    "incomeList": {
+      "title": "Registos de Receitas",
+      "empty": "Nenhuma receita registada.",
+      "date": "Data",
+      "category": "Categoria",
+      "description": "Descrição",
+      "amount": "Valor",
+      "actions": "Ações"
+    },
+    "expenseList": {
+      "title": "Registos de Despesas",
+      "empty": "Nenhuma despesa registada.",
+      "date": "Data",
+      "category": "Categoria",
+      "description": "Descrição",
+      "amount": "Valor",
+      "actions": "Ações"
+    },
+    "expenseForm": {
+      "addTitle": "Registar Despesa",
+      "editTitle": "Editar Despesa",
+      "date": "Data",
+      "category": "Categoria",
+      "categoryPlaceholder": "Selecione a categoria",
+      "amount": "Valor (Kz)",
+      "amountPlaceholder": "Ex: 6000 ou 6.000",
+      "description": "Descrição (Opcional)",
+      "descriptionPlaceholder": "Breve descrição da despesa...",
+      "cancel": "Cancelar",
+      "save": "Salvar",
+      "register": "Registar",
+      "created": "Despesa registada!",
+      "updated": "Despesa actualizada!",
+      "error": "Erro ao registar despesa."
+    },
+    "incomeForm": {
+      "addTitle": "Adicionar Receita",
+      "editTitle": "Editar Receita",
+      "date": "Data",
+      "category": "Categoria",
+      "categoryPlaceholder": "Selecione a categoria",
+      "amount": "Valor (Kz)",
+      "amountPlaceholder": "Ex: 6000 ou 6.000",
+      "description": "Descrição (Opcional)",
+      "descriptionPlaceholder": "Breve descrição...",
+      "cancel": "Cancelar",
+      "save": "Salvar",
+      "add": "Adicionar",
+      "created": "Receita registada!",
+      "updated": "Receita actualizada!",
+      "error": "Erro ao registar receita."
+    },
+    "summary": {
+      "monthlyIncome": "Receitas de",
+      "monthlyExpenses": "Despesas de",
+      "monthlyBalance": "Saldo de",
+      "generalBalance": "Saldo Geral",
+      "totalThisMonth": "Total deste mês",
+      "incomeMinusExpenses": "Receitas menos despesas",
+      "totalBalance": "Saldo acumulado total"
+    },
+    "pdf": {
+      "export": "Exportar PDF",
+      "generating": "A gerar PDF...",
+      "locked": "Disponível no plano PRO. Actualize o seu plano.",
+      "fileName": "relatorio-financeiro"
+    }
   },
   "events": {
     "title": "Eventos",
@@ -126,6 +193,21 @@
       "updated": "Evento actualizado!",
       "checkErrors": "Verifique os erros no formulário.",
       "error": "Erro ao salvar evento."
+    },
+    "attendance": {
+      "title": "Presenças",
+      "search": "Pesquisar membros...",
+      "present": "de",
+      "presentLabel": "presentes",
+      "selectAll": "Seleccionar tudo",
+      "deselectAll": "Desmarcar tudo",
+      "noMembers": "Nenhum membro encontrado.",
+      "cancel": "Cancelar",
+      "save": "Salvar Presenças",
+      "at": "às",
+      "updated": "Presenças actualizadas!",
+      "error": "Erro ao actualizar presenças.",
+      "noRole": "Sem cargo"
     }
   },
   "departments": {
@@ -134,7 +216,49 @@
     "addDepartment": "Adicionar Departamento",
     "confirmDelete": "Tens a certeza?",
     "cancel": "Cancelar",
-    "confirm": "Confirmar Eliminação"
+    "confirm": "Confirmar Eliminação",
+    "form": {
+      "addTitle": "Adicionar Departamento",
+      "editTitle": "Editar Departamento",
+      "name": "Nome do Departamento",
+      "namePlaceholder": "Ex: Ministério de Adoração",
+      "leader": "Líder (Opcional)",
+      "leaderPlaceholder": "Selecione o líder",
+      "noLeader": "Sem líder",
+      "description": "Descrição (Opcional)",
+      "descriptionPlaceholder": "Breve descrição deste departamento...",
+      "cancel": "Cancelar",
+      "save": "Salvar alterações",
+      "add": "Adicionar Departamento",
+      "created": "Departamento criado!",
+      "updated": "Departamento actualizado!",
+      "error": "Erro ao salvar departamento."
+    },
+    "list": {
+      "empty": "Ainda não existem departamentos criados. Adicione o seu primeiro departamento.",
+      "manageMembers": "Gerenciar membros",
+      "edit": "Editar",
+      "remove": "Remover",
+      "leader": "Líder",
+      "noLeader": "Sem líder definido",
+      "member": "membro",
+      "members": "membros"
+    },
+    "membersDialog": {
+      "title": "Membros",
+      "search": "Pesquisar membros...",
+      "selected": "de",
+      "selectedLabel": "seleccionados",
+      "selectAll": "Seleccionar tudo",
+      "deselectAll": "Desmarcar tudo",
+      "noMembers": "Nenhum membro encontrado.",
+      "noRole": "Sem cargo",
+      "leader": "Líder",
+      "cancel": "Cancelar",
+      "save": "Salvar Membros",
+      "updated": "Membros actualizados!",
+      "error": "Erro ao actualizar membros."
+    }
   },
   "settings": {
     "title": "Configurações",
@@ -150,7 +274,10 @@
     "password": "Palavra-passe",
     "loginButton": "Entrar",
     "noAccount": "Não tem conta?",
-    "register": "Registar"
+    "register": "Registar",
+    "subtitle": "Introduza os seus dados para aceder ao painel",
+    "loading": "A entrar...",
+    "error": "Erro desconhecido."
   },
   "common": {
     "save": "Guardar",

@@ -6,6 +6,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Pencil, Trash2, Users, UserCircle } from "lucide-react";
 import { Department } from "@/types/department";
+import { useTranslations } from "next-intl";
 
 interface DepartmentsListProps {
   departments: Department[];
@@ -15,11 +16,14 @@ interface DepartmentsListProps {
 }
 
 export function DepartmentsList({ departments, onEdit, onDelete, onManageMembers }: DepartmentsListProps) {
+  const t = useTranslations("departments.list");
+  const tc = useTranslations("common");
+
   return (
     <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
       {departments.length === 0 ? (
         <div className="col-span-full text-center py-12 text-muted-foreground">
-          Ainda não existem departamentos criados. Adicione o seu primeiro departamento.
+          {t("empty")}
         </div>
       ) : (
         departments.map(department => (
@@ -42,18 +46,18 @@ export function DepartmentsList({ departments, onEdit, onDelete, onManageMembers
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={() => onManageMembers(department)}>
                     <Users className="h-4 w-4 mr-2" />
-                    Gerenciar membros
+                    {t("manageMembers")}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => onEdit(department)}>
                     <Pencil className="h-4 w-4 mr-2" />
-                    Editar
+                    {tc("edit")}
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onSelect={e => { e.preventDefault(); onDelete(department.id); }}
                     className="text-destructive focus:text-destructive"
                   >
                     <Trash2 className="h-4 w-4 mr-2" />
-                    Remover
+                    {tc("delete")}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -62,7 +66,7 @@ export function DepartmentsList({ departments, onEdit, onDelete, onManageMembers
               {department.leader ? (
                 <div className="flex items-center gap-2 text-sm">
                   <UserCircle className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">Líder:</span>
+                  <span className="text-muted-foreground">{t("leader")}:</span>
                   <span className="font-medium">{department.leader.name}</span>
                   {department.leader.role && (
                     <Badge variant="secondary" className="text-xs">
@@ -73,13 +77,14 @@ export function DepartmentsList({ departments, onEdit, onDelete, onManageMembers
               ) : (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <UserCircle className="h-4 w-4" />
-                  <span>Sem líder definido</span>
+                  <span>{t("noLeader")}</span>
                 </div>
               )}
 
               <Badge variant="secondary" className="gap-1 w-fit">
                 <Users className="h-3 w-3" />
-                {department.members.length} {department.members.length === 1 ? "membro" : "membros"}
+                {department.members.length}{" "}
+                {department.members.length === 1 ? t("member") : t("members")}
               </Badge>
 
               <Button
@@ -89,7 +94,7 @@ export function DepartmentsList({ departments, onEdit, onDelete, onManageMembers
                 className="w-full mt-2"
               >
                 <Users className="h-4 w-4 mr-2" />
-                Gerenciar membros
+                {t("manageMembers")}
               </Button>
             </CardContent>
           </Card>

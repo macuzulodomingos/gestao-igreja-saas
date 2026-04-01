@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2 } from "lucide-react";
 import { saveTransactionAction } from "@/app/actions/finance";
 import { FinanceTransaction } from "@/types/finance";
+import { useTranslations } from "next-intl";
 
 const schema = z.object({
   date: z.string().min(1, "Data obrigatória"),
@@ -36,11 +37,13 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   entry: FinanceTransaction | null;
   categories: Category[];
-  onUpgrade?: (message: string) => void; // 👈 NOVO
+  onUpgrade?: (message: string) => void;
 }
 
 export function ExpenseFormDialog({ open, onOpenChange, entry, categories, onUpgrade }: Props) {
   const [isPending, startTransition] = useTransition();
+  const t = useTranslations("finance.expenseForm");
+  const tc = useTranslations("common");
 
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -85,24 +88,22 @@ export function ExpenseFormDialog({ open, onOpenChange, entry, categories, onUpg
       }
 
       const formData = new FormData();
-      formData.append("description", data.description || "Despesa"); // 👈 era "Receita"
+      formData.append("description", data.description || "Despesa");
       formData.append("amount", cleanAmount);
-      formData.append("type", "EXPENSE");                             // 👈 era "INCOME"
+      formData.append("type", "EXPENSE");
       formData.append("categoryId", data.categoryId);
       formData.append("date", data.date);
 
-      // 👇 passa o id se for edição
       const result = await saveTransactionAction(formData, entry?.id ?? undefined);
 
       if (result.success) {
-        toast.success(entry ? "Despesa actualizada!" : "Despesa registada!"); // 👈 era "Receita"
+        toast.success(entry ? t("updated") : t("created"));
         onOpenChange(false);
       } else if ("upgrade" in result && result.upgrade) {
-        // 👈 fecha o form e mostra modal de upgrade
         onOpenChange(false);
-        onUpgrade?.(result.error || "Limite do plano atingido.");
+        onUpgrade?.(result.error || tc("upgrade"));
       } else {
-        toast.error(result.error || "Erro ao registar despesa."); // 👈 era "receita"
+        toast.error(result.error || t("error"));
       }
     });
   };
@@ -111,13 +112,13 @@ export function ExpenseFormDialog({ open, onOpenChange, entry, categories, onUpg
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{entry ? "Editar Despesa" : "Registar Despesa"}</DialogTitle>
+          <DialogTitle>{entry ? t("editTitle") : t("addTitle")}</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
             <FormField control={form.control} name="date" render={({ field }) => (
               <FormItem>
-                <FormLabel>Data</FormLabel>
+                <FormLabel>{t("date")}</FormLabel>
                 <FormControl><Input type="date" {...field} /></FormControl>
                 <FormMessage />
               </FormItem>
@@ -125,10 +126,12 @@ export function ExpenseFormDialog({ open, onOpenChange, entry, categories, onUpg
 
             <FormField control={form.control} name="categoryId" render={({ field }) => (
               <FormItem>
-                <FormLabel>Categoria</FormLabel>
+                <FormLabel>{t("category")}</FormLabel>
                 <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
-                    <SelectTrigger><SelectValue placeholder="Selecione a categoria" /></SelectTrigger>
+                    <SelectTrigger>
+                      <SelectValue placeholder={t("categoryPlaceholder")} />
+                    </SelectTrigger>
                   </FormControl>
                   <SelectContent>
                     {categories.map(cat => (
@@ -142,12 +145,12 @@ export function ExpenseFormDialog({ open, onOpenChange, entry, categories, onUpg
 
             <FormField control={form.control} name="amount" render={({ field }) => (
               <FormItem>
-                <FormLabel>Valor (Kz)</FormLabel>
+                <FormLabel>{t("amount")}</FormLabel>
                 <FormControl>
                   <Input
                     type="text"
                     inputMode="numeric"
-                    placeholder="Ex: 6000 ou 6.000"
+                    placeholder={t("amountPlaceholder")}
                     {...field}
                   />
                 </FormControl>
@@ -157,18 +160,28 @@ export function ExpenseFormDialog({ open, onOpenChange, entry, categories, onUpg
 
             <FormField control={form.control} name="description" render={({ field }) => (
               <FormItem>
-                <FormLabel>Descrição (Opcional)</FormLabel>
+                <FormLabel>{t("description")}</FormLabel>
                 <FormControl>
-                  <Textarea placeholder="Breve descrição da despesa..." className="resize-none" rows={2} {...field} />
+                  <Textarea
+                    placeholder={t("descriptionPlaceholder")}
+                    className="resize-none"
+                    rows={2}
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )} />
 
             <div className="flex justify-end gap-3 pt-4">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                {tc("cancel")}
+              </Button>
               <Button type="submit" disabled={isPending}>
-                {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : entry ? "Salvar" : "Registar"}
+                {isPending
+                  ? <Loader2 className="h-4 w-4 animate-spin" />
+                  : entry ? t("save") : t("register")
+                }
               </Button>
             </div>
           </form>

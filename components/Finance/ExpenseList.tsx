@@ -5,10 +5,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { ptBR, fr } from "date-fns/locale";
 import { FinanceTransaction } from "@/types/finance";
+import { useTranslations, useLocale } from "next-intl";
 
-
+const dateLocalesMap = {
+  pt: ptBR,
+  fr: fr,
+};
 
 interface ExpenseListProps {
   entries: FinanceTransaction[];
@@ -36,6 +40,11 @@ const getCategoryColor = (name: string) => {
 };
 
 export function ExpenseList({ entries, onEdit, onDelete }: ExpenseListProps) {
+  const t = useTranslations("finance.expenseList");
+  const tc = useTranslations("common");
+  const locale = useLocale();
+  const dateLocale = dateLocalesMap[locale as keyof typeof dateLocalesMap] ?? ptBR;
+
   const sortedEntries = [...entries].sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
   );
@@ -43,28 +52,28 @@ export function ExpenseList({ entries, onEdit, onDelete }: ExpenseListProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">Registos de Despesas</CardTitle>
+        <CardTitle className="text-lg">{t("title")}</CardTitle>
       </CardHeader>
       <CardContent>
         {sortedEntries.length === 0 ? (
-          <p className="text-muted-foreground text-center py-8">Nenhuma despesa registada.</p>
+          <p className="text-muted-foreground text-center py-8">{t("empty")}</p>
         ) : (
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Data</TableHead>
-                  <TableHead>Categoria</TableHead>
-                  <TableHead>Descrição</TableHead>
-                  <TableHead className="text-right">Valor</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
+                  <TableHead>{t("date")}</TableHead>
+                  <TableHead>{t("category")}</TableHead>
+                  <TableHead>{t("description")}</TableHead>
+                  <TableHead className="text-right">{t("amount")}</TableHead>
+                  <TableHead className="text-right">{t("actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {sortedEntries.map((entry) => (
                   <TableRow key={entry.id}>
                     <TableCell className="text-sm">
-                      {format(new Date(entry.date), "dd 'de' MMM, yyyy", { locale: ptBR })}
+                      {format(new Date(entry.date), "dd 'de' MMM, yyyy", { locale: dateLocale })}
                     </TableCell>
                     <TableCell>
                       <Badge variant="secondary" className={getCategoryColor(entry.category)}>
@@ -86,13 +95,13 @@ export function ExpenseList({ entries, onEdit, onDelete }: ExpenseListProps) {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={() => onEdit(entry)}>
-                            <Pencil className="h-4 w-4 mr-2" /> Editar
+                            <Pencil className="h-4 w-4 mr-2" /> {tc("edit")}
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => onDelete(entry.id)}
                             className="text-destructive focus:text-destructive"
                           >
-                            <Trash2 className="h-4 w-4 mr-2" /> Eliminar
+                            <Trash2 className="h-4 w-4 mr-2" /> {tc("delete")}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>

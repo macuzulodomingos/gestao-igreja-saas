@@ -57,6 +57,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.churchId = user.churchId ?? null;
         token.churchSlug = user.churchSlug ?? null;
         token.refreshedAt = Date.now();
+
+        // 👈 busca o locale do utilizador na DB no momento do login
+        const dbUser = await prisma.user.findUnique({
+          where: { id: user.id as string },
+          select: { locale: true },
+        });
+        token.locale = dbUser?.locale ?? "pt";
         return token;
       }
 
@@ -81,6 +88,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       token.role = dbUser.role as UserRole;
       token.churchId = dbUser.churchId ?? null;
       token.churchSlug = dbUser.church?.slug ?? null;
+      token.locale = dbUser.locale ?? "pt"; // 👈 actualiza locale no refresh
       token.refreshedAt = Date.now();
 
       return token;
@@ -92,6 +100,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.role = token.role as UserRole;
         session.user.churchId = token.churchId as string;
         session.user.churchSlug = token.churchSlug as string;
+        session.user.locale = token.locale as string; // 👈 NOVO
       }
       return session;
     },

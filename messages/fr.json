@@ -81,7 +81,74 @@
     "errorDelete": "Erreur lors de la suppression.",
     "totalIncome": "Total des entrées",
     "totalExpenses": "Total des sorties",
-    "incomeMinusExpenses": "Revenus moins dépenses"
+    "incomeMinusExpenses": "Revenus moins dépenses",
+    "incomeList": {
+      "title": "Registres de revenus",
+      "empty": "Aucun revenu enregistré.",
+      "date": "Date",
+      "category": "Catégorie",
+      "description": "Description",
+      "amount": "Montant",
+      "actions": "Actions"
+    },
+    "expenseList": {
+      "title": "Registres de dépenses",
+      "empty": "Aucune dépense enregistrée.",
+      "date": "Date",
+      "category": "Catégorie",
+      "description": "Description",
+      "amount": "Montant",
+      "actions": "Actions"
+    },
+    "expenseForm": {
+      "addTitle": "Enregistrer une dépense",
+      "editTitle": "Modifier la dépense",
+      "date": "Date",
+      "category": "Catégorie",
+      "categoryPlaceholder": "Sélectionner la catégorie",
+      "amount": "Montant (Kz)",
+      "amountPlaceholder": "Ex: 6000 ou 6.000",
+      "description": "Description (Optionnelle)",
+      "descriptionPlaceholder": "Brève description de la dépense...",
+      "cancel": "Annuler",
+      "save": "Enregistrer",
+      "register": "Enregistrer",
+      "created": "Dépense enregistrée!",
+      "updated": "Dépense mise à jour!",
+      "error": "Erreur lors de l'enregistrement."
+    },
+    "incomeForm": {
+      "addTitle": "Ajouter un revenu",
+      "editTitle": "Modifier le revenu",
+      "date": "Date",
+      "category": "Catégorie",
+      "categoryPlaceholder": "Sélectionner la catégorie",
+      "amount": "Montant (Kz)",
+      "amountPlaceholder": "Ex: 6000 ou 6.000",
+      "description": "Description (Optionnelle)",
+      "descriptionPlaceholder": "Brève description...",
+      "cancel": "Annuler",
+      "save": "Enregistrer",
+      "add": "Ajouter",
+      "created": "Revenu enregistré!",
+      "updated": "Revenu mis à jour!",
+      "error": "Erreur lors de l'enregistrement."
+    },
+    "summary": {
+      "monthlyIncome": "Revenus de",
+      "monthlyExpenses": "Dépenses de",
+      "monthlyBalance": "Solde de",
+      "generalBalance": "Solde général",
+      "totalThisMonth": "Total ce mois",
+      "incomeMinusExpenses": "Revenus moins dépenses",
+      "totalBalance": "Solde total accumulé"
+    },
+    "pdf": {
+      "export": "Exporter PDF",
+      "generating": "Génération du PDF...",
+      "locked": "Disponible dans le plan PRO. Mettez à niveau votre plan.",
+      "fileName": "rapport-financier"
+    }
   },
   "events": {
     "title": "Événements",
@@ -126,6 +193,21 @@
       "updated": "Événement mis à jour!",
       "checkErrors": "Vérifiez les erreurs dans le formulaire.",
       "error": "Erreur lors de la sauvegarde."
+    },
+    "attendance": {
+      "title": "Présences",
+      "search": "Rechercher des membres...",
+      "present": "de",
+      "presentLabel": "présents",
+      "selectAll": "Tout sélectionner",
+      "deselectAll": "Tout déselectionner",
+      "noMembers": "Aucun membre trouvé.",
+      "cancel": "Annuler",
+      "save": "Enregistrer les présences",
+      "at": "à",
+      "updated": "Présences mises à jour!",
+      "error": "Erreur lors de la mise à jour.",
+      "noRole": "Sans rôle"
     }
   },
   "departments": {
@@ -134,7 +216,49 @@
     "addDepartment": "Ajouter un département",
     "confirmDelete": "Êtes-vous sûr?",
     "cancel": "Annuler",
-    "confirm": "Confirmer la suppression"
+    "confirm": "Confirmer la suppression",
+    "form": {
+      "addTitle": "Ajouter un département",
+      "editTitle": "Modifier le département",
+      "name": "Nom du département",
+      "namePlaceholder": "Ex: Ministère de Louange",
+      "leader": "Leader (Optionnel)",
+      "leaderPlaceholder": "Sélectionner le leader",
+      "noLeader": "Sans leader",
+      "description": "Description (Optionnelle)",
+      "descriptionPlaceholder": "Brève description de ce département...",
+      "cancel": "Annuler",
+      "save": "Enregistrer",
+      "add": "Ajouter le département",
+      "created": "Département créé!",
+      "updated": "Département mis à jour!",
+      "error": "Erreur lors de la sauvegarde."
+    },
+    "list": {
+      "empty": "Aucun département créé. Ajoutez votre premier département.",
+      "manageMembers": "Gérer les membres",
+      "edit": "Modifier",
+      "remove": "Supprimer",
+      "leader": "Leader",
+      "noLeader": "Sans leader défini",
+      "member": "membre",
+      "members": "membres"
+    },
+    "membersDialog": {
+      "title": "Membres",
+      "search": "Rechercher des membres...",
+      "selected": "de",
+      "selectedLabel": "sélectionnés",
+      "selectAll": "Tout sélectionner",
+      "deselectAll": "Tout déselectionner",
+      "noMembers": "Aucun membre trouvé.",
+      "noRole": "Sans rôle",
+      "leader": "Leader",
+      "cancel": "Annuler",
+      "save": "Enregistrer les membres",
+      "updated": "Membres mis à jour!",
+      "error": "Erreur lors de la mise à jour."
+    }
   },
   "settings": {
     "title": "Paramètres",
@@ -150,7 +274,10 @@
     "password": "Mot de passe",
     "loginButton": "Se connecter",
     "noAccount": "Pas de compte?",
-    "register": "S'inscrire"
+    "register": "S'inscrire",
+    "subtitle": "Entrez vos données pour accéder au panneau",
+    "loading": "Connexion...",
+    "error": "Erreur inconnue."
   },
   "common": {
     "save": "Enregistrer",

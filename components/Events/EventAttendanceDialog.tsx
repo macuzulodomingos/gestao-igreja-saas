@@ -2,8 +2,6 @@
 
 import { useState, useEffect, useTransition } from "react";
 import { toast } from "sonner";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -14,19 +12,29 @@ import { Search, Users, Loader2 } from "lucide-react";
 import { syncAttendeesAction } from "@/app/actions/event-actions";
 import { ChurchEvent, EventListMember } from "@/types/event";
 import { formatInTimeZone } from "date-fns-tz";
+import { ptBR, fr } from "date-fns/locale";
+import { useTranslations, useLocale } from "next-intl";
+
+const dateLocalesMap = {
+  pt: ptBR,
+  fr: fr,
+};
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   event: ChurchEvent;
   allMembers: EventListMember[];
-  timezone: string; // 👈 NOVO
+  timezone: string;
 }
 
 export function EventAttendanceDialog({ open, onOpenChange, event, allMembers, timezone }: Props) {
   const [isPending, startTransition] = useTransition();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const t = useTranslations("events.attendance");
+  const locale = useLocale();
+  const dateLocale = dateLocalesMap[locale as keyof typeof dateLocalesMap] ?? ptBR;
 
   useEffect(() => {
     if (open) {
@@ -63,10 +71,10 @@ export function EventAttendanceDialog({ open, onOpenChange, event, allMembers, t
     startTransition(async () => {
       const result = await syncAttendeesAction(event.id, selectedIds);
       if (result.success) {
-        toast.success("Presenças actualizadas!");
+        toast.success(t("updated"));
         onOpenChange(false);
       } else {
-        toast.error(result.error || "Erro ao actualizar presenças.");
+        toast.error(result.error || t("error"));
       }
     });
   };
@@ -80,13 +88,13 @@ export function EventAttendanceDialog({ open, onOpenChange, event, allMembers, t
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
-            Presenças
+            {t("title")}
           </DialogTitle>
           <div className="text-sm text-muted-foreground">
             <span className="font-medium">{event.name}</span>
             <span className="mx-2">•</span>
-            {formatInTimeZone(new Date(event.startAt), timezone, "dd 'de' MMM, yyyy", { locale: ptBR })}
-            {" às "}
+            {formatInTimeZone(new Date(event.startAt), timezone, "dd 'de' MMM, yyyy", { locale: dateLocale })}
+            {` ${t("at")} `}
             {formatInTimeZone(new Date(event.startAt), timezone, "HH:mm")}
           </div>
         </DialogHeader>
@@ -95,7 +103,7 @@ export function EventAttendanceDialog({ open, onOpenChange, event, allMembers, t
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Pesquisar membros..."
+              placeholder={t("search")}
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
               className="pl-10"
@@ -104,10 +112,10 @@ export function EventAttendanceDialog({ open, onOpenChange, event, allMembers, t
 
           <div className="flex items-center justify-between">
             <Badge variant="secondary">
-              {selectedIds.length} de {activeMembers.length} presentes
+              {selectedIds.length} {t("present")} {activeMembers.length} {t("presentLabel")}
             </Badge>
             <Button type="button" variant="ghost" size="sm" onClick={handleSelectAll}>
-              {allFilteredSelected ? "Desmarcar tudo" : "Seleccionar tudo"}
+              {allFilteredSelected ? t("deselectAll") : t("selectAll")}
             </Button>
           </div>
 
@@ -115,7 +123,7 @@ export function EventAttendanceDialog({ open, onOpenChange, event, allMembers, t
             <div className="space-y-2">
               {filteredMembers.length === 0 ? (
                 <p className="text-center text-muted-foreground py-8">
-                  Nenhum membro encontrado.
+                  {t("noMembers")}
                 </p>
               ) : (
                 filteredMembers.map(member => (
@@ -130,7 +138,7 @@ export function EventAttendanceDialog({ open, onOpenChange, event, allMembers, t
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-sm">{member.name}</p>
                       <p className="text-xs text-muted-foreground">
-                        {member.role?.name || "Sem cargo"}
+                        {member.role?.name || t("noRole")}
                       </p>
                     </div>
                   </label>
@@ -142,10 +150,10 @@ export function EventAttendanceDialog({ open, onOpenChange, event, allMembers, t
 
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-            Cancelar
+            {t("cancel")}
           </Button>
           <Button onClick={handleSave} disabled={isPending}>
-            {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Salvar Presenças"}
+            {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : t("save")}
           </Button>
         </DialogFooter>
       </DialogContent>

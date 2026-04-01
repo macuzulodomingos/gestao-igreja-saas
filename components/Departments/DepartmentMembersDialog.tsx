@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Search, Users, Loader2 } from "lucide-react";
 import { syncDepartmentMembersAction } from "@/app/actions/department-actions";
 import { Department, DepartmentListMember } from "@/types/department";
+import { useTranslations } from "next-intl";
 
 interface Props {
   open: boolean;
@@ -23,6 +24,7 @@ export function DepartmentMembersDialog({ open, onOpenChange, department, allMem
   const [isPending, startTransition] = useTransition();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const t = useTranslations("departments.membersDialog");
 
   useEffect(() => {
     if (open) {
@@ -59,10 +61,10 @@ export function DepartmentMembersDialog({ open, onOpenChange, department, allMem
     startTransition(async () => {
       const result = await syncDepartmentMembersAction(department.id, selectedIds);
       if (result.success) {
-        toast.success("Membros actualizados!");
+        toast.success(t("updated"));
         onOpenChange(false);
       } else {
-        toast.error(result.error || "Erro ao actualizar membros.");
+        toast.error(result.error || t("error"));
       }
     });
   };
@@ -76,7 +78,7 @@ export function DepartmentMembersDialog({ open, onOpenChange, department, allMem
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
-            Membros — {department.name}
+            {t("title")} — {department.name}
           </DialogTitle>
         </DialogHeader>
 
@@ -84,7 +86,7 @@ export function DepartmentMembersDialog({ open, onOpenChange, department, allMem
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Pesquisar membros..."
+              placeholder={t("search")}
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
               className="pl-10"
@@ -93,10 +95,10 @@ export function DepartmentMembersDialog({ open, onOpenChange, department, allMem
 
           <div className="flex items-center justify-between">
             <Badge variant="secondary">
-              {selectedIds.length} de {activeMembers.length} seleccionados
+              {selectedIds.length} {t("selected")} {activeMembers.length} {t("selectedLabel")}
             </Badge>
             <Button type="button" variant="ghost" size="sm" onClick={handleSelectAll}>
-              {allFilteredSelected ? "Desmarcar tudo" : "Seleccionar tudo"}
+              {allFilteredSelected ? t("deselectAll") : t("selectAll")}
             </Button>
           </div>
 
@@ -104,7 +106,7 @@ export function DepartmentMembersDialog({ open, onOpenChange, department, allMem
             <div className="space-y-2">
               {filteredMembers.length === 0 ? (
                 <p className="text-center text-muted-foreground py-8">
-                  Nenhum membro encontrado.
+                  {t("noMembers")}
                 </p>
               ) : (
                 filteredMembers.map(member => (
@@ -119,12 +121,12 @@ export function DepartmentMembersDialog({ open, onOpenChange, department, allMem
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-sm">{member.name}</p>
                       <p className="text-xs text-muted-foreground">
-                        {member.role?.name || "Sem cargo"}
+                        {member.role?.name || t("noRole")}
                       </p>
                     </div>
                     {member.id === department.leaderId && (
                       <Badge variant="outline" className="shrink-0 text-xs">
-                        Líder
+                        {t("leader")}
                       </Badge>
                     )}
                   </label>
@@ -136,10 +138,10 @@ export function DepartmentMembersDialog({ open, onOpenChange, department, allMem
 
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-            Cancelar
+            {t("cancel")}
           </Button>
           <Button onClick={handleSave} disabled={isPending}>
-            {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Salvar Membros"}
+            {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : t("save")}
           </Button>
         </DialogFooter>
       </DialogContent>

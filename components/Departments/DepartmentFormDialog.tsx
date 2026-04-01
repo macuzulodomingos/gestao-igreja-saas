@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
 import { saveDepartmentAction } from "@/app/actions/department-actions";
+import { useTranslations } from "next-intl";
 
 const schema = z.object({
   name: z.string().min(1, "Nome obrigatório").max(100),
@@ -40,11 +41,13 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   department: Department | null;
   members: Member[];
-  onUpgrade?: (message: string) => void; // 👈 NOVO
+  onUpgrade?: (message: string) => void;
 }
 
 export function DepartmentFormDialog({ open, onOpenChange, department, members, onUpgrade }: Props) {
   const [isPending, startTransition] = useTransition();
+  const t = useTranslations("departments.form");
+  const tc = useTranslations("common");
 
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -78,14 +81,13 @@ export function DepartmentFormDialog({ open, onOpenChange, department, members, 
       );
 
       if (result.success) {
-        toast.success(department ? "Departamento actualizado!" : "Departamento criado!");
+        toast.success(department ? t("updated") : t("created"));
         onOpenChange(false);
       } else if ("upgrade" in result && result.upgrade) {
-        // 👈 fecha o form e mostra modal de upgrade
         onOpenChange(false);
-        onUpgrade?.(result.error || "Limite do plano atingido.");
+        onUpgrade?.(result.error || tc("upgrade"));
       } else {
-        toast.error(result.error || "Erro ao salvar departamento.");
+        toast.error(result.error || t("error"));
       }
     });
   };
@@ -95,7 +97,7 @@ export function DepartmentFormDialog({ open, onOpenChange, department, members, 
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>
-            {department ? "Editar Departamento" : "Adicionar Departamento"}
+            {department ? t("editTitle") : t("addTitle")}
           </DialogTitle>
         </DialogHeader>
         <Form {...form}>
@@ -103,9 +105,9 @@ export function DepartmentFormDialog({ open, onOpenChange, department, members, 
 
             <FormField control={form.control} name="name" render={({ field }) => (
               <FormItem>
-                <FormLabel>Nome do Departamento</FormLabel>
+                <FormLabel>{t("name")}</FormLabel>
                 <FormControl>
-                  <Input placeholder="Ex: Ministério de Adoração" {...field} />
+                  <Input placeholder={t("namePlaceholder")} {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -113,15 +115,15 @@ export function DepartmentFormDialog({ open, onOpenChange, department, members, 
 
             <FormField control={form.control} name="leaderId" render={({ field }) => (
               <FormItem>
-                <FormLabel>Líder (Opcional)</FormLabel>
+                <FormLabel>{t("leader")}</FormLabel>
                 <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecione o líder" />
+                      <SelectValue placeholder={t("leaderPlaceholder")} />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="none">Sem líder</SelectItem>
+                    <SelectItem value="none">{t("noLeader")}</SelectItem>
                     {members.map(member => (
                       <SelectItem key={member.id} value={member.id}>
                         {member.name} {member.role ? `(${member.role.name})` : ""}
@@ -135,10 +137,10 @@ export function DepartmentFormDialog({ open, onOpenChange, department, members, 
 
             <FormField control={form.control} name="description" render={({ field }) => (
               <FormItem>
-                <FormLabel>Descrição (Opcional)</FormLabel>
+                <FormLabel>{t("description")}</FormLabel>
                 <FormControl>
                   <Textarea
-                    placeholder="Breve descrição deste departamento..."
+                    placeholder={t("descriptionPlaceholder")}
                     className="resize-none"
                     rows={3}
                     {...field}
@@ -150,12 +152,12 @@ export function DepartmentFormDialog({ open, onOpenChange, department, members, 
 
             <div className="flex justify-end gap-3 pt-4">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                Cancelar
+                {tc("cancel")}
               </Button>
               <Button type="submit" disabled={isPending}>
                 {isPending
                   ? <Loader2 className="h-4 w-4 animate-spin" />
-                  : department ? "Salvar alterações" : "Adicionar Departamento"
+                  : department ? t("save") : t("add")
                 }
               </Button>
             </div>
