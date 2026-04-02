@@ -58,6 +58,7 @@ export function DownloadPDFButton({
   canExportPdf,
 }: DownloadPDFButtonProps) {
   const t = useTranslations("finance.pdf");
+  const tr = useTranslations("finance.report");
   const locale = useLocale();
   const months = monthsMap[locale as keyof typeof monthsMap] ?? MONTHS_PT;
   const monthName = months[month - 1];
@@ -88,9 +89,29 @@ export function DownloadPDFButton({
           churchName={churchName}
           month={month}
           year={year}
+          monthName={monthName}        // 👈 NOVO
           income={income}
           expenses={expenses}
           stats={stats}
+          translations={{              // 👈 NOVO
+            title: tr("title"),
+            generatedAt: tr("generatedAt"),
+            monthlyIncome: tr("monthlyIncome"),
+            monthlyExpenses: tr("monthlyExpenses"),
+            monthlyBalance: tr("monthlyBalance"),
+            generalBalance: tr("generalBalance"),
+            incomeSection: tr("incomeSection"),
+            expensesSection: tr("expensesSection"),
+            total: tr("total"),
+            noIncome: tr("noIncome"),
+            noExpenses: tr("noExpenses"),
+            date: tr("date"),
+            description: tr("description"),
+            category: tr("category"),
+            amount: tr("amount"),
+            footer: tr("footer"),
+            confidential: tr("confidential"),
+          }}
         />
       }
       fileName={fileName}

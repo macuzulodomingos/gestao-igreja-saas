@@ -1,22 +1,18 @@
 "use client";
 
 import {
-  Document, Page, Text, View, StyleSheet, Font
+  Document, Page, Text, View, StyleSheet,
 } from "@react-pdf/renderer";
-
-const MONTHS = [
-  "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
-  "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
-];
 
 const styles = StyleSheet.create({
   page: {
-    padding: 40,
+    paddingTop: 40,
+    paddingHorizontal: 40,
+    paddingBottom: 60, // 👈 reserva espaço para o rodapé (30px posição + 30px margem)
     fontFamily: "Helvetica",
     fontSize: 10,
     color: "#1a1a1a",
   },
-  // Cabeçalho
   header: {
     marginBottom: 24,
     borderBottom: "2px solid #7c3aed",
@@ -37,7 +33,6 @@ const styles = StyleSheet.create({
     color: "#999",
     marginTop: 2,
   },
-  // Cards de resumo
   summaryRow: {
     flexDirection: "row",
     gap: 12,
@@ -62,7 +57,6 @@ const styles = StyleSheet.create({
   expenseValue: { color: "#dc2626" },
   balancePositive: { color: "#059669" },
   balanceNegative: { color: "#dc2626" },
-  // Secções
   sectionTitle: {
     fontSize: 11,
     fontFamily: "Helvetica-Bold",
@@ -74,7 +68,6 @@ const styles = StyleSheet.create({
   section: {
     marginBottom: 20,
   },
-  // Tabela
   tableHeader: {
     flexDirection: "row",
     backgroundColor: "#f3f4f6",
@@ -99,10 +92,9 @@ const styles = StyleSheet.create({
   colAmount: { width: "20%", fontSize: 9, textAlign: "right" },
   colAmountHeader: { width: "20%", fontSize: 9, textAlign: "right", fontFamily: "Helvetica-Bold" },
   colHeader: { fontFamily: "Helvetica-Bold", fontSize: 9, color: "#374151" },
-  // Rodapé
   footer: {
     position: "absolute",
-    bottom: 30,
+    bottom: 20,
     left: 40,
     right: 40,
     flexDirection: "row",
@@ -143,10 +135,32 @@ type Transaction = {
   date: Date | string;
 };
 
+// 👈 tipo para as traduções
+type ReportTranslations = {
+  title: string;
+  generatedAt: string;
+  monthlyIncome: string;
+  monthlyExpenses: string;
+  monthlyBalance: string;
+  generalBalance: string;
+  incomeSection: string;
+  expensesSection: string;
+  total: string;
+  noIncome: string;
+  noExpenses: string;
+  date: string;
+  description: string;
+  category: string;
+  amount: string;
+  footer: string;
+  confidential: string;
+};
+
 interface FinanceReportProps {
   churchName: string;
   month: number;
   year: number;
+  monthName: string; // 👈 passa o nome do mês já traduzido
   income: Transaction[];
   expenses: Transaction[];
   stats: {
@@ -157,18 +171,20 @@ interface FinanceReportProps {
     totalExpenses: number;
     netBalance: number;
   };
+  translations: ReportTranslations; // 👈 NOVO
 }
 
 export function FinanceReport({
   churchName,
   month,
   year,
+  monthName,
   income,
   expenses,
   stats,
+  translations: tr,
 }: FinanceReportProps) {
-  const monthName = MONTHS[month - 1];
-  const generatedAt = new Date().toLocaleString("pt-BR");
+  const generatedAt = new Date().toLocaleString("pt-AO");
 
   return (
     <Document>
@@ -178,29 +194,29 @@ export function FinanceReport({
         <View style={styles.header}>
           <Text style={styles.churchName}>{churchName}</Text>
           <Text style={styles.reportTitle}>
-            Relatório Financeiro — {monthName} {year}
+            {tr.title} — {monthName} {year}
           </Text>
           <Text style={styles.reportDate}>
-            Gerado em: {generatedAt}
+            {tr.generatedAt}: {generatedAt}
           </Text>
         </View>
 
         {/* Cards de resumo */}
         <View style={styles.summaryRow}>
           <View style={styles.summaryCard}>
-            <Text style={styles.summaryLabel}>Receitas do Mês</Text>
+            <Text style={styles.summaryLabel}>{tr.monthlyIncome}</Text>
             <Text style={[styles.summaryValue, styles.incomeValue]}>
               {formatCurrency(stats.monthlyIncomes)}
             </Text>
           </View>
           <View style={styles.summaryCard}>
-            <Text style={styles.summaryLabel}>Despesas do Mês</Text>
+            <Text style={styles.summaryLabel}>{tr.monthlyExpenses}</Text>
             <Text style={[styles.summaryValue, styles.expenseValue]}>
               {formatCurrency(stats.monthlyExpenses)}
             </Text>
           </View>
           <View style={styles.summaryCard}>
-            <Text style={styles.summaryLabel}>Saldo do Mês</Text>
+            <Text style={styles.summaryLabel}>{tr.monthlyBalance}</Text>
             <Text style={[
               styles.summaryValue,
               stats.monthlyBalance >= 0 ? styles.balancePositive : styles.balanceNegative
@@ -209,7 +225,7 @@ export function FinanceReport({
             </Text>
           </View>
           <View style={styles.summaryCard}>
-            <Text style={styles.summaryLabel}>Saldo Geral</Text>
+            <Text style={styles.summaryLabel}>{tr.generalBalance}</Text>
             <Text style={[
               styles.summaryValue,
               stats.netBalance >= 0 ? styles.balancePositive : styles.balanceNegative
@@ -222,20 +238,20 @@ export function FinanceReport({
         {/* Tabela de Receitas */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
-            Receitas ({income.length}) — Total: {formatCurrency(stats.monthlyIncomes)}
+            {tr.incomeSection} ({income.length}) — {tr.total}: {formatCurrency(stats.monthlyIncomes)}
           </Text>
           {income.length === 0 ? (
-            <Text style={styles.emptyText}>Nenhuma receita registada neste mês.</Text>
+            <Text style={styles.emptyText}>{tr.noIncome}</Text>
           ) : (
             <>
               <View style={styles.tableHeader}>
-                <Text style={[styles.colDate, styles.colHeader]}>Data</Text>
-                <Text style={[styles.colDescription, styles.colHeader]}>Descrição</Text>
-                <Text style={[styles.colCategory, styles.colHeader]}>Categoria</Text>
-                <Text style={[styles.colAmountHeader]}>Valor</Text>
+                <Text style={[styles.colDate, styles.colHeader]}>{tr.date}</Text>
+                <Text style={[styles.colDescription, styles.colHeader]}>{tr.description}</Text>
+                <Text style={[styles.colCategory, styles.colHeader]}>{tr.category}</Text>
+                <Text style={[styles.colAmountHeader]}>{tr.amount}</Text>
               </View>
               {income.map((t, i) => (
-                <View key={t.id} style={i % 2 === 0 ? styles.tableRow : styles.tableRowAlt}>
+                <View key={t.id} wrap={false} style={i % 2 === 0 ? styles.tableRow : styles.tableRowAlt}>
                   <Text style={styles.colDate}>{formatDate(t.date)}</Text>
                   <Text style={styles.colDescription}>{t.description}</Text>
                   <Text style={styles.colCategory}>{t.category}</Text>
@@ -251,20 +267,20 @@ export function FinanceReport({
         {/* Tabela de Despesas */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
-            Despesas ({expenses.length}) — Total: {formatCurrency(stats.monthlyExpenses)}
+            {tr.expensesSection} ({expenses.length}) — {tr.total}: {formatCurrency(stats.monthlyExpenses)}
           </Text>
           {expenses.length === 0 ? (
-            <Text style={styles.emptyText}>Nenhuma despesa registada neste mês.</Text>
+            <Text style={styles.emptyText}>{tr.noExpenses}</Text>
           ) : (
             <>
               <View style={styles.tableHeader}>
-                <Text style={[styles.colDate, styles.colHeader]}>Data</Text>
-                <Text style={[styles.colDescription, styles.colHeader]}>Descrição</Text>
-                <Text style={[styles.colCategory, styles.colHeader]}>Categoria</Text>
-                <Text style={[styles.colAmountHeader]}>Valor</Text>
+                <Text style={[styles.colDate, styles.colHeader]}>{tr.date}</Text>
+                <Text style={[styles.colDescription, styles.colHeader]}>{tr.description}</Text>
+                <Text style={[styles.colCategory, styles.colHeader]}>{tr.category}</Text>
+                <Text style={[styles.colAmountHeader]}>{tr.amount}</Text>
               </View>
               {expenses.map((t, i) => (
-                <View key={t.id} style={i % 2 === 0 ? styles.tableRow : styles.tableRowAlt}>
+                <View key={t.id} wrap={false} style={i % 2 === 0 ? styles.tableRow : styles.tableRowAlt}>
                   <Text style={styles.colDate}>{formatDate(t.date)}</Text>
                   <Text style={styles.colDescription}>{t.description}</Text>
                   <Text style={styles.colCategory}>{t.category}</Text>
@@ -279,9 +295,9 @@ export function FinanceReport({
 
         {/* Rodapé */}
         <View style={styles.footer} fixed>
-          <Text style={styles.footerText}>ChurchOS — Sistema de Gestão de Igreja</Text>
+          <Text style={styles.footerText}>{tr.footer}</Text>
           <Text style={styles.footerText}>
-            {monthName} {year} — Confidencial
+            {monthName} {year} — {tr.confidential}
           </Text>
         </View>
 

@@ -148,6 +148,25 @@
       "generating": "A gerar PDF...",
       "locked": "Disponível no plano PRO. Actualize o seu plano.",
       "fileName": "relatorio-financeiro"
+    },
+    "report": {
+      "title": "Relatório Financeiro",
+      "generatedAt": "Gerado em",
+      "monthlyIncome": "Receitas do Mês",
+      "monthlyExpenses": "Despesas do Mês",
+      "monthlyBalance": "Saldo do Mês",
+      "generalBalance": "Saldo Geral",
+      "incomeSection": "Receitas",
+      "expensesSection": "Despesas",
+      "total": "Total",
+      "noIncome": "Nenhuma receita registada neste mês.",
+      "noExpenses": "Nenhuma despesa registada neste mês.",
+      "date": "Data",
+      "description": "Descrição",
+      "category": "Categoria",
+      "amount": "Valor",
+      "footer": "ChurchOS — Sistema de Gestão de Igreja",
+      "confidential": "Confidencial"
     }
   },
   "events": {
@@ -292,5 +311,21 @@
     "search": "Pesquisar",
     "noResults": "Sem resultados.",
     "upgrade": "Actualizar plano"
+  },
+  "validation": {
+    "required": "Obrigatório",
+    "descriptionTooLong": "Descrição muito longa",
+    "amountRequired": "Valor obrigatório",
+    "amountPositive": "Valor deve ser positivo",
+    "typeRequired": "Selecione o tipo",
+    "categoryRequired": "Categoria obrigatória",
+    "dateRequired": "Data obrigatória",
+    "dateInvalid": "Data inválida",
+    "nameRequired": "Nome obrigatório",
+    "nameTooLong": "Nome demasiado longo",
+    "emailInvalid": "E-mail inválido",
+    "joinDateRequired": "Data de ingresso obrigatória",
+    "eventNameRequired": "Nome do evento obrigatório",
+    "eventTimeRequired": "Hora obrigatória"
   }
 }

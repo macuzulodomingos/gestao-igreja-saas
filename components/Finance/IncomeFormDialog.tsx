@@ -15,18 +15,20 @@ import { Loader2 } from "lucide-react";
 import { saveTransactionAction } from "@/app/actions/finance";
 import { FinanceTransaction } from "@/types/finance";
 import { useTranslations } from "next-intl";
+import { TranslatedFormMessage } from "@/components/ui/TranslatedFormMessage";
+
 
 const schema = z.object({
-  date: z.string().min(1, "Data obrigatória"),
-  categoryId: z.string().min(1, "Categoria obrigatória"),
-  amount: z.string().min(1, "Valor obrigatório").refine(
-    (val) => {
-      const clean = val.replace(/\./g, "").replace(",", ".");
-      return !isNaN(Number(clean)) && Number(clean) > 0;
-    },
-    "Valor deve ser positivo"
-  ),
-  description: z.string().max(200, "Descrição não pode ter mais de 200 caracteres").optional(),
+  date: z.string().min(1, "validation.dateRequired"),
+  categoryId: z.string().min(1, "validation.categoryRequired"),
+  amount: z
+    .string()
+    .min(1, "validation.amountRequired")
+    .refine(
+      (val) => !isNaN(Number(val)) && Number(val) > 0,
+      "validation.amountPositive"
+    ),
+  description: z.string().max(200, "validation.descriptionTooLong").optional(),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -120,7 +122,7 @@ export function IncomeFormDialog({ open, onOpenChange, entry, categories, onUpgr
               <FormItem>
                 <FormLabel>{t("date")}</FormLabel>
                 <FormControl><Input type="date" {...field} /></FormControl>
-                <FormMessage />
+                <TranslatedFormMessage /> 
               </FormItem>
             )} />
 
@@ -139,7 +141,7 @@ export function IncomeFormDialog({ open, onOpenChange, entry, categories, onUpgr
                     ))}
                   </SelectContent>
                 </Select>
-                <FormMessage />
+                <TranslatedFormMessage /> // 👈
               </FormItem>
             )} />
 
@@ -154,7 +156,7 @@ export function IncomeFormDialog({ open, onOpenChange, entry, categories, onUpgr
                     {...field}
                   />
                 </FormControl>
-                <FormMessage />
+                <TranslatedFormMessage />
               </FormItem>
             )} />
 
@@ -169,7 +171,7 @@ export function IncomeFormDialog({ open, onOpenChange, entry, categories, onUpgr
                     {...field}
                   />
                 </FormControl>
-                <FormMessage />
+                <TranslatedFormMessage />
               </FormItem>
             )} />
 
