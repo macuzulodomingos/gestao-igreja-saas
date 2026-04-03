@@ -6,16 +6,18 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
 import { saveCategoryAction } from "@/app/actions/finance-category-actions";
 import { FinanceCategory } from "@/types/category";
+import { useTranslations } from "next-intl";
+import { TranslatedFormMessage } from "@/components/ui/TranslatedFormMessage";
 
 const schema = z.object({
-  name: z.string().min(1, "Nome obrigatório").max(50, "Máximo 50 caracteres"),
+  name: z.string().min(1, "validation.nameRequired").max(50, "validation.categoryNameTooLong"),
   type: z.enum(["INCOME", "EXPENSE"]),
 });
 
@@ -29,6 +31,8 @@ interface Props {
 
 export function CategoryFormDialog({ open, onOpenChange, category }: Props) {
   const [isPending, startTransition] = useTransition();
+  const t = useTranslations("categories.form");
+  const tc = useTranslations("common");
 
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -53,10 +57,11 @@ export function CategoryFormDialog({ open, onOpenChange, category }: Props) {
       const result = await saveCategoryAction(formData, category?.id);
 
       if (result.success) {
-        toast.success(category ? "Categoria actualizada!" : "Categoria criada!");
+        toast.success(category ? t("updated") : t("created"));
         onOpenChange(false);
       } else {
-        toast.error(result.error || "Erro ao salvar categoria.");
+        const errorCode = (result as any).errorCode;
+        toast.error(errorCode ? t(`errors.${errorCode}`) : t("error"));
       }
     });
   };
@@ -66,7 +71,7 @@ export function CategoryFormDialog({ open, onOpenChange, category }: Props) {
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
           <DialogTitle>
-            {category ? "Editar Categoria" : "Nova Categoria"}
+            {category ? t("editTitle") : t("addTitle")}
           </DialogTitle>
         </DialogHeader>
         <Form {...form}>
@@ -74,40 +79,40 @@ export function CategoryFormDialog({ open, onOpenChange, category }: Props) {
 
             <FormField control={form.control} name="name" render={({ field }) => (
               <FormItem>
-                <FormLabel>Nome</FormLabel>
+                <FormLabel>{t("name")}</FormLabel>
                 <FormControl>
-                  <Input placeholder="Ex: Dízimo, Aluguel..." {...field} />
+                  <Input placeholder={t("namePlaceholder")} {...field} />
                 </FormControl>
-                <FormMessage />
+                <TranslatedFormMessage />
               </FormItem>
             )} />
 
             <FormField control={form.control} name="type" render={({ field }) => (
               <FormItem>
-                <FormLabel>Tipo</FormLabel>
+                <FormLabel>{t("type")}</FormLabel>
                 <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecione o tipo" />
+                      <SelectValue placeholder={t("typePlaceholder")} />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="INCOME">Receita</SelectItem>
-                    <SelectItem value="EXPENSE">Despesa</SelectItem>
+                    <SelectItem value="INCOME">{t("income")}</SelectItem>
+                    <SelectItem value="EXPENSE">{t("expense")}</SelectItem>
                   </SelectContent>
                 </Select>
-                <FormMessage />
+                <TranslatedFormMessage />
               </FormItem>
             )} />
 
             <div className="flex justify-end gap-3 pt-2">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                Cancelar
+                {tc("cancel")}
               </Button>
               <Button type="submit" disabled={isPending}>
                 {isPending
                   ? <Loader2 className="h-4 w-4 animate-spin" />
-                  : category ? "Salvar" : "Criar"
+                  : category ? t("save") : t("create")
                 }
               </Button>
             </div>

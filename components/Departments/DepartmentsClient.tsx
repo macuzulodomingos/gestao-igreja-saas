@@ -54,8 +54,8 @@ export default function DepartmentsClient({ initialDepartments, members }: Depar
   const confirmDelete = async () => {
     if (!departmentToDelete) return;
     const result = await deleteDepartmentAction(departmentToDelete.id);
-    if (result.success) toast.success(t("title") + " eliminado!");
-    else toast.error(result.error || t("confirm"));
+    if (result.success) toast.success(t("successDeleted"));
+    else toast.error(result.error || t("errorDelete"));
     setDepartmentToDelete(null);
   };
 
@@ -104,9 +104,9 @@ export default function DepartmentsClient({ initialDepartments, members }: Depar
           <AlertDialogHeader>
             <AlertDialogTitle>{t("confirmDelete")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Deseja realmente eliminar o departamento{" "}
+              {t("confirmDeleteDesc")}{" "}
               <strong>{departmentToDelete?.name}</strong>?{" "}
-              Esta acção é irreversível.
+              {t("irreversible")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

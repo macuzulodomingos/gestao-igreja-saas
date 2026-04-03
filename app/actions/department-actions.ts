@@ -8,8 +8,8 @@ import { getAuthContext } from "@/lib/auth-context";
 import { checkDepartmentLimit } from "@/lib/plan-guard";
 
 const departmentSchema = z.object({
-  name: z.string().min(1, "Nome obrigatório").max(100),
-  description: z.string().max(500).optional(),
+  name: z.string().min(1, "validation.nameRequired").max(100, "validation.departmentNameTooLong"),
+  description: z.string().max(500, "validation.departmentDescTooLong").optional(),
   leaderId: z.string().optional(),
 });
 

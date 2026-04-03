@@ -16,6 +16,7 @@ import { eventSchema } from "@/lib/validations/event";
 import { saveEventAction } from "@/app/actions/event-actions";
 import { ChurchEvent, EventCategory, EventListDepartment } from "@/types/event";
 import { useTranslations } from "next-intl";
+import { TranslatedFormMessage } from "@/components/ui/TranslatedFormMessage";
 
 type FormData = z.infer<typeof eventSchema>;
 
@@ -117,7 +118,7 @@ export function EventFormDialog({ open, onOpenChange, event, departments, catego
                 <FormControl>
                   <Input placeholder={t("namePlaceholder")} {...field} />
                 </FormControl>
-                <FormMessage />
+                <TranslatedFormMessage />
               </FormItem>
             )} />
 
@@ -144,7 +145,7 @@ export function EventFormDialog({ open, onOpenChange, event, departments, catego
                     )}
                   </SelectContent>
                 </Select>
-                <FormMessage />
+                <TranslatedFormMessage />
               </FormItem>
             )} />
 
@@ -153,14 +154,14 @@ export function EventFormDialog({ open, onOpenChange, event, departments, catego
                 <FormItem>
                   <FormLabel>{t("date")}</FormLabel>
                   <FormControl><Input type="date" {...field} /></FormControl>
-                  <FormMessage />
+                  <TranslatedFormMessage />
                 </FormItem>
               )} />
               <FormField control={form.control} name="time" render={({ field }) => (
                 <FormItem>
                   <FormLabel>{t("time")}</FormLabel>
                   <FormControl><Input type="time" {...field} /></FormControl>
-                  <FormMessage />
+                  <TranslatedFormMessage />
                 </FormItem>
               )} />
             </div>
@@ -181,7 +182,7 @@ export function EventFormDialog({ open, onOpenChange, event, departments, catego
                     ))}
                   </SelectContent>
                 </Select>
-                <FormMessage />
+                <TranslatedFormMessage />
               </FormItem>
             )} />
 
@@ -196,7 +197,7 @@ export function EventFormDialog({ open, onOpenChange, event, departments, catego
                     {...field}
                   />
                 </FormControl>
-                <FormMessage />
+                <TranslatedFormMessage />
               </FormItem>
             )} />
 

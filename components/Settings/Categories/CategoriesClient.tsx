@@ -12,6 +12,7 @@ import {
 import { FinanceCategory } from "@/types/category";
 import { CategoriesList } from "./CategoriesList";
 import { CategoryFormDialog } from "./CategoryFormDialog";
+import { useTranslations } from "next-intl";
 
 interface Props {
   initialCategories: FinanceCategory[];
@@ -21,6 +22,7 @@ export default function CategoriesClient({ initialCategories }: Props) {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<FinanceCategory | null>(null);
   const [categoryToDelete, setCategoryToDelete] = useState<FinanceCategory | null>(null);
+  const t = useTranslations("categories");
 
   const handleAdd = () => {
     setEditingCategory(null);
@@ -40,8 +42,13 @@ export default function CategoriesClient({ initialCategories }: Props) {
   const confirmDelete = async () => {
     if (!categoryToDelete) return;
     const result = await deleteCategoryAction(categoryToDelete.id);
-    if (result.success) toast.success("Categoria eliminada!");
-    else toast.error(result.error || "Erro ao eliminar.");
+    if (result.success) {
+      toast.success(t("successDeleted"));
+    } else {
+      // 👈 traduz o errorCode
+      const errorCode = (result as any).errorCode;
+      toast.error(errorCode ? t(`errors.${errorCode}`) : t("errorDelete"));
+    }
     setCategoryToDelete(null);
   };
 
@@ -49,14 +56,12 @@ export default function CategoriesClient({ initialCategories }: Props) {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground">Categorias</h1>
-          <p className="text-muted-foreground mt-1">
-            Gere as categorias de receitas e despesas da sua igreja.
-          </p>
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground">{t("title")}</h1>
+          <p className="text-muted-foreground mt-1">{t("subtitle")}</p>
         </div>
         <Button onClick={handleAdd} className="gap-2">
           <Plus className="h-4 w-4" />
-          Adicionar Categoria
+          {t("addCategory")}
         </Button>
       </div>
 
@@ -78,19 +83,19 @@ export default function CategoriesClient({ initialCategories }: Props) {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Tens a certeza?</AlertDialogTitle>
+            <AlertDialogTitle>{t("confirmDelete")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Deseja eliminar a categoria <strong>{categoryToDelete?.name}</strong>?{" "}
-              Só é possível eliminar categorias sem transacções associadas.
+              {t("confirmDeleteDesc")} <strong>{categoryToDelete?.name}</strong>?{" "}
+              {t("confirmDeleteDesc2")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-white hover:bg-destructive/90"
               onClick={confirmDelete}
             >
-              Confirmar Eliminação
+              {t("confirm")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

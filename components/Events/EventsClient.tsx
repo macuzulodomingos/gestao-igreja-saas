@@ -63,8 +63,8 @@ export default function EventsClient({
   const confirmDelete = async () => {
     if (!eventToDelete) return;
     const result = await deleteEventAction(eventToDelete.id);
-    if (result.success) toast.success(t("title") + " eliminado!");
-    else toast.error(result.error || t("confirm"));
+    if (result.success) toast.success(t("successDeleted"));
+    else toast.error(result.error || t("errorDelete"));
     setEventToDelete(null);
   };
 

@@ -14,10 +14,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2 } from "lucide-react";
 import { saveDepartmentAction } from "@/app/actions/department-actions";
 import { useTranslations } from "next-intl";
+import { TranslatedFormMessage } from "@/components/ui/TranslatedFormMessage";
 
 const schema = z.object({
-  name: z.string().min(1, "Nome obrigatório").max(100),
-  description: z.string().max(500, "Máximo 500 caracteres").optional(),
+  name: z.string().min(1, "validation.nameRequired").max(100, "validation.departmentNameTooLong"),
+  description: z.string().max(500, "validation.departmentDescTooLong").optional(),
   leaderId: z.string().optional(),
 });
 
@@ -109,7 +110,7 @@ export function DepartmentFormDialog({ open, onOpenChange, department, members, 
                 <FormControl>
                   <Input placeholder={t("namePlaceholder")} {...field} />
                 </FormControl>
-                <FormMessage />
+                <TranslatedFormMessage />
               </FormItem>
             )} />
 
@@ -131,7 +132,7 @@ export function DepartmentFormDialog({ open, onOpenChange, department, members, 
                     ))}
                   </SelectContent>
                 </Select>
-                <FormMessage />
+                <TranslatedFormMessage />
               </FormItem>
             )} />
 
@@ -146,7 +147,7 @@ export function DepartmentFormDialog({ open, onOpenChange, department, members, 
                     {...field}
                   />
                 </FormControl>
-                <FormMessage />
+                <TranslatedFormMessage />
               </FormItem>
             )} />
 

@@ -130,17 +130,29 @@ export default function MemberClient({
         setIsModalOpen(false);
         setEditingMember(null);
       });
-      toast.success(editingMember ? t("save") : t("register"));
+      toast.success(editingMember ? t("successUpdated") : t("successCreated"));
       (event.target as HTMLFormElement).reset();
     } else if ("upgrade" in result && result.upgrade) {
       upgrade.showUpgrade(result.error || tc("upgrade"));
     } else if (result.fieldErrors) {
       setFieldErrors(result.fieldErrors);
-      toast.error(tc("error"));
+      toast.error(t("errorForm"));
     } else {
       toast.error(result.error || tc("error"));
     }
   }
+
+  const tv = useTranslations("validation");
+
+  const translateError = (msg: string) => {
+    try {
+      // 👈 remove o prefixo "validation." se existir antes de passar ao tv
+      const key = msg.startsWith("validation.") ? msg.replace("validation.", "") : msg;
+      return tv(key as any);
+    } catch {
+      return msg;
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -185,7 +197,7 @@ export default function MemberClient({
                   placeholder={t("fullName")}
                   className={fieldErrors.name ? "border-destructive" : ""}
                 />
-                {fieldErrors.name && <p className="text-xs text-destructive">{fieldErrors.name[0]}</p>}
+                {fieldErrors.name && <p className="text-xs text-destructive">{translateError(fieldErrors.name[0])}</p>}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -199,7 +211,7 @@ export default function MemberClient({
                     placeholder="ex@email.com"
                     className={fieldErrors.email ? "border-destructive" : ""}
                   />
-                  {fieldErrors.email && <p className="text-xs text-destructive">{fieldErrors.email[0]}</p>}
+                  {fieldErrors.email && <p className="text-xs text-destructive">{translateError(fieldErrors.email[0])}</p>}
                 </div>
                 <div className="grid gap-2">
                   <label htmlFor="phone" className={`text-sm font-medium ${fieldErrors.phone ? "text-destructive" : ""}`}>
@@ -211,7 +223,7 @@ export default function MemberClient({
                     placeholder="9xx xxx xxx"
                     className={fieldErrors.phone ? "border-destructive" : ""}
                   />
-                  {fieldErrors.phone && <p className="text-xs text-destructive">{fieldErrors.phone[0]}</p>}
+                  {fieldErrors.phone && <p className="text-xs text-destructive">{translateError(fieldErrors.phone[0])}</p>}
                 </div>
               </div>
 
@@ -230,7 +242,7 @@ export default function MemberClient({
                       <option key={role.id} value={role.id}>{role.name}</option>
                     ))}
                   </select>
-                  {fieldErrors.role && <p className="text-xs text-destructive">{fieldErrors.role[0]}</p>}
+                  {fieldErrors.role && <p className="text-xs text-destructive">{translateError(fieldErrors.role[0])}</p>}
                 </div>
                 <div className="grid gap-2">
                   <label htmlFor="joinDate" className={`text-sm font-medium ${fieldErrors.joinDate ? "text-destructive" : ""}`}>
@@ -245,7 +257,7 @@ export default function MemberClient({
                         : new Date().toISOString().split("T")[0]
                     }
                   />
-                  {fieldErrors.joinDate && <p className="text-xs text-destructive">{fieldErrors.joinDate[0]}</p>}
+                  {fieldErrors.joinDate && <p className="text-xs text-destructive">{translateError(fieldErrors.joinDate[0])}</p>}
                 </div>
               </div>
 
@@ -438,7 +450,7 @@ export default function MemberClient({
                     if (!memberToDelete) return;
                     const result = await deleteMemberAction(memberToDelete.id);
                     if (result.success) {
-                      toast.success(tc("success"));
+                      toast.success(t("successDeleted"));
                     } else {
                       toast.error(result.error);
                     }

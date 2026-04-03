@@ -37,17 +37,17 @@ export async function saveCategoryAction(
   } catch (error: unknown) {
     const message = getErrorMessage(error);
     if (message === "UNAUTHORIZED")
-      return { success: false, error: "Não autenticado." };
+      return { success: false, errorCode: "unauthorized" };
     if (message === "CHURCH_ID_REQUIRED")
-      return { success: false, error: "Igreja não encontrada." };
+      return { success: false, errorCode: "churchNotFound" };
     if (message === "CATEGORY_NOT_FOUND")
-      return { success: false, error: "Categoria não encontrada." };
+      return { success: false, errorCode: "categoryNotFound" };
     if (message === "CATEGORY_DUPLICATE")
-      return { success: false, fieldErrors: { name: ["Já existe uma categoria com este nome e tipo."] } };
+      return { success: false, fieldErrors: { name: ["categories.errors.duplicate"] } };
     if (isPrismaError(error) && error.code === "P2002")
-      return { success: false, fieldErrors: { name: ["Esta categoria já existe."] } };
+      return { success: false, fieldErrors: { name: ["categories.errors.duplicate"] } };
     console.error("[SAVE_CATEGORY_ERROR]:", error);
-    return { success: false, error: "Erro ao salvar categoria." };
+    return { success: false, errorCode: "errorSave" };
   }
 }
 
@@ -66,16 +66,16 @@ export async function deleteCategoryAction(
   } catch (error: unknown) {
     const message = getErrorMessage(error);
     if (message === "UNAUTHORIZED")
-      return { success: false, error: "Não autenticado." };
+      return { success: false, errorCode: "unauthorized" };
     if (message === "CATEGORY_NOT_FOUND")
-      return { success: false, error: "Categoria não encontrada." };
+      return { success: false, errorCode: "categoryNotFound" };
     if (message === "CATEGORY_HAS_TRANSACTIONS")
-      return { success: false, error: "Não é possível eliminar uma categoria com transacções associadas." };
+      return { success: false, errorCode: "categoryHasTransactions" };
     if (isPrismaError(error) && error.code === "P2025")
-      return { success: false, error: "Categoria já foi eliminada." };
+      return { success: false, errorCode: "categoryAlreadyDeleted" };
     if (isPrismaError(error) && error.code === "P2003")
-      return { success: false, error: "Não é possível eliminar uma categoria com transacções associadas." };
+      return { success: false, errorCode: "categoryHasTransactions" };
     console.error("[DELETE_CATEGORY_ERROR]:", error);
-    return { success: false, error: "Erro ao eliminar categoria." };
+    return { success: false, errorCode: "errorDelete" };
   }
 }
