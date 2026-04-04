@@ -3,23 +3,17 @@
 import { useState, useTransition } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Plus, Pencil, Trash2, Users } from "lucide-react";
 import { UserFormDialog } from "@/components/Settings/Users/UserFormDialog";
 import { deleteUserAction } from "@/app/actions/user-actions";
 import { toast } from "sonner";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { UpgradeModal } from "@/components/UpgradeModal";
 import { useUpgradeModal } from "@/hooks/useUpgradeModal";
+import { useTranslations } from "next-intl";
 
 type User = {
   id: string;
@@ -27,13 +21,6 @@ type User = {
   email: string;
   role: string;
   createdAt: Date;
-};
-
-const roleLabels: Record<string, string> = {
-  ADMIN: "Administrador",
-  TREASURER: "Tesoureiro",
-  SECRETARY: "Secretário",
-  OPERATOR: "Operador",
 };
 
 const roleColors: Record<string, string> = {
@@ -55,6 +42,8 @@ export default function UsersClient({ initialUsers, currentUserId }: UsersClient
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const [isPending, startTransition] = useTransition();
   const upgrade = useUpgradeModal();
+  const t = useTranslations("users");
+  const te = useTranslations("users.errors");
 
   const handleDelete = () => {
     if (!userToDelete) return;
@@ -62,9 +51,10 @@ export default function UsersClient({ initialUsers, currentUserId }: UsersClient
       const result = await deleteUserAction(userToDelete.id);
       if (result.success) {
         setUsers((prev) => prev.filter((u) => u.id !== userToDelete.id));
-        toast.success("Utilizador removido.");
+        toast.success(t("successDeleted"));
       } else {
-        toast.error(result.error || "Erro ao remover.");
+        const errorCode = (result as any).errorCode;
+        toast.error(errorCode ? te(errorCode) : t("errorDelete"));
       }
       setUserToDelete(null);
     });
@@ -76,27 +66,25 @@ export default function UsersClient({ initialUsers, currentUserId }: UsersClient
         <div>
           <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-2">
             <Users className="h-7 w-7 text-primary" />
-            Utilizadores
+            {t("title")}
           </h1>
-          <p className="text-muted-foreground mt-1">
-            Gere quem tem acesso ao painel da sua igreja.
-          </p>
+          <p className="text-muted-foreground mt-1">{t("subtitle")}</p>
         </div>
         <Button onClick={() => { setEditingUser(null); setIsFormOpen(true); }} className="gap-2">
-          <Plus className="h-4 w-4" /> Adicionar Utilizador
+          <Plus className="h-4 w-4" /> {t("addUser")}
         </Button>
       </div>
 
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm text-muted-foreground">
-            {users.length} utilizador(es)
+            {users.length} {t("count")}
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           {users.length === 0 ? (
             <p className="text-center text-muted-foreground py-12 text-sm">
-              Nenhum utilizador encontrado.
+              {t("empty")}
             </p>
           ) : (
             <div className="divide-y">
@@ -110,7 +98,7 @@ export default function UsersClient({ initialUsers, currentUserId }: UsersClient
                       <p className="text-sm font-medium">
                         {user.name}
                         {user.id === currentUserId && (
-                          <span className="ml-2 text-xs text-muted-foreground">(você)</span>
+                          <span className="ml-2 text-xs text-muted-foreground">{t("you")}</span>
                         )}
                       </p>
                       <p className="text-xs text-muted-foreground">{user.email}</p>
@@ -119,22 +107,19 @@ export default function UsersClient({ initialUsers, currentUserId }: UsersClient
 
                   <div className="flex items-center gap-3">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${roleColors[user.role] ?? "bg-muted text-muted-foreground"}`}>
-                      {roleLabels[user.role] ?? user.role}
+                      {t(`roles.${user.role}`) ?? user.role}
                     </span>
 
                     {user.role !== "ADMIN" && user.id !== currentUserId && (
                       <div className="flex gap-1">
                         <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
+                          variant="ghost" size="icon" className="h-8 w-8"
                           onClick={() => { setEditingUser(user); setIsFormOpen(true); }}
                         >
                           <Pencil className="h-4 w-4" />
                         </Button>
                         <Button
-                          variant="ghost"
-                          size="icon"
+                          variant="ghost" size="icon"
                           className="h-8 w-8 text-destructive hover:text-destructive"
                           onClick={() => setUserToDelete(user)}
                         >
@@ -154,7 +139,7 @@ export default function UsersClient({ initialUsers, currentUserId }: UsersClient
         open={isFormOpen}
         onOpenChange={setIsFormOpen}
         editingUser={editingUser}
-        onUpgrade={(message) => upgrade.showUpgrade(message)} // 👈 NOVO
+        onUpgrade={(message) => upgrade.showUpgrade(message)}
         onSuccess={(updatedUser) => {
           if (editingUser) {
             setUsers((prev) => prev.map((u) => u.id === updatedUser.id ? updatedUser : u));
@@ -165,7 +150,6 @@ export default function UsersClient({ initialUsers, currentUserId }: UsersClient
         }}
       />
 
-      {/* 👈 NOVO — adiciona no fim */}
       <UpgradeModal
         open={upgrade.isOpen}
         onOpenChange={upgrade.onOpenChange}
@@ -175,20 +159,19 @@ export default function UsersClient({ initialUsers, currentUserId }: UsersClient
       <AlertDialog open={!!userToDelete} onOpenChange={(open) => !open && setUserToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Remover utilizador?</AlertDialogTitle>
+            <AlertDialogTitle>{t("confirmDelete")}</AlertDialogTitle>
             <AlertDialogDescription>
-              <strong>{userToDelete?.name}</strong> perderá acesso ao painel imediatamente.
-              Esta acção não pode ser desfeita.
+              <strong>{userToDelete?.name}</strong> {t("confirmDeleteDesc")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               disabled={isPending}
               className="bg-destructive hover:bg-destructive/90"
             >
-              Remover
+              {t("remove")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

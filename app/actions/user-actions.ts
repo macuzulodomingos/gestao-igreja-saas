@@ -12,18 +12,16 @@ import { getErrorMessage, isPrismaError } from "@/lib/errors";
 const ALLOWED_ROLES = ["TREASURER", "SECRETARY", "OPERATOR"] as const;
 
 const createUserSchema = z.object({
-  name: z.string().min(2, "Nome obrigatório").max(100),
-  email: z.string().email("E-mail inválido"),
-  password: z.string().min(6, "Mínimo 6 caracteres"),
-  role: z.enum(ALLOWED_ROLES, {
-    message: "Cargo inválido",
-  }),
+  name: z.string().min(2, "validation.nameRequired").max(100, "validation.nameTooLong"),
+  email: z.string().email("validation.emailInvalid"),
+  password: z.string().min(6, "validation.passwordTooShort"),
+  role: z.enum(ALLOWED_ROLES, { message: "validation.required" }),
 });
 
 const updateUserSchema = z.object({
   name: z.string().min(2).max(100).optional(),
   role: z.enum(ALLOWED_ROLES).optional(),
-});
+}); 
 
 async function getAuthContext(targetChurchId?: string) {
   const session = await auth();
@@ -76,16 +74,15 @@ export async function createUserAction(formData: FormData, targetChurchId?: stri
   } catch (error: unknown) {
     const message = getErrorMessage(error);
     if (message === "UNAUTHORIZED")
-      return { success: false, error: "Não autenticado." };
+      return { success: false, errorCode: "unauthorized" };
     if (message === "FORBIDDEN")
-      return { success: false, error: "Sem permissão." };
+      return { success: false, errorCode: "forbidden" };
     if (message === "PLAN_LIMIT_USERS")
-      return { success: false, error: "Limite de utilizadores atingido. Actualize o seu plano.", upgrade: true };
+      return { success: false, errorCode: "planLimitUsers", upgrade: true };
     if (isPrismaError(error) && error.code === "P2002")
-      return { success: false, fieldErrors: { email: ["Este e-mail já está registado."] } };
-
+      return { success: false, fieldErrors: { email: ["users.errors.emailTaken"] } };
     console.error("[CREATE_USER_ERROR]:", error);
-    return { success: false, error: "Erro ao criar utilizador." };
+    return { success: false, errorCode: "errorSave" };
   }
 }
 
@@ -109,15 +106,15 @@ export async function updateUserAction(
   } catch (error: unknown) {
     const message = getErrorMessage(error);
     if (message === "UNAUTHORIZED")
-      return { success: false, error: "Não autenticado." };
+      return { success: false, errorCode: "unauthorized" };
     if (message === "FORBIDDEN")
-      return { success: false, error: "Sem permissão." };
+      return { success: false, errorCode: "forbidden" };
     if (message === "CANNOT_EDIT_SELF")
-      return { success: false, error: "Não pode editar a sua própria conta aqui." };
+      return { success: false, errorCode: "cannotEditSelf" };
     if (message === "USER_NOT_FOUND")
-      return { success: false, error: "Utilizador não encontrado." };
+      return { success: false, errorCode: "userNotFound" };
     console.error("[UPDATE_USER_ERROR]:", error);
-    return { success: false, error: "Erro ao actualizar utilizador." };
+    return { success: false, errorCode: "errorSave" };
   }
 }
 
@@ -132,18 +129,18 @@ export async function deleteUserAction(userId: string, targetChurchId?: string) 
   } catch (error: unknown) {
     const message = getErrorMessage(error);
     if (message === "UNAUTHORIZED")
-      return { success: false, error: "Não autenticado." };
+      return { success: false, errorCode: "unauthorized" };
     if (message === "FORBIDDEN")
-      return { success: false, error: "Sem permissão." };
+      return { success: false, errorCode: "forbidden" };
     if (message === "CANNOT_DELETE_SELF")
-      return { success: false, error: "Não pode eliminar a sua própria conta." };
+      return { success: false, errorCode: "cannotDeleteSelf" };
     if (message === "CANNOT_DELETE_ADMIN")
-      return { success: false, error: "Não pode eliminar o administrador." };
+      return { success: false, errorCode: "cannotDeleteAdmin" };
     if (message === "CANNOT_DELETE_LAST_SUPER_ADMIN")
-      return { success: false, error: "Não pode eliminar o único Super Admin do sistema." };
+      return { success: false, errorCode: "cannotDeleteLastSuperAdmin" };
     if (message === "USER_NOT_FOUND")
-      return { success: false, error: "Utilizador não encontrado." };
+      return { success: false, errorCode: "userNotFound" };
     console.error("[DELETE_USER_ERROR]:", error);
-    return { success: false, error: "Erro ao eliminar utilizador." };
+    return { success: false, errorCode: "errorDelete" };
   }
 }

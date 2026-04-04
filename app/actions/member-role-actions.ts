@@ -9,7 +9,7 @@ import { getErrorMessage, isPrismaError } from "@/lib/errors"; // 👈 Teu padr�
 
 
 const roleSchema = z.object({
-  name: z.string().min(1, "Nome obrigatório").max(50, "Máximo 50 caracteres"),
+  name: z.string().min(1, "validation.nameRequired").max(50, "validation.nameTooLong"),
 });
 
 export async function saveRoleAction(
@@ -40,19 +40,13 @@ export async function saveRoleAction(
   } catch (error: unknown) {
     const message = getErrorMessage(error);
     if (message === "UNAUTHORIZED")
-      return { success: false, error: "Não autenticado." };
+      return { success: false, errorCode: "unauthorized" };
     if (message === "CHURCH_ID_REQUIRED")
-      return { success: false, error: "Igreja não identificada." };
-    if (isPrismaError(error)) {
-      if (error.code === "P2002")
-        return { success: false, error: "Já existe um cargo com este nome nesta igreja." };
-    }
-
+      return { success: false, errorCode: "unauthorized" };
+    if (isPrismaError(error) && error.code === "P2002")
+      return { success: false, errorCode: "duplicate" };
     console.error("[SAVE_ROLE_ERROR]:", error);
-    return { 
-      success: false, 
-      error: message || "Erro ao processar dados do cargo." 
-    };
+    return { success: false, errorCode: "errorSave" };
   }
 }
 
@@ -70,22 +64,13 @@ export async function deleteRoleAction(
 
   } catch (error: unknown) {
     const message = getErrorMessage(error);
-
     if (message === "UNAUTHORIZED")
-      return { success: false, error: "Não autenticado." };
-    if (message.includes("Não é possível eliminar")) {
-      return { success: false, error: message };
-    }
-
-    if (isPrismaError(error)) {
-      if (error.code === "P2003")
-        return { success: false, error: "Existem registros vinculados a este cargo." };
-    }
-
+      return { success: false, errorCode: "unauthorized" };
+    if (message.includes("Não é possível eliminar"))
+      return { success: false, errorCode: "roleHasMembers" };
+    if (isPrismaError(error) && error.code === "P2003")
+      return { success: false, errorCode: "roleHasMembers" };
     console.error("[DELETE_ROLE_ERROR]:", error);
-    return { 
-      success: false, 
-      error: message || "Erro ao eliminar cargo." 
-    };
+    return { success: false, errorCode: "errorDelete" };
   }
 }

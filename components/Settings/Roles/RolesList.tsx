@@ -1,11 +1,11 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Pencil, Trash2, ShieldCheck } from "lucide-react";
 import { MemberRole } from "@/types/role";
+import { useTranslations } from "next-intl";
 
 interface Props {
   roles: MemberRole[];
@@ -14,11 +14,14 @@ interface Props {
 }
 
 export function RolesList({ roles, onEdit, onDelete }: Props) {
+  const t = useTranslations("roles.list");
+  const tc = useTranslations("common");
+
   if (roles.length === 0) {
     return (
       <Card>
         <CardContent className="text-center py-12 text-muted-foreground">
-          Nenhum cargo criado. Adicione o primeiro cargo da sua igreja.
+          {t("empty")}
         </CardContent>
       </Card>
     );
@@ -37,7 +40,7 @@ export function RolesList({ roles, onEdit, onDelete }: Props) {
               <p className="font-medium">{role.name}</p>
               {role._count && (
                 <p className="text-xs text-muted-foreground">
-                  {role._count.members} {role._count.members === 1 ? "membro" : "membros"}
+                  {role._count.members} {role._count.members === 1 ? t("member") : t("members")}
                 </p>
               )}
             </div>
@@ -51,14 +54,14 @@ export function RolesList({ roles, onEdit, onDelete }: Props) {
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => onEdit(role)}>
                 <Pencil className="h-4 w-4 mr-2" />
-                Editar
+                {tc("edit")}
               </DropdownMenuItem>
               <DropdownMenuItem
                 onSelect={e => { e.preventDefault(); onDelete(role.id); }}
                 className="text-destructive focus:text-destructive"
               >
                 <Trash2 className="h-4 w-4 mr-2" />
-                Remover
+                {tc("delete")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

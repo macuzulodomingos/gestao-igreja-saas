@@ -359,7 +359,8 @@
     "eventTimePast": "L'heure ne peut pas être dans le passé",
     "departmentNameTooLong": "Nom trop long",
     "departmentDescTooLong": "Maximum 500 caractères",
-    "categoryNameTooLong": "Maximum 50 caractères"
+    "categoryNameTooLong": "Maximum 50 caractères",
+    "passwordTooShort": "Minimum 6 caractères"
   },
   "billing": {
     "title": "Facturation",
@@ -477,6 +478,95 @@
       "errorDelete": "Erreur lors de la suppression.",
       "errorSave": "Erreur lors de la sauvegarde.",
       "categoryAlreadyDeleted": "La catégorie a déjà été supprimée."
+    }
+  },
+  "roles": {
+    "title": "Rôles",
+    "subtitle": "Gérez les rôles des membres de votre église.",
+    "addRole": "Ajouter un rôle",
+    "confirmDelete": "Êtes-vous sûr?",
+    "confirmDeleteDesc": "Voulez-vous supprimer le rôle",
+    "confirmDeleteDesc2": "Il n'est possible de supprimer que les rôles sans membres associés.",
+    "cancel": "Annuler",
+    "confirm": "Confirmer la suppression",
+    "successDeleted": "Rôle supprimé!",
+    "errorDelete": "Erreur lors de la suppression.",
+    "errors": {
+      "unauthorized": "Non authentifié.",
+      "roleNotFound": "Rôle introuvable.",
+      "roleHasMembers": "Il n'est pas possible de supprimer un rôle avec des membres associés.",
+      "errorDelete": "Erreur lors de la suppression.",
+      "errorSave": "Erreur lors de la sauvegarde.",
+      "duplicate": "Un rôle avec ce nom existe déjà dans cette église."
+    },
+    "form": {
+      "addTitle": "Nouveau rôle",
+      "editTitle": "Modifier le rôle",
+      "name": "Nom du rôle",
+      "namePlaceholder": "Ex: Pasteur, Diacre, Secrétaire...",
+      "cancel": "Annuler",
+      "save": "Enregistrer",
+      "create": "Créer",
+      "created": "Rôle créé!",
+      "updated": "Rôle mis à jour!",
+      "error": "Erreur lors de la sauvegarde."
+    },
+    "list": {
+      "empty": "Aucun rôle créé. Ajoutez le premier rôle de votre église.",
+      "member": "membre",
+      "members": "membres"
+    }
+  },
+  "users": {
+    "title": "Utilisateurs",
+    "subtitle": "Gérez qui a accès au panneau de votre église.",
+    "addUser": "Ajouter un utilisateur",
+    "count": "utilisateur(s)",
+    "empty": "Aucun utilisateur trouvé.",
+    "you": "(vous)",
+    "confirmDelete": "Supprimer l'utilisateur?",
+    "confirmDeleteDesc": "perdra l'accès au panneau immédiatement. Cette action ne peut pas être annulée.",
+    "cancel": "Annuler",
+    "remove": "Supprimer",
+    "successDeleted": "Utilisateur supprimé.",
+    "errorDelete": "Erreur lors de la suppression.",
+    "roles": {
+      "ADMIN": "Administrateur",
+      "TREASURER": "Trésorier",
+      "SECRETARY": "Secrétaire",
+      "OPERATOR": "Opérateur"
+    },
+    "form": {
+      "addTitle": "Nouvel utilisateur",
+      "editTitle": "Modifier l'utilisateur",
+      "name": "Nom",
+      "namePlaceholder": "Nom complet",
+      "email": "E-mail",
+      "emailPlaceholder": "email@eglise.com",
+      "password": "Mot de passe",
+      "passwordPlaceholder": "Minimum 6 caractères",
+      "role": "Rôle",
+      "cancel": "Annuler",
+      "save": "Mettre à jour",
+      "create": "Créer l'utilisateur",
+      "saving": "Enregistrement...",
+      "created": "Utilisateur créé.",
+      "updated": "Utilisateur mis à jour.",
+      "errorForm": "Vérifiez les erreurs dans le formulaire.",
+      "error": "Erreur lors de la sauvegarde."
+    },
+    "errors": {
+      "unauthorized": "Non authentifié.",
+      "forbidden": "Permission refusée.",
+      "planLimitUsers": "Limite d'utilisateurs atteinte. Mettez à niveau votre plan.",
+      "emailTaken": "Cet e-mail est déjà enregistré.",
+      "cannotEditSelf": "Vous ne pouvez pas modifier votre propre compte ici.",
+      "cannotDeleteSelf": "Vous ne pouvez pas supprimer votre propre compte.",
+      "cannotDeleteAdmin": "Vous ne pouvez pas supprimer l'administrateur.",
+      "cannotDeleteLastSuperAdmin": "Vous ne pouvez pas supprimer le seul Super Admin du système.",
+      "userNotFound": "Utilisateur introuvable.",
+      "errorSave": "Erreur lors de la sauvegarde.",
+      "errorDelete": "Erreur lors de la suppression."
     }
   }
 }

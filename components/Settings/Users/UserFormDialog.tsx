@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Loader2 } from "lucide-react";
 import { createUserAction, updateUserAction } from "@/app/actions/user-actions";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 
 type User = {
   id: string;
@@ -16,24 +17,29 @@ type User = {
   createdAt: Date;
 };
 
-const ROLE_OPTIONS = [
-  { value: "TREASURER", label: "Tesoureiro" },
-  { value: "SECRETARY", label: "Secretário" },
-  { value: "OPERATOR", label: "Operador" },
-];
-
 interface UserFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   editingUser: User | null;
   onSuccess: (user: User) => void;
-  onUpgrade?: (message: string) => void; // 👈 NOVO
+  onUpgrade?: (message: string) => void;
 }
 
 export function UserFormDialog({ open, onOpenChange, editingUser, onSuccess, onUpgrade }: UserFormDialogProps) {
   const [isPending, startTransition] = useTransition();
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
   const isEditing = !!editingUser;
+  const t = useTranslations("users.form");
+  const tc = useTranslations("common");
+  const tu = useTranslations("users");
+  const te = useTranslations("users.errors");
+  const tv = useTranslations("validation");
+
+  const ROLE_OPTIONS = [
+    { value: "TREASURER", label: tu("roles.TREASURER") },
+    { value: "SECRETARY", label: tu("roles.SECRETARY") },
+    { value: "OPERATOR", label: tu("roles.OPERATOR") },
+  ];
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -46,7 +52,7 @@ export function UserFormDialog({ open, onOpenChange, editingUser, onSuccess, onU
         : await createUserAction(formData);
 
       if (result.success) {
-        toast.success(isEditing ? "Utilizador actualizado." : "Utilizador criado.");
+        toast.success(isEditing ? t("updated") : t("created"));
         const name = formData.get("name") as string;
         const email = formData.get("email") as string;
         const role = formData.get("role") as string;
@@ -58,33 +64,47 @@ export function UserFormDialog({ open, onOpenChange, editingUser, onSuccess, onU
           createdAt: editingUser?.createdAt ?? new Date(),
         });
       } else if ("upgrade" in result && result.upgrade) {
-        // 👈 fecha o form e mostra modal de upgrade
         onOpenChange(false);
-        onUpgrade?.(result.error || "Limite do plano atingido.");
+        // 👈 usa errorCode em vez de error
+        const errorCode = (result as any).errorCode;
+        onUpgrade?.(errorCode ? te(errorCode) : tc("upgrade"));
       } else if (result.fieldErrors) {
-        setFieldErrors(result.fieldErrors); // 👈 mostra erros por campo
-        toast.error("Verifique os erros no formulário.");
+        const translated: Record<string, string[]> = {};
+        for (const [key, msgs] of Object.entries(result.fieldErrors)) {
+          translated[key] = msgs.map(msg => {
+            if (msg.startsWith("validation.")) {
+              try { return tv(msg.replace("validation.", "") as any); } catch { return msg; }
+            }
+            if (msg.startsWith("users.errors.")) {
+              try { return te(msg.replace("users.errors.", "") as any); } catch { return msg; }
+            }
+            return msg;
+          });
+        }
+        setFieldErrors(translated);
+        toast.error(t("errorForm"));
       } else {
-        toast.error(result.error || "Erro ao guardar.");
+        const errorCode = (result as any).errorCode;
+        toast.error(errorCode ? te(errorCode) : t("error"));
       }
     });
-  };
+  }; // 👈 handleSubmit termina aqui
 
-  return (
+  return ( // 👈 return fora do handleSubmit
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>
-            {isEditing ? "Editar Utilizador" : "Novo Utilizador"}
+            {isEditing ? t("editTitle") : t("addTitle")}
           </DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 pt-2">
           <div className="space-y-2">
-            <label className="text-sm font-medium">Nome</label>
+            <label className="text-sm font-medium">{t("name")}</label>
             <Input
               name="name"
-              placeholder="Nome completo"
+              placeholder={t("namePlaceholder")}
               defaultValue={editingUser?.name ?? ""}
               className={fieldErrors.name ? "border-destructive" : ""}
             />
@@ -96,11 +116,11 @@ export function UserFormDialog({ open, onOpenChange, editingUser, onSuccess, onU
           {!isEditing && (
             <>
               <div className="space-y-2">
-                <label className="text-sm font-medium">E-mail</label>
+                <label className="text-sm font-medium">{t("email")}</label>
                 <Input
                   name="email"
                   type="email"
-                  placeholder="email@igreja.com"
+                  placeholder={t("emailPlaceholder")}
                   className={fieldErrors.email ? "border-destructive" : ""}
                 />
                 {fieldErrors.email && (
@@ -108,11 +128,11 @@ export function UserFormDialog({ open, onOpenChange, editingUser, onSuccess, onU
                 )}
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium">Palavra-passe</label>
+                <label className="text-sm font-medium">{t("password")}</label>
                 <Input
                   name="password"
                   type="password"
-                  placeholder="Mínimo 6 caracteres"
+                  placeholder={t("passwordPlaceholder")}
                   className={fieldErrors.password ? "border-destructive" : ""}
                 />
                 {fieldErrors.password && (
@@ -123,7 +143,7 @@ export function UserFormDialog({ open, onOpenChange, editingUser, onSuccess, onU
           )}
 
           <div className="space-y-2">
-            <label className="text-sm font-medium">Cargo</label>
+            <label className="text-sm font-medium">{t("role")}</label>
             <select
               name="role"
               defaultValue={editingUser?.role ?? "OPERATOR"}
@@ -142,13 +162,13 @@ export function UserFormDialog({ open, onOpenChange, editingUser, onSuccess, onU
 
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancelar
+              {tc("cancel")}
             </Button>
             <Button type="submit" disabled={isPending}>
               {isPending ? (
-                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> A guardar...</>
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t("saving")}</>
               ) : (
-                isEditing ? "Actualizar" : "Criar Utilizador"
+                isEditing ? t("save") : t("create")
               )}
             </Button>
           </div>

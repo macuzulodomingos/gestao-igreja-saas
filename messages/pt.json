@@ -359,7 +359,8 @@
     "eventTimePast": "A hora não pode ser no passado",
     "departmentNameTooLong": "Nome demasiado longo",
     "departmentDescTooLong": "Máximo 500 caracteres",
-    "categoryNameTooLong": "Máximo 50 caracteres"
+    "categoryNameTooLong": "Máximo 50 caracteres",
+    "passwordTooShort": "Mínimo 6 caracteres"
   },
   "billing": {
     "title": "Faturamento",
@@ -477,6 +478,95 @@
       "errorDelete": "Erro ao eliminar categoria.",
       "errorSave": "Erro ao salvar categoria.",
       "categoryAlreadyDeleted": "Categoria já foi eliminada."
+    }
+  },
+  "roles": {
+    "title": "Cargos",
+    "subtitle": "Gere os cargos dos membros da sua igreja.",
+    "addRole": "Adicionar Cargo",
+    "confirmDelete": "Tens a certeza?",
+    "confirmDeleteDesc": "Deseja eliminar o cargo",
+    "confirmDeleteDesc2": "Só é possível eliminar cargos sem membros associados.",
+    "cancel": "Cancelar",
+    "confirm": "Confirmar Eliminação",
+    "successDeleted": "Cargo eliminado!",
+    "errorDelete": "Erro ao eliminar.",
+    "errors": {
+      "unauthorized": "Não autenticado.",
+      "roleNotFound": "Cargo não encontrado.",
+      "roleHasMembers": "Não é possível eliminar um cargo com membros associados.",
+      "errorDelete": "Erro ao eliminar cargo.",
+      "errorSave": "Erro ao salvar cargo.",
+      "duplicate": "Já existe um cargo com este nome nesta igreja."
+    },
+    "form": {
+      "addTitle": "Novo Cargo",
+      "editTitle": "Editar Cargo",
+      "name": "Nome do Cargo",
+      "namePlaceholder": "Ex: Pastor, Diácono, Secretário...",
+      "cancel": "Cancelar",
+      "save": "Salvar",
+      "create": "Criar",
+      "created": "Cargo criado!",
+      "updated": "Cargo actualizado!",
+      "error": "Erro ao salvar cargo."
+    },
+    "list": {
+      "empty": "Nenhum cargo criado. Adicione o primeiro cargo da sua igreja.",
+      "member": "membro",
+      "members": "membros"
+    }
+  },
+  "users": {
+    "title": "Utilizadores",
+    "subtitle": "Gere quem tem acesso ao painel da sua igreja.",
+    "addUser": "Adicionar Utilizador",
+    "count": "utilizador(es)",
+    "empty": "Nenhum utilizador encontrado.",
+    "you": "(você)",
+    "confirmDelete": "Remover utilizador?",
+    "confirmDeleteDesc": "perderá acesso ao painel imediatamente. Esta acção não pode ser desfeita.",
+    "cancel": "Cancelar",
+    "remove": "Remover",
+    "successDeleted": "Utilizador removido.",
+    "errorDelete": "Erro ao remover.",
+    "roles": {
+      "ADMIN": "Administrador",
+      "TREASURER": "Tesoureiro",
+      "SECRETARY": "Secretário",
+      "OPERATOR": "Operador"
+    },
+    "form": {
+      "addTitle": "Novo Utilizador",
+      "editTitle": "Editar Utilizador",
+      "name": "Nome",
+      "namePlaceholder": "Nome completo",
+      "email": "E-mail",
+      "emailPlaceholder": "email@igreja.com",
+      "password": "Palavra-passe",
+      "passwordPlaceholder": "Mínimo 6 caracteres",
+      "role": "Cargo",
+      "cancel": "Cancelar",
+      "save": "Actualizar",
+      "create": "Criar Utilizador",
+      "saving": "A guardar...",
+      "created": "Utilizador criado.",
+      "updated": "Utilizador actualizado.",
+      "errorForm": "Verifique os erros no formulário.",
+      "error": "Erro ao guardar."
+    },
+    "errors": {
+      "unauthorized": "Não autenticado.",
+      "forbidden": "Sem permissão.",
+      "planLimitUsers": "Limite de utilizadores atingido. Actualize o seu plano.",
+      "emailTaken": "Este e-mail já está registado.",
+      "cannotEditSelf": "Não pode editar a sua própria conta aqui.",
+      "cannotDeleteSelf": "Não pode eliminar a sua própria conta.",
+      "cannotDeleteAdmin": "Não pode eliminar o administrador.",
+      "cannotDeleteLastSuperAdmin": "Não pode eliminar o único Super Admin do sistema.",
+      "userNotFound": "Utilizador não encontrado.",
+      "errorSave": "Erro ao guardar utilizador.",
+      "errorDelete": "Erro ao eliminar utilizador."
     }
   }
 }

@@ -12,6 +12,7 @@ import {
 import { MemberRole } from "@/types/role";
 import { RolesList } from "./RolesList";
 import { RoleFormDialog } from "./RoleFormDialog";
+import { useTranslations } from "next-intl";
 
 interface Props {
   initialRoles: MemberRole[];
@@ -21,6 +22,7 @@ export default function RolesClient({ initialRoles }: Props) {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingRole, setEditingRole] = useState<MemberRole | null>(null);
   const [roleToDelete, setRoleToDelete] = useState<MemberRole | null>(null);
+  const t = useTranslations("roles");
 
   const handleAdd = () => {
     setEditingRole(null);
@@ -40,8 +42,12 @@ export default function RolesClient({ initialRoles }: Props) {
   const confirmDelete = async () => {
     if (!roleToDelete) return;
     const result = await deleteRoleAction(roleToDelete.id);
-    if (result.success) toast.success("Cargo eliminado!");
-    else toast.error(result.error || "Erro ao eliminar.");
+    if (result.success) {
+      toast.success(t("successDeleted"));
+    } else {
+      const errorCode = (result as any).errorCode;
+      toast.error(errorCode ? t(`errors.${errorCode}`) : t("errorDelete"));
+    }
     setRoleToDelete(null);
   };
 
@@ -49,14 +55,12 @@ export default function RolesClient({ initialRoles }: Props) {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground">Cargos</h1>
-          <p className="text-muted-foreground mt-1">
-            Gere os cargos dos membros da sua igreja.
-          </p>
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground">{t("title")}</h1>
+          <p className="text-muted-foreground mt-1">{t("subtitle")}</p>
         </div>
         <Button onClick={handleAdd} className="gap-2">
           <Plus className="h-4 w-4" />
-          Adicionar Cargo
+          {t("addRole")}
         </Button>
       </div>
 
@@ -78,19 +82,19 @@ export default function RolesClient({ initialRoles }: Props) {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Tens a certeza?</AlertDialogTitle>
+            <AlertDialogTitle>{t("confirmDelete")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Deseja eliminar o cargo <strong>{roleToDelete?.name}</strong>?{" "}
-              Só é possível eliminar cargos sem membros associados.
+              {t("confirmDeleteDesc")} <strong>{roleToDelete?.name}</strong>?{" "}
+              {t("confirmDeleteDesc2")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-white hover:bg-destructive/90"
               onClick={confirmDelete}
             >
-              Confirmar Eliminação
+              {t("confirm")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
