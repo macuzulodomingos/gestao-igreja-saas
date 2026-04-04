@@ -1,6 +1,6 @@
 "use server";
 
-import { ChurchService } from "@/services/churchService";
+import { RegisterChurchService } from "@/services/registerChurchService";
 import { Prisma } from "@prisma/client";
 import { isPrismaError } from "@/lib/errors";
 import { registerSchema } from "@/lib/validations/register";
@@ -17,7 +17,7 @@ export async function registerChurchAction(formData: FormData) {
   }
 
   try {
-    await ChurchService.registerChurch(result.data);
+    await RegisterChurchService.registerChurch(result.data);
     return { success: true, slug: result.data.churchSlug };
 
   } catch (error: unknown) {

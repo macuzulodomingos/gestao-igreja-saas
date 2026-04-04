@@ -1,12 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Languages, Check } from "lucide-react";
+import { Languages, Check, Loader2 } from "lucide-react";
 import { updateLocaleAction } from "@/app/actions/locale-actions";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
 
 const LANGUAGES = [
   {
@@ -29,7 +28,6 @@ interface LanguageClientProps {
 }
 
 export function LanguageClient({ currentLocale, slug }: LanguageClientProps) {
-  const router = useRouter();
   const [selected, setSelected] = useState(currentLocale);
   const [saving, setSaving] = useState(false);
 
@@ -39,12 +37,12 @@ export function LanguageClient({ currentLocale, slug }: LanguageClientProps) {
     setSaving(false);
 
     if (result.success) {
+      // 👈 mensagem na língua seleccionada — intencional
       toast.success(selected === "pt" ? "Idioma actualizado!" : "Langue mise à jour!");
-
-      // 👈 redireciona para a mesma página com o novo locale
       window.location.href = `/${selected}/${slug}/configuracoes/idioma`;
     } else {
-      toast.error(result.error || "Erro ao guardar.");
+      // 👈 mensagem nas duas línguas — utilizador pode não saber qual é a sua
+      toast.error("Erro ao guardar / Erreur lors de la sauvegarde.");
     }
   };
 
@@ -64,10 +62,9 @@ export function LanguageClient({ currentLocale, slug }: LanguageClientProps) {
         {LANGUAGES.map((lang) => (
           <Card
             key={lang.code}
-            className={`cursor-pointer transition-all hover:border-primary/50 ${selected === lang.code
-                ? "border-2 border-primary"
-                : "border"
-              }`}
+            className={`cursor-pointer transition-all hover:border-primary/50 ${
+              selected === lang.code ? "border-2 border-primary" : "border"
+            }`}
             onClick={() => setSelected(lang.code)}
           >
             <CardContent className="flex items-center justify-between py-4 px-5">
@@ -91,7 +88,10 @@ export function LanguageClient({ currentLocale, slug }: LanguageClientProps) {
         disabled={saving || selected === currentLocale}
         className="w-full"
       >
-        {saving ? "A guardar..." : "Guardar / Enregistrer"}
+        {saving
+          ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> A guardar... / Enregistrement...</>
+          : "Guardar / Enregistrer"
+        }
       </Button>
     </div>
   );

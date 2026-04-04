@@ -12,6 +12,7 @@ import {
   AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useTranslations } from "next-intl";
 
 type EventCategory = {
   id: string;
@@ -29,6 +30,8 @@ export default function EventCategoriesClient({ initialCategories }: EventCatego
   const [editingCategory, setEditingCategory] = useState<EventCategory | null>(null);
   const [categoryToDelete, setCategoryToDelete] = useState<EventCategory | null>(null);
   const [isPending, startTransition] = useTransition();
+  const t = useTranslations("eventCategories");
+  const te = useTranslations("eventCategories.errors");
 
   const handleDelete = () => {
     if (!categoryToDelete) return;
@@ -36,9 +39,10 @@ export default function EventCategoriesClient({ initialCategories }: EventCatego
       const result = await deleteEventCategoryAction(categoryToDelete.id);
       if (result.success) {
         setCategories(prev => prev.filter(c => c.id !== categoryToDelete.id));
-        toast.success("Categoria eliminada.");
+        toast.success(t("successDeleted"));
       } else {
-        toast.error(result.error || "Erro ao eliminar.");
+        const errorCode = (result as any).errorCode;
+        toast.error(errorCode ? te(errorCode) : t("errorDelete"));
       }
       setCategoryToDelete(null);
     });
@@ -50,27 +54,25 @@ export default function EventCategoriesClient({ initialCategories }: EventCatego
         <div>
           <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-2">
             <CalendarDays className="h-7 w-7 text-primary" />
-            Categorias de Eventos
+            {t("title")}
           </h1>
-          <p className="text-muted-foreground mt-1">
-            Gere os tipos de eventos da sua igreja.
-          </p>
+          <p className="text-muted-foreground mt-1">{t("subtitle")}</p>
         </div>
         <Button onClick={() => { setEditingCategory(null); setIsFormOpen(true); }} className="gap-2">
-          <Plus className="h-4 w-4" /> Nova Categoria
+          <Plus className="h-4 w-4" /> {t("addCategory")}
         </Button>
       </div>
 
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm text-muted-foreground">
-            {categories.length} categoria(s)
+            {categories.length} {t("count")}
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           {categories.length === 0 ? (
             <p className="text-center text-muted-foreground py-12 text-sm">
-              Nenhuma categoria criada.
+              {t("empty")}
             </p>
           ) : (
             <div className="divide-y">
@@ -79,7 +81,7 @@ export default function EventCategoriesClient({ initialCategories }: EventCatego
                   <div>
                     <p className="text-sm font-medium">{category.name}</p>
                     <p className="text-xs text-muted-foreground">
-                      {category._count.events} evento(s)
+                      {category._count.events} {t("events")}
                     </p>
                   </div>
                   <div className="flex gap-1">
@@ -93,7 +95,6 @@ export default function EventCategoriesClient({ initialCategories }: EventCatego
                       variant="ghost" size="icon"
                       className="h-8 w-8 text-destructive hover:text-destructive"
                       onClick={() => setCategoryToDelete(category)}
-                      disabled={category._count.events > 0}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -122,19 +123,19 @@ export default function EventCategoriesClient({ initialCategories }: EventCatego
       <AlertDialog open={!!categoryToDelete} onOpenChange={(open) => !open && setCategoryToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Eliminar categoria?</AlertDialogTitle>
+            <AlertDialogTitle>{t("confirmDelete")}</AlertDialogTitle>
             <AlertDialogDescription>
-              A categoria <strong>{categoryToDelete?.name}</strong> será eliminada permanentemente.
+              {t("confirmDeleteDesc")} <strong>{categoryToDelete?.name}</strong> {t("confirmDeleteDesc2")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               disabled={isPending}
               className="bg-destructive hover:bg-destructive/90"
             >
-              Eliminar
+              {t("confirm")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

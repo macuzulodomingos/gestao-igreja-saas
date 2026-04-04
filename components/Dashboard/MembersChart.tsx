@@ -1,23 +1,25 @@
-// MembersChart.tsx
 "use client";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-
-const chartConfig = {
-  members: { label: "Membros", color: "var(--color-primary)" },
-} satisfies ChartConfig;
+import { useTranslations } from "next-intl";
 
 interface MembersChartProps {
   data: { month: string; members: number }[];
 }
 
 export function MembersChart({ data }: MembersChartProps) {
+  const t = useTranslations("dashboard");
+
+  const chartConfig = {
+    members: { label: t("membersLabel"), color: "var(--color-primary)" },
+  } satisfies ChartConfig;
+
   return (
     <Card className="card-shadow rounded-2xl border-border">
       <CardHeader className="pb-2">
-        <CardTitle className="text-lg font-semibold">Crescimento de membros</CardTitle>
-        <p className="text-sm text-muted-foreground">Últimos 6 meses</p>
+        <CardTitle className="text-lg font-semibold">{t("membersGrowth")}</CardTitle>
+        <p className="text-sm text-muted-foreground">{t("last6months")}</p>
       </CardHeader>
       <CardContent className="pt-4">
         <ChartContainer config={chartConfig} className="h-[300px] w-full">

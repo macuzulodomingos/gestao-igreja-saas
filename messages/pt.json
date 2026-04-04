@@ -18,7 +18,28 @@
     "monthlyBalance": "Saldo do Mês",
     "memberGrowth": "Crescimento de membros",
     "last6months": "Últimos 6 meses",
-    "incomeVsExpenses": "Receitas vs Despesas"
+    "incomeVsExpenses": "Receitas vs Despesas",
+    "stats": {
+      "totalMembers": "Total de Membros",
+      "newMembersThisMonth": "este mês",
+      "monthlyIncome": "Receitas do Mês",
+      "monthlyIncomeSubtitle": "Total de entradas",
+      "monthlyExpenses": "Despesas do Mês",
+      "monthlyExpensesSubtitle": "Total de saídas",
+      "monthlyBalance": "Saldo do Mês",
+      "monthlyBalanceSubtitle": "Receitas menos despesas"
+    },
+    "recentTransactions": "Transações recentes",
+    "lastActivity": "Última actividade financeira",
+    "noTransactions": "Nenhuma transação recente.",
+    "recentMembers": "Membros recentes",
+    "recentMembersSubtitle": "Últimas adições à sua congregação",
+    "noRecentMembers": "Nenhum membro recente.",
+    "joinedOn": "Ingressou",
+    "membersGrowth": "Crescimento de membros",
+    "membersLabel": "Membros",
+    "incomeLabel": "Receitas",
+    "expensesLabel": "Despesas"
   },
   "members": {
     "title": "Membros",
@@ -568,5 +589,103 @@
       "errorSave": "Erro ao guardar utilizador.",
       "errorDelete": "Erro ao eliminar utilizador."
     }
+  },
+  "eventCategories": {
+    "title": "Categorias de Eventos",
+    "subtitle": "Gere os tipos de eventos da sua igreja.",
+    "addCategory": "Nova Categoria",
+    "count": "categoria(s)",
+    "empty": "Nenhuma categoria criada.",
+    "events": "evento(s)",
+    "confirmDelete": "Eliminar categoria?",
+    "confirmDeleteDesc": "A categoria",
+    "confirmDeleteDesc2": "será eliminada permanentemente.",
+    "cancel": "Cancelar",
+    "confirm": "Eliminar",
+    "successDeleted": "Categoria eliminada.",
+    "errorDelete": "Erro ao eliminar.",
+    "errors": {
+      "unauthorized": "Não autenticado.",
+      "categoryNotFound": "Categoria não encontrada.",
+      "categoryHasEvents": "Não é possível eliminar uma categoria com eventos associados.",
+      "errorDelete": "Erro ao eliminar categoria.",
+      "duplicate": "Esta categoria já existe.",
+      "errorSave": "Erro ao guardar categoria.",
+      "categoryAlreadyDeleted": "Categoria já foi eliminada."
+    },
+    "form": {
+      "addTitle": "Nova Categoria",
+      "editTitle": "Editar Categoria",
+      "name": "Nome",
+      "namePlaceholder": "Ex: Oração, Culto, Ensaio",
+      "cancel": "Cancelar",
+      "save": "Actualizar",
+      "create": "Criar",
+      "saving": "A guardar...",
+      "created": "Categoria criada.",
+      "updated": "Categoria actualizada.",
+      "errorForm": "Verifique os erros no formulário.",
+      "error": "Erro ao guardar."
+    }
+  },
+  "churchSettings": {
+    "title": "Configurações da Igreja",
+    "subtitle": "Gere as configurações gerais da sua igreja.",
+    "generalInfo": "Informações Gerais",
+    "name": "Nome",
+    "slug": "Slug",
+    "plan": "Plano",
+    "timezone": "Fuso Horário",
+    "timezoneDesc": "Define o fuso horário da sua igreja. Afecta a exibição de datas e horas nos eventos.",
+    "timezonePlaceholder": "Selecione o fuso horário",
+    "save": "Guardar Alterações",
+    "saving": "A guardar...",
+    "successSaved": "Configurações actualizadas!",
+    "errorSave": "Erro ao actualizar.",
+    "nameLabel": "Nome da Igreja",
+    "namePlaceholder": "Ex: Igreja Evangélica de Luanda",
+    "errors": {
+      "unauthorized": "Não autenticado.",
+      "nameTaken": "Já existe uma igreja com este nome.",
+      "errorSave": "Erro ao actualizar configurações."
+    }
+  },
+  "audit": {
+    "title": "Auditoria",
+    "subtitle": "Registo completo de todas as acções realizadas no sistema.",
+    "filters": "Filtros",
+    "allModules": "Todos os módulos",
+    "allActions": "Todas as acções",
+    "clearFilters": "Limpar filtros",
+    "module": "Módulo",
+    "action": "Acção",
+    "records": "registo(s) encontrado(s)",
+    "empty": "Nenhum registo encontrado.",
+    "system": "Sistema",
+    "page": "Página",
+    "of": "de",
+    "previous": "Anterior",
+    "next": "Próximo",
+    "actions": {
+      "CREATE": "Criações",
+      "UPDATE": "Edições",
+      "DELETE": "Eliminações",
+      "SYNC": "Sincronizações"
+    },
+    "entities": {
+      "Member": "Membros",
+      "Finance": "Finanças",
+      "Department": "Departamentos",
+      "Event": "Eventos",
+      "FinanceCategory": "Categorias",
+      "MemberRole": "Cargos",
+      "EventCategory": "Categorias de Eventos",
+      "User": "Utilizadores",
+      "Subscription": "Subscrições"
+    },
+    "changedFields": "Campos alterados",
+    "field": "Campo",
+    "oldValue": "Valor anterior",
+    "newValue": "Novo valor"
   }
 }

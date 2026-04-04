@@ -4,21 +4,25 @@ import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getAuthContext } from "@/lib/auth-context";
-import { getErrorMessage } from "@/lib/errors";
+import { getErrorMessage, isPrismaError } from "@/lib/errors";
+import { ChurchService } from "@/services/churchService";
+
+const VALID_TIMEZONES = [
+  "Africa/Luanda",
+  "Africa/Kinshasa",
+  "Africa/Lubumbashi",
+  "America/Sao_Paulo",
+  "America/Manaus",
+  "Europe/Lisbon",
+  "Africa/Maputo",
+] as const;
 
 const churchSettingsSchema = z.object({
-  timezone: z.enum([
-    "Africa/Luanda",
-    "Africa/Kinshasa",
-    "Africa/Lubumbashi",
-    "America/Sao_Paulo",
-    "America/Manaus",
-    "Europe/Lisbon",
-    "Africa/Maputo",
-  ]),
+  name: z.string().min(2, "validation.nameRequired").max(100, "validation.nameTooLong").trim(),
+  timezone: z.enum(VALID_TIMEZONES),
 });
 
-export async function updateChurchTimezoneAction(
+export async function updateChurchSettingsAction(
   formData: FormData,
   targetChurchId?: string,
 ) {
@@ -32,9 +36,9 @@ export async function updateChurchTimezoneAction(
       return { success: false, fieldErrors: result.error.flatten().fieldErrors };
     }
 
-    await prisma.church.update({
-      where: { id: churchId },
-      data: { timezone: result.data.timezone },
+    await ChurchService.updateSettings(churchId, {
+      name: result.data.name,
+      timezone: result.data.timezone,
     });
 
     revalidatePath(`/[slug]/configuracoes`, "page");
@@ -44,10 +48,14 @@ export async function updateChurchTimezoneAction(
   } catch (error: unknown) {
     const message = getErrorMessage(error);
     if (message === "UNAUTHORIZED")
-      return { success: false, error: "Não autenticado." };
+      return { success: false, errorCode: "unauthorized" };
     if (message === "CHURCH_ID_REQUIRED")
-      return { success: false, error: "Igreja não encontrada." };
-    console.error("[UPDATE_CHURCH_TIMEZONE_ERROR]:", error);
-    return { success: false, error: "Erro ao actualizar timezone." };
+      return { success: false, errorCode: "unauthorized" };
+    if (isPrismaError(error) && error.code === "P2002")
+      return { success: false, errorCode: "nameTaken" };
+    console.error("[UPDATE_CHURCH_SETTINGS_ERROR]:", error);
+    return { success: false, errorCode: "errorSave" };
   }
 }
+
+

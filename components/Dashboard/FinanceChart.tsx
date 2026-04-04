@@ -2,6 +2,7 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "@/components/ui/chart";
+import { useTranslations } from "next-intl";
 
 const formatKzShort = (value: number) => {
   if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)} M`;
@@ -9,21 +10,23 @@ const formatKzShort = (value: number) => {
   return `${value}`;
 };
 
-const chartConfig = {
-  income: { label: "Receitas", color: "var(--color-primary)" },
-  expenses: { label: "Despesas", color: "var(--color-muted-foreground)" },
-} satisfies ChartConfig;
-
 interface FinanceChartProps {
   data: { month: string; income: number; expenses: number }[];
 }
 
 export function FinanceChart({ data }: FinanceChartProps) {
+  const t = useTranslations("dashboard");
+
+  const chartConfig = {
+    income: { label: t("incomeLabel"), color: "var(--color-primary)" },
+    expenses: { label: t("expensesLabel"), color: "var(--color-muted-foreground)" },
+  } satisfies ChartConfig;
+
   return (
     <Card className="card-shadow rounded-2xl border-border">
       <CardHeader className="pb-2">
-        <CardTitle className="text-lg font-semibold">Receitas vs Despesas</CardTitle>
-        <p className="text-sm text-muted-foreground">Últimos 6 meses</p>
+        <CardTitle className="text-lg font-semibold">{t("incomeVsExpenses")}</CardTitle>
+        <p className="text-sm text-muted-foreground">{t("last6months")}</p>
       </CardHeader>
       <CardContent className="pt-4">
         <ChartContainer config={chartConfig} className="h-[300px] w-full">
@@ -41,8 +44,8 @@ export function FinanceChart({ data }: FinanceChartProps) {
               }
             />} />
             <ChartLegend content={<ChartLegendContent />} />
-            <Bar dataKey="income" name="Receitas" fill="var(--color-income)" radius={[4, 4, 0, 0]} barSize={18} />
-            <Bar dataKey="expenses" name="Despesas" fill="var(--color-expenses)" radius={[4, 4, 0, 0]} barSize={18} />
+            <Bar dataKey="income" name={t("incomeLabel")} fill="var(--color-income)" radius={[4, 4, 0, 0]} barSize={18} />
+            <Bar dataKey="expenses" name={t("expensesLabel")} fill="var(--color-expenses)" radius={[4, 4, 0, 0]} barSize={18} />
           </BarChart>
         </ChartContainer>
       </CardContent>

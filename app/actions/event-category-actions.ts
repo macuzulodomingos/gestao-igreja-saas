@@ -7,7 +7,7 @@ import { getErrorMessage, isPrismaError } from "@/lib/errors";
 import { getAuthContext } from "@/lib/auth-context";
 
 const categorySchema = z.object({
-  name: z.string().min(1, "Nome obrigatório").max(100).trim(),
+  name: z.string().min(1, "validation.nameRequired").max(100, "validation.nameTooLong").trim(),
 });
 
 
@@ -37,15 +37,15 @@ export async function saveEventCategoryAction(
   } catch (error: unknown) {
     const message = getErrorMessage(error);
     if (message === "UNAUTHORIZED")
-      return { success: false, error: "Não autenticado." };
+      return { success: false, errorCode: "unauthorized" };
     if (message === "CHURCH_ID_REQUIRED")
-      return { success: false, error: "Igreja não encontrada." };
+      return { success: false, errorCode: "unauthorized" };
     if (message === "CATEGORY_NOT_FOUND")
-      return { success: false, error: "Categoria não encontrada." };
+      return { success: false, errorCode: "categoryNotFound" };
     if (isPrismaError(error) && error.code === "P2002")
-      return { success: false, fieldErrors: { name: ["Esta categoria já existe."] } };
+      return { success: false, fieldErrors: { name: ["eventCategories.errors.duplicate"] } };
     console.error("[SAVE_EVENT_CATEGORY_ERROR]:", error);
-    return { success: false, error: "Erro ao guardar categoria." };
+    return { success: false, errorCode: "errorSave" };
   }
 }
 
@@ -64,14 +64,14 @@ export async function deleteEventCategoryAction(
   } catch (error: unknown) {
     const message = getErrorMessage(error);
     if (message === "UNAUTHORIZED")
-      return { success: false, error: "Não autenticado." };
+      return { success: false, errorCode: "unauthorized" };
     if (message === "CATEGORY_NOT_FOUND")
-      return { success: false, error: "Categoria não encontrada." };
+      return { success: false, errorCode: "categoryNotFound" };
     if (message === "CATEGORY_HAS_EVENTS")
-      return { success: false, error: "Não é possível eliminar uma categoria com eventos associados." };
+      return { success: false, errorCode: "categoryHasEvents" };
     if (isPrismaError(error) && error.code === "P2025")
-      return { success: false, error: "Categoria já foi eliminada." };
+      return { success: false, errorCode: "categoryAlreadyDeleted" };
     console.error("[DELETE_EVENT_CATEGORY_ERROR]:", error);
-    return { success: false, error: "Erro ao eliminar categoria." };
+    return { success: false, errorCode: "errorDelete" };
   }
 }

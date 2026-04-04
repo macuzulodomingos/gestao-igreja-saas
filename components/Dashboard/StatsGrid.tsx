@@ -1,5 +1,6 @@
 import { Users, Wallet, TrendingUp, TrendingDown } from "lucide-react";
 import { StatsCard } from "./StatsCard";
+import { useTranslations } from "next-intl";
 
 const formatCurrency = (amount: number) =>
   new Intl.NumberFormat("pt-AO", {
@@ -22,33 +23,35 @@ interface StatsGridProps {
 }
 
 export function StatsGrid({ stats }: StatsGridProps) {
+  const t = useTranslations("dashboard.stats");
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
       <StatsCard
-        title="Total de Membros"
+        title={t("totalMembers")}
         value={stats.totalMembers}
-        subtitle={`+${stats.newMembersThisMonth} este mês`}
+        subtitle={`+${stats.newMembersThisMonth} ${t("newMembersThisMonth")}`}
         icon={Users}
         trend={{ value: stats.memberGrowth, isPositive: stats.memberGrowth >= 0 }}
       />
       <StatsCard
-        title="Receitas do Mês"
+        title={t("monthlyIncome")}
         value={formatCurrency(stats.monthlyIncome)}
-        subtitle="Total de entradas"
+        subtitle={t("monthlyIncomeSubtitle")}
         icon={TrendingUp}
-        valueClassName="text-green-600 dark:text-green-400" // 👈
+        valueClassName="text-green-600 dark:text-green-400"
       />
       <StatsCard
-        title="Despesas do Mês"
+        title={t("monthlyExpenses")}
         value={formatCurrency(stats.monthlyExpenses)}
-        subtitle="Total de saídas"
+        subtitle={t("monthlyExpensesSubtitle")}
         icon={TrendingDown}
-        valueClassName="text-red-600 dark:text-red-400"  // 👈 não existe ainda
+        valueClassName="text-red-600 dark:text-red-400"
       />
       <StatsCard
-        title="Saldo do Mês"
+        title={t("monthlyBalance")}
         value={formatCurrency(stats.monthlyBalance)}
-        subtitle="Receitas menos despesas"
+        subtitle={t("monthlyBalanceSubtitle")}
         icon={Wallet}
         trend={{ value: 0, isPositive: stats.monthlyBalance >= 0 }}
       />

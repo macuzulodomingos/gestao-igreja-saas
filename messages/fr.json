@@ -18,7 +18,28 @@
     "monthlyBalance": "Solde du mois",
     "memberGrowth": "Croissance des membres",
     "last6months": "6 derniers mois",
-    "incomeVsExpenses": "Revenus vs Dépenses"
+    "incomeVsExpenses": "Revenus vs Dépenses",
+    "stats": {
+      "totalMembers": "Total des membres",
+      "newMembersThisMonth": "ce mois",
+      "monthlyIncome": "Revenus du mois",
+      "monthlyIncomeSubtitle": "Total des entrées",
+      "monthlyExpenses": "Dépenses du mois",
+      "monthlyExpensesSubtitle": "Total des sorties",
+      "monthlyBalance": "Solde du mois",
+      "monthlyBalanceSubtitle": "Revenus moins dépenses"
+    },
+    "recentTransactions": "Transactions récentes",
+    "lastActivity": "Dernière activité financière",
+    "noTransactions": "Aucune transaction récente.",
+    "recentMembers": "Membres récents",
+    "recentMembersSubtitle": "Derniers ajouts à votre congrégation",
+    "noRecentMembers": "Aucun membre récent.",
+    "joinedOn": "Rejoint le",
+    "membersGrowth": "Croissance des membres",
+    "membersLabel": "Membres",
+    "incomeLabel": "Revenus",
+    "expensesLabel": "Dépenses"
   },
   "members": {
     "title": "Membres",
@@ -568,5 +589,103 @@
       "errorSave": "Erreur lors de la sauvegarde.",
       "errorDelete": "Erreur lors de la suppression."
     }
+  },
+  "eventCategories": {
+    "title": "Catégories d'événements",
+    "subtitle": "Gérez les types d'événements de votre église.",
+    "addCategory": "Nouvelle catégorie",
+    "count": "catégorie(s)",
+    "empty": "Aucune catégorie créée.",
+    "events": "événement(s)",
+    "confirmDelete": "Supprimer la catégorie?",
+    "confirmDeleteDesc": "La catégorie",
+    "confirmDeleteDesc2": "sera supprimée définitivement.",
+    "cancel": "Annuler",
+    "confirm": "Supprimer",
+    "successDeleted": "Catégorie supprimée.",
+    "errorDelete": "Erreur lors de la suppression.",
+    "errors": {
+      "unauthorized": "Non authentifié.",
+      "categoryNotFound": "Catégorie introuvable.",
+      "categoryHasEvents": "Il n'est pas possible de supprimer une catégorie avec des événements associés.",
+      "errorDelete": "Erreur lors de la suppression.",
+      "duplicate": "Cette catégorie existe déjà.",
+      "errorSave": "Erreur lors de la sauvegarde.",
+      "categoryAlreadyDeleted": "La catégorie a déjà été supprimée."
+    },
+    "form": {
+      "addTitle": "Nouvelle catégorie",
+      "editTitle": "Modifier la catégorie",
+      "name": "Nom",
+      "namePlaceholder": "Ex: Prière, Culte, Répétition",
+      "cancel": "Annuler",
+      "save": "Mettre à jour",
+      "create": "Créer",
+      "saving": "Enregistrement...",
+      "created": "Catégorie créée.",
+      "updated": "Catégorie mise à jour.",
+      "errorForm": "Vérifiez les erreurs dans le formulaire.",
+      "error": "Erreur lors de la sauvegarde."
+    }
+  },
+  "churchSettings": {
+    "title": "Paramètres de l'église",
+    "subtitle": "Gérez les paramètres généraux de votre église.",
+    "generalInfo": "Informations générales",
+    "name": "Nom",
+    "slug": "Slug",
+    "plan": "Plan",
+    "timezone": "Fuseau horaire",
+    "timezoneDesc": "Définit le fuseau horaire de votre église. Affecte l'affichage des dates et heures des événements.",
+    "timezonePlaceholder": "Sélectionnez le fuseau horaire",
+    "save": "Enregistrer les modifications",
+    "saving": "Enregistrement...",
+    "successSaved": "Paramètres mis à jour!",
+    "errorSave": "Erreur lors de la mise à jour.",
+    "nameLabel": "Nom de l'église",
+    "namePlaceholder": "Ex: Église Évangélique de Kinshasa",
+    "errors": {
+      "unauthorized": "Non authentifié.",
+      "nameTaken": "Une église avec ce nom existe déjà.",
+      "errorSave": "Erreur lors de la mise à jour des paramètres."
+    }
+  },
+  "audit": {
+    "title": "Audit",
+    "subtitle": "Registre complet de toutes les actions effectuées dans le système.",
+    "filters": "Filtres",
+    "allModules": "Tous les modules",
+    "allActions": "Toutes les actions",
+    "clearFilters": "Effacer les filtres",
+    "module": "Module",
+    "action": "Action",
+    "records": "enregistrement(s) trouvé(s)",
+    "empty": "Aucun enregistrement trouvé.",
+    "system": "Système",
+    "page": "Page",
+    "of": "de",
+    "previous": "Précédent",
+    "next": "Suivant",
+    "actions": {
+      "CREATE": "Créations",
+      "UPDATE": "Modifications",
+      "DELETE": "Suppressions",
+      "SYNC": "Synchronisations"
+    },
+    "entities": {
+      "Member": "Membres",
+      "Finance": "Finances",
+      "Department": "Départements",
+      "Event": "Événements",
+      "FinanceCategory": "Catégories",
+      "MemberRole": "Rôles",
+      "EventCategory": "Catégories d'événements",
+      "User": "Utilisateurs",
+      "Subscription": "Abonnements"
+    },
+    "changedFields": "Champs modifiés",
+    "field": "Champ",
+    "oldValue": "Ancienne valeur",
+    "newValue": "Nouvelle valeur"
   }
 }

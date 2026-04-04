@@ -35,6 +35,8 @@ export const AuditService = {
           entityId: true,
           userEmail: true,
           createdAt: true,
+          oldData: true, // 👈
+          newData: true, // 👈
         },
         orderBy: { createdAt: "desc" },
         skip: (page - 1) * limit,

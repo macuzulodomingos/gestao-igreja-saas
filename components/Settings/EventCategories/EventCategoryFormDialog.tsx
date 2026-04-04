@@ -6,14 +6,16 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { saveEventCategoryAction } from "@/app/actions/event-category-actions";
+import { useTranslations } from "next-intl";
+import { TranslatedFormMessage } from "@/components/ui/TranslatedFormMessage";
 
 const schema = z.object({
-  name: z.string().min(1, "Nome obrigatório").max(100, "Máximo 100 caracteres"),
+  name: z.string().min(1, "validation.nameRequired").max(100, "validation.nameTooLong"),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -37,13 +39,16 @@ export function EventCategoryFormDialog({
   onSuccess,
 }: EventCategoryFormDialogProps) {
   const [isPending, startTransition] = useTransition();
+  const t = useTranslations("eventCategories.form");
+  const tc = useTranslations("common");
+  const te = useTranslations("eventCategories.errors");
+  const tv = useTranslations("validation");
 
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: { name: "" },
   });
 
-  // 👈 mesmo padrão do RoleFormDialog
   useEffect(() => {
     if (open) {
       form.reset({ name: editingCategory?.name ?? "" });
@@ -58,19 +63,25 @@ export function EventCategoryFormDialog({
       const result = await saveEventCategoryAction(formData, editingCategory?.id);
 
       if (result.success) {
-        toast.success(editingCategory ? "Categoria actualizada." : "Categoria criada.");
-        onSuccess({
-          id: result.id!, // 👈 id real do banco — nunca crypto.randomUUID()
-          name: data.name,
-        });
+        toast.success(editingCategory ? t("updated") : t("created"));
+        onSuccess({ id: result.id!, name: data.name });
         onOpenChange(false);
       } else if (result.fieldErrors) {
         Object.entries(result.fieldErrors).forEach(([field, messages]) => {
-          form.setError(field as keyof FormData, { message: messages[0] });
+          const msg = messages[0];
+          // 👈 traduz a mensagem antes de passar ao form
+          let translated = msg;
+          if (msg.startsWith("validation.")) {
+            try { translated = tv(msg.replace("validation.", "") as any); } catch { }
+          } else if (msg.startsWith("eventCategories.errors.")) {
+            try { translated = te(msg.replace("eventCategories.errors.", "") as any); } catch { }
+          }
+          form.setError(field as keyof FormData, { message: translated });
         });
-        toast.error("Verifique os erros no formulário.");
+        toast.error(t("errorForm"));
       } else {
-        toast.error(result.error || "Erro ao guardar.");
+        const errorCode = (result as any).errorCode;
+        toast.error(errorCode ? te(errorCode) : t("error"));
       }
     });
   };
@@ -80,30 +91,30 @@ export function EventCategoryFormDialog({
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
           <DialogTitle>
-            {editingCategory ? "Editar Categoria" : "Nova Categoria"}
+            {editingCategory ? t("editTitle") : t("addTitle")}
           </DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 pt-2">
             <FormField control={form.control} name="name" render={({ field }) => (
               <FormItem>
-                <FormLabel>Nome</FormLabel>
+                <FormLabel>{t("name")}</FormLabel>
                 <FormControl>
-                  <Input placeholder="Ex: Oração, Culto, Ensaio" {...field} />
+                  <Input placeholder={t("namePlaceholder")} {...field} />
                 </FormControl>
-                <FormMessage />
+                <TranslatedFormMessage />
               </FormItem>
             )} />
 
             <div className="flex justify-end gap-2 pt-2">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                Cancelar
+                {tc("cancel")}
               </Button>
               <Button type="submit" disabled={isPending}>
                 {isPending ? (
-                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> A guardar...</>
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t("saving")}</>
                 ) : (
-                  editingCategory ? "Actualizar" : "Criar"
+                  editingCategory ? t("save") : t("create")
                 )}
               </Button>
             </div>

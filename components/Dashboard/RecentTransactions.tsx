@@ -2,7 +2,8 @@ import { ArrowDownLeft, ArrowUpRight, Receipt } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { ptBR, fr } from "date-fns/locale";
+import { useTranslations, useLocale } from "next-intl";
 
 type RecentTransaction = {
   id: string;
@@ -17,6 +18,8 @@ interface RecentTransactionsProps {
   transactions: RecentTransaction[];
 }
 
+const dateLocalesMap = { pt: ptBR, fr: fr };
+
 const formatCurrency = (amount: number) =>
   new Intl.NumberFormat("pt-AO", {
     style: "currency",
@@ -25,52 +28,56 @@ const formatCurrency = (amount: number) =>
   }).format(amount).replace("AOA", "Kz");
 
 export function RecentTransactions({ transactions }: RecentTransactionsProps) {
+  const t = useTranslations("dashboard");
+  const locale = useLocale();
+  const dateLocale = dateLocalesMap[locale as keyof typeof dateLocalesMap] ?? ptBR;
+
   return (
     <Card className="card-shadow rounded-2xl">
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg font-semibold">Transações recentes</CardTitle>
+          <CardTitle className="text-lg font-semibold">{t("recentTransactions")}</CardTitle>
           <Receipt className="h-5 w-5 text-muted-foreground" />
         </div>
-        <p className="text-sm text-muted-foreground">Última actividade financeira</p>
+        <p className="text-sm text-muted-foreground">{t("lastActivity")}</p>
       </CardHeader>
       <CardContent className="space-y-4">
         {transactions.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-4">
-            Nenhuma transação recente.
+            {t("noTransactions")}
           </p>
         ) : (
-          transactions.map((t) => (
+          transactions.map((tx) => (
             <div
-              key={t.id}
+              key={tx.id}
               className="flex items-center gap-4 p-3 rounded-xl hover:bg-muted/50 transition-colors"
             >
               <div className={cn(
                 "flex h-10 w-10 items-center justify-center rounded-xl",
-                t.type === "INCOME"
+                tx.type === "INCOME"
                   ? "bg-green-100 dark:bg-green-900/30"
                   : "bg-red-100 dark:bg-red-900/30"
               )}>
-                {t.type === "INCOME"
+                {tx.type === "INCOME"
                   ? <ArrowDownLeft className="h-5 w-5 text-green-600 dark:text-green-400" />
                   : <ArrowUpRight className="h-5 w-5 text-red-600 dark:text-red-400" />
                 }
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-foreground truncate">
-                  {t.description}
+                  {tx.description}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {t.category} • {format(new Date(t.date), "dd 'de' MMM", { locale: ptBR })}
+                  {tx.category} • {format(new Date(tx.date), "dd 'de' MMM", { locale: dateLocale })}
                 </p>
               </div>
               <span className={cn(
                 "text-sm font-semibold",
-                t.type === "INCOME"
+                tx.type === "INCOME"
                   ? "text-green-600 dark:text-green-400"
                   : "text-red-600 dark:text-red-400"
               )}>
-                {t.type === "INCOME" ? "+" : "-"}{formatCurrency(t.amount)}
+                {tx.type === "INCOME" ? "+" : "-"}{formatCurrency(tx.amount)}
               </span>
             </div>
           ))
