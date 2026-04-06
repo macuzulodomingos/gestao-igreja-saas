@@ -27,6 +27,7 @@ interface Actor {
 // 👈 controle explícito dos campos — sem vazar dados internos
 const sanitizeForLog = (data: Record<string, unknown> | null) => {
   if (!data) return undefined;
+  const roleObj = data.role as { name: string } | null | undefined;
   return {
     id: data.id,
     name: data.name,
@@ -34,7 +35,7 @@ const sanitizeForLog = (data: Record<string, unknown> | null) => {
     phone: data.phone,
     status: data.status,
     joinDate: data.joinDate,
-    roleId: data.roleId,
+    role: roleObj?.name ?? null,
     deletedAt: data.deletedAt,
   } as Prisma.InputJsonValue;
 };
@@ -180,6 +181,7 @@ export const MemberService = {
           roleId: true,
           churchId: true,
           deletedAt: true,
+          role: { select: { name: true } },
         },
       });
 
@@ -218,6 +220,7 @@ export const MemberService = {
           roleId: true,
           churchId: true,
           deletedAt: true,
+          role: { select: { name: true } },
         },
       });
 

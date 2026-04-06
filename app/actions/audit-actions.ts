@@ -50,7 +50,23 @@ export async function getMemberHistoryAction(
       memberId,
       isSuperAdmin ? undefined : churchId
     );
-    return { success: true, data: history };
+
+    // 👈 mapeia para o tipo AuditLog centralizado
+    const mapped = history.map((log) => ({
+      id: log.id,
+      churchId: log.churchId,
+      userId: log.userId,
+      userEmail: log.userEmail,
+      action: log.action,
+      entityName: log.entityName,
+      entityId: log.entityId,
+      oldData: log.oldData,
+      newData: log.newData,
+      ipAddress: log.ipAddress,
+      createdAt: log.createdAt,
+    }));
+
+    return { success: true, data: mapped };
   } catch (error: unknown) {
     const message = getErrorMessage(error);
     if (message === "UNAUTHORIZED")

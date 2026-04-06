@@ -23,19 +23,7 @@ export interface MemberRole {
   name: string;
 }
 
-export interface AuditLog {
-  id: string;
-  churchId: string;
-  userId: string | null;
-  userEmail: string | null;
-  action: string;
-  entityName: string;
-  entityId: string;
-  oldData: Prisma.JsonValue;
-  newData: Prisma.JsonValue;
-  ipAddress: string | null;
-  createdAt: Date | string; // Use Date | string para evitar erros de serialização no Next.js
-}
+
 
 // Você também pode centralizar os tipos das Actions aqui
 export interface ActionResponse {
