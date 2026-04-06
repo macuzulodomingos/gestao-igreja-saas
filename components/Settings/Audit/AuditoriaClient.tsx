@@ -207,13 +207,18 @@ export default function AuditoriaClient({
                         <p className="text-sm font-medium truncate">
                           {log.userEmail || t("system")}
                         </p>
-                        <p className="text-xs text-muted-foreground truncate">
-                          ID: {log.entityId}
-                        </p>
-                        {/* 👈 preview das alterações */}
+                        {/* 👈 remove o ID — mostra campos alterados como preview */}
                         {hasDiff && !isExpanded && (
                           <p className="text-xs text-muted-foreground mt-1 truncate">
                             {t("changedFields")}: {diff.map(d => d.key).join(", ")}
+                          </p>
+                        )}
+                        {!hasDiff && log.newData && typeof log.newData === "object" && !Array.isArray(log.newData) && (
+                          <p className="text-xs text-muted-foreground mt-1 truncate">
+                            {Object.keys(log.newData as object)
+                              .filter(k => !["id", "churchId", "createdAt", "updatedAt", "deletedAt", "roleId", "categoryId"].includes(k))
+                              .slice(0, 3)
+                              .join(", ")}
                           </p>
                         )}
                       </div>

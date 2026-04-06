@@ -83,7 +83,10 @@
     "successCreated": "Membro adicionado!",
     "successUpdated": "Membro actualizado!",
     "successDeleted": "Membro removido com sucesso!",
-    "errorForm": "Verifique os erros no formulário."
+    "errorForm": "Verifique os erros no formulário.",
+    "historyTitle": "Histórico de",
+    "historyDesc": "Rastreio completo de alterações feitas neste registo.",
+    "historyLoading": "A carregar linha do tempo..."
   },
   "finance": {
     "title": "Finanças",
@@ -687,5 +690,31 @@
     "field": "Campo",
     "oldValue": "Valor anterior",
     "newValue": "Novo valor"
+  },
+  "auditHistory": {
+    "timeline": "Linha do Tempo",
+    "noChanges": "Nenhuma alteração registrada.",
+    "changedBy": "Alterado por",
+    "system": "Sistema",
+    "technicalFields": "Campos técnicos actualizados.",
+    "deleted": "O registo foi removido permanentemente.",
+    "empty": "vazio",
+    "items": "item(s)",
+    "fields": {
+      "name": "Nome",
+      "email": "E-mail",
+      "phone": "Telefone",
+      "role": "Cargo",
+      "status": "Estado",
+      "joinDate": "Data de Ingresso",
+      "description": "Descrição",
+      "amount": "Valor",
+      "type": "Tipo",
+      "date": "Data",
+      "category": "Categoria",
+      "leaderId": "Líder",
+      "memberIds": "Membros",
+      "time": "Hora"
+    }
   }
 }

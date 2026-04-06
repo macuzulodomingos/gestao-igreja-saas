@@ -2,7 +2,7 @@ import { Prisma } from "@prisma/client";
 
 export interface AuditLog {
   id: string;
-  churchId: string;
+  churchId: string | null;  // 👈 reflecte o schema — String?
   userId?: string | null;
   userEmail: string | null;
   action: string;

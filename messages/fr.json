@@ -83,7 +83,10 @@
     "successCreated": "Membre ajouté!",
     "successUpdated": "Membre mis à jour!",
     "successDeleted": "Membre supprimé avec succès!",
-    "errorForm": "Vérifiez les erreurs dans le formulaire."
+    "errorForm": "Vérifiez les erreurs dans le formulaire.",
+    "historyTitle": "Historique de",
+    "historyDesc": "Suivi complet des modifications apportées à cet enregistrement.",
+    "historyLoading": "Chargement de la ligne du temps..."
   },
   "finance": {
     "title": "Finances",
@@ -687,5 +690,31 @@
     "field": "Champ",
     "oldValue": "Ancienne valeur",
     "newValue": "Nouvelle valeur"
+  },
+  "auditHistory": {
+    "timeline": "Ligne du temps",
+    "noChanges": "Aucune modification enregistrée.",
+    "changedBy": "Modifié par",
+    "system": "Système",
+    "technicalFields": "Champs techniques mis à jour.",
+    "deleted": "L'enregistrement a été supprimé définitivement.",
+    "empty": "vide",
+    "items": "élément(s)",
+    "fields": {
+      "name": "Nom",
+      "email": "E-mail",
+      "phone": "Téléphone",
+      "role": "Rôle",
+      "status": "Statut",
+      "joinDate": "Date d'adhésion",
+      "description": "Description",
+      "amount": "Montant",
+      "type": "Type",
+      "date": "Date",
+      "category": "Catégorie",
+      "leaderId": "Leader",
+      "memberIds": "Membres",
+      "time": "Heure"
+    }
   }
 }
