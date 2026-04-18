@@ -46,15 +46,20 @@ const getActionLabel = (action: string) => {
     .replace("_EXPENSE", "").replace(/_/g, " ");
 };
 
+
+const IGNORED_FIELDS = [
+  "id", "churchId", "updatedAt", "createdAt",
+  "roleId", "categoryId", "departmentId", "leaderId",
+  "deletedAt", "userId", "ipAddress",
+];
+
 // 👈 calcula diferenças entre oldData e newData
 const getDiff = (oldData?: Prisma.JsonValue, newData?: Prisma.JsonValue) => {
   if (!oldData && !newData) return [];
   if (!oldData && newData && typeof newData === "object" && !Array.isArray(newData)) {
-    return Object.entries(newData).map(([key, value]) => ({
-      key,
-      old: null,
-      new: value,
-    }));
+    return Object.entries(newData)
+      .filter(([key]) => !IGNORED_FIELDS.includes(key)) // 👈
+      .map(([key, value]) => ({ key, old: null, new: value }));
   }
   if (oldData && !newData) return [];
   if (
@@ -64,6 +69,7 @@ const getDiff = (oldData?: Prisma.JsonValue, newData?: Prisma.JsonValue) => {
   ) {
     const allKeys = new Set([...Object.keys(oldData), ...Object.keys(newData)]);
     return Array.from(allKeys)
+      .filter(key => !IGNORED_FIELDS.includes(key)) // 👈
       .filter(key => JSON.stringify((oldData as any)[key]) !== JSON.stringify((newData as any)[key]))
       .map(key => ({
         key,
@@ -216,7 +222,7 @@ export default function AuditoriaClient({
                         {!hasDiff && log.newData && typeof log.newData === "object" && !Array.isArray(log.newData) && (
                           <p className="text-xs text-muted-foreground mt-1 truncate">
                             {Object.keys(log.newData as object)
-                              .filter(k => !["id", "churchId", "createdAt", "updatedAt", "deletedAt", "roleId", "categoryId"].includes(k))
+                              .filter(k => !IGNORED_FIELDS.includes(k)) // 👈
                               .slice(0, 3)
                               .join(", ")}
                           </p>

@@ -46,13 +46,15 @@ export const EventService = {
       if (!category || category.churchId !== churchId)
         throw new Error("INVALID_CATEGORY");
 
+      let departmentName: string | null = null;
       if (data.departmentId) {
         const dept = await tx.department.findUnique({
           where: { id: data.departmentId },
-          select: { id: true, churchId: true },
+          select: { id: true, name: true, churchId: true },
         });
         if (!dept || dept.churchId !== churchId)
           throw new Error("INVALID_DEPARTMENT");
+        departmentName = dept.name;
       }
 
       const event = await tx.event.create({
@@ -79,7 +81,7 @@ export const EventService = {
             name: data.name,
             category: category.name,
             startAt: data.startAt,
-            departmentId: data.departmentId ?? null,
+            department: departmentName ?? null,
           },
         },
       });
@@ -97,7 +99,11 @@ export const EventService = {
     return prisma.$transaction(async (tx) => {
       const existing = await tx.event.findUnique({
         where: { id },
-        select: { id: true, name: true, categoryId: true, startAt: true, churchId: true },
+        select: {
+          id: true, name: true, startAt: true, churchId: true,
+          category: { select: { name: true } },           // 👈
+          department: { select: { name: true } },          // 👈
+        },
       });
 
       if (!existing) throw new Error("EVENT_NOT_FOUND");
@@ -111,13 +117,15 @@ export const EventService = {
       if (!category || category.churchId !== churchId)
         throw new Error("INVALID_CATEGORY");
 
+      let departmentName: string | null = null;
       if (data.departmentId) {
         const dept = await tx.department.findUnique({
           where: { id: data.departmentId },
-          select: { id: true, churchId: true },
+          select: { id: true, name: true, churchId: true },
         });
         if (!dept || dept.churchId !== churchId)
           throw new Error("INVALID_DEPARTMENT");
+        departmentName = dept.name;
       }
 
       const updated = await tx.event.update({
@@ -140,8 +148,18 @@ export const EventService = {
           action: "UPDATE_EVENT",
           entityName: "Event",
           entityId: id,
-          oldData: { name: existing.name, categoryId: existing.categoryId, startAt: existing.startAt },
-          newData: { name: data.name, categoryId: data.categoryId, startAt: data.startAt },
+          oldData: {
+            name: existing.name,
+            category: existing.category?.name ?? null,    // 👈
+            startAt: existing.startAt,
+            department: existing.department?.name ?? null, // 👈
+          },
+          newData: {
+            name: data.name,
+            category: category.name,                      // 👈
+            startAt: data.startAt,
+            department: departmentName,                   // 👈
+          },
         },
       });
 
@@ -157,7 +175,10 @@ export const EventService = {
     return prisma.$transaction(async (tx) => {
       const existing = await tx.event.findUnique({
         where: { id },
-        select: { id: true, name: true, categoryId: true, churchId: true },
+        select: {
+          id: true, name: true, churchId: true,
+          category: { select: { name: true } },  // 👈
+        },
       });
 
       if (!existing) throw new Error("EVENT_NOT_FOUND");
@@ -173,7 +194,10 @@ export const EventService = {
           action: "DELETE_EVENT",
           entityName: "Event",
           entityId: id,
-          oldData: { name: existing.name, categoryId: existing.categoryId },
+          oldData: {
+          name: existing.name,
+          category: existing.category?.name ?? null, // 👈
+        },
         },
       });
     });

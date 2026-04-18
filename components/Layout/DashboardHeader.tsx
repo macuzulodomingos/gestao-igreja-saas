@@ -5,12 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
+  DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -18,6 +14,7 @@ import { Plan } from "@prisma/client";
 import { RoleBadge } from "./RoleBadge";
 import { signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 const planStyles: Record<Plan, string> = {
   FREE: "bg-slate-100 text-slate-600 border-slate-200",
@@ -29,7 +26,7 @@ interface DashboardHeaderProps {
   church: {
     name: string;
     plan: Plan;
-    slug: string; // 👈
+    slug: string;
   };
   user: {
     name?: string | null;
@@ -41,6 +38,7 @@ interface DashboardHeaderProps {
 
 export function DashboardHeader({ church, user }: DashboardHeaderProps) {
   const router = useRouter();
+  const t = useTranslations("header");
 
   const userInitials = user.name
     ? user.name.split(" ").map((n) => n[0]).join("").toUpperCase()
@@ -93,31 +91,28 @@ export function DashboardHeader({ church, user }: DashboardHeaderProps) {
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-1">
                   <p className="text-sm font-medium leading-none">{user.name}</p>
-                  <p className="text-xs leading-none text-muted-foreground">
-                    {user.email}
-                  </p>
+                  <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem className="cursor-pointer gap-2">
-                <UserIcon className="h-4 w-4" /> Configurações do Perfil
+                <UserIcon className="h-4 w-4" /> {t("profileSettings")}
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => router.push(`/${church.slug}/configuracoes`)}
                 className="cursor-pointer gap-2"
               >
-                <Settings className="h-4 w-4" /> Configurações da Igreja
+                <Settings className="h-4 w-4" /> {t("churchSettings")}
               </DropdownMenuItem>
               <DropdownMenuItem className="cursor-pointer gap-2">
-                <CreditCard className="h-4 w-4" /> Faturamento
+                <CreditCard className="h-4 w-4" /> {t("billing")}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-
               <DropdownMenuItem
                 onClick={() => signOut({ callbackUrl: "/login" })}
                 className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer font-medium gap-2"
               >
-                <LogOut className="h-4 w-4" /> Sair da conta
+                <LogOut className="h-4 w-4" /> {t("signOut")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

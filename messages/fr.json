@@ -716,5 +716,11 @@
       "memberIds": "Membres",
       "time": "Heure"
     }
+  },
+  "header": {
+    "profileSettings": "Paramètres du profil",
+    "churchSettings": "Paramètres de l'église",
+    "billing": "Facturation",
+    "signOut": "Se déconnecter"
   }
 }
