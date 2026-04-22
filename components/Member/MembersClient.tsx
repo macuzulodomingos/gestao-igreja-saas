@@ -92,6 +92,7 @@ export default function MemberClient({
   const upgrade = useUpgradeModal();
   const t = useTranslations("members"); // 👈 NOVO
   const tc = useTranslations("common"); // 👈 NOVO
+  const tm = useTranslations("members.errors");
 
   useEffect(() => {
     const currentQuery = searchParams.toString();
@@ -133,12 +134,14 @@ export default function MemberClient({
       toast.success(editingMember ? t("successUpdated") : t("successCreated"));
       (event.target as HTMLFormElement).reset();
     } else if ("upgrade" in result && result.upgrade) {
-      upgrade.showUpgrade(result.error || tc("upgrade"));
+      const errorCode = (result as any).errorCode;
+      upgrade.showUpgrade(errorCode ? tm(errorCode) : tc("upgrade"));
     } else if (result.fieldErrors) {
       setFieldErrors(result.fieldErrors);
       toast.error(t("errorForm"));
     } else {
-      toast.error(result.error || tc("error"));
+      const errorCode = (result as any).errorCode;
+      toast.error(errorCode ? tm(errorCode) : tc("error"));
     }
   }
 
@@ -452,7 +455,8 @@ export default function MemberClient({
                     if (result.success) {
                       toast.success(t("successDeleted"));
                     } else {
-                      toast.error(result.error);
+                      const errorCode = (result as any).errorCode;
+                      toast.error(errorCode ? tm(errorCode) : tc("error"));
                     }
                     setMemberToDelete(null);
                   }}

@@ -51,7 +51,7 @@ export function EventFormDialog({ open, onOpenChange, event, departments, catego
       if (event) {
         const startAt = new Date(event.startAt);
         const date = startAt.toLocaleDateString("en-CA");
-        const time = startAt.toLocaleTimeString("pt-AO", {
+        const time = startAt.toLocaleTimeString("en-GB", {
           hour: "2-digit",
           minute: "2-digit",
           hour12: false,

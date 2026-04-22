@@ -136,9 +136,11 @@ model Member {
 
   // ÍNDICES COMPOSTOS PARA PERFORMANCE NO SAAS
   @@index([churchId, name])
-  @@index([churchId, email])
   @@index([churchId, status, joinDate]) // 👈 NOVO — acelera o gráfico de membros
   @@index([churchId, deletedAt]) // 👈 índice para filtrar activos
+
+  // 👈 índice único parcial criado via migration manual:
+  // CREATE UNIQUE INDEX "member_email_church_active_idx" ON "Member"("email", "churchId") WHERE "deletedAt" IS NULL
 }
 
 enum MemberStatus {

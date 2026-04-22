@@ -29,14 +29,12 @@ const sanitizeForLog = (data: Record<string, unknown> | null) => {
   if (!data) return undefined;
   const roleObj = data.role as { name: string } | null | undefined;
   return {
-    id: data.id,
     name: data.name,
     email: data.email,
     phone: data.phone,
     status: data.status,
     joinDate: data.joinDate,
     role: roleObj?.name ?? null,
-    deletedAt: data.deletedAt,
   } as Prisma.InputJsonValue;
 };
 
@@ -268,7 +266,7 @@ export const MemberService = {
         throw new Error("MEMBER_ALREADY_DELETED");
 
       const deletedMember = await tx.member.update({
-        where: { id },
+        where: { id, churchId, deletedAt: null }, // 👈 mais seguro
         data: {
           deletedAt: new Date(),
         },

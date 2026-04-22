@@ -57,27 +57,27 @@ export async function createMemberAction(
     const message = getErrorMessage(error);
 
     if (message === "UNAUTHORIZED")
-      return { success: false, error: "Não autenticado." };
+      return { success: false, errorCode: "unauthorized" };
     if (message === "CHURCH_ID_REQUIRED")
-      return { success: false, error: "Igreja não encontrada." };
+      return { success: false, errorCode: "unauthorized" };
     if (message === "PLAN_LIMIT_MEMBERS")
-      return { success: false, error: "Limite de membros atingido. Actualize o seu plano.", upgrade: true };
+      return { success: false, errorCode: "planLimitMembers", upgrade: true };
     
     // 2. Lógica de Negócio do Service
     if (message === "INVALID_ROLE")
-      return { success: false, error: "O cargo selecionado não pertence a esta igreja." };
+      return { success: false, errorCode: "invalidRole" };
     if (message === "INVALID_JOIN_DATE_TYPE") {
-      return { success: false, error: "O formato da data de entrada é inválido." };
+      return { success: false, errorCode: "invalidDate" };
     }
 
     // 3. Prisma (Banco de Dados)
     if (isPrismaError(error)) {
       if (error.code === "P2002")
-        return { success: false, error: "Este e-mail já está em uso nesta igreja." };
+        return { success: false, errorCode: "emailTaken" };
     }
 
     console.error("[CREATE_MEMBER_ERROR]:", error);
-    return { success: false, error: "Falha ao realizar o cadastro do membro." };
+    return { success: false, errorCode: "errorCreate" };
   }
 }
 
@@ -126,29 +126,29 @@ export async function updateMemberAction(
 
     // 1. Erros de Permissão / Auth
     if (message === "UNAUTHORIZED")
-      return { success: false, error: "Não autenticado." };
+      return { success: false, errorCode: "unauthorized" };
     if (message === "CHURCH_ID_REQUIRED")
-      return { success: false, error: "Igreja não identificada." };
+      return { success: false, errorCode: "unauthorized" };
 
     // 2. Erros vindos diretamente do teu MemberService (Lógica de Negócio)
     if (message === "MEMBER_NOT_FOUND")
-      return { success: false, error: "Membro não encontrado ou acesso negado." };
+      return { success: false, errorCode: "memberNotFound" };
     if (message === "INVALID_ROLE")
-      return { success: false, error: "O cargo selecionado é inválido para esta igreja." };
+      return { success: false, errorCode: "invalidRole" };
     if (message === "INVALID_JOIN_DATE_TYPE") {
-      return { success: false, error: "O formato da data de entrada é inválido." };
+      return { success: false, errorCode: "invalidDate" };
     } 
 
     // 3. Erros do Banco de Dados (Prisma)
     if (isPrismaError(error)) {
       if (error.code === "P2002") 
-        return { success: false, error: "Este e-mail já está em uso nesta igreja." };
+        return { success: false, errorCode: "emailTaken" };
     }
 
     console.error("[UPDATE_MEMBER_ERROR]:", error);
     return { 
       success: false, 
-      error: "Falha ao atualizar dados do membro. Tente novamente." 
+      errorCode: "errorUpdate" 
     };
   }
 }
@@ -171,13 +171,13 @@ export async function deleteMemberAction(
   } catch (error: unknown) {
     const message = getErrorMessage(error);
     if (message === "UNAUTHORIZED") 
-      return { success: false, error: "Não autenticado." };
+      return { success: false, errorCode: "unauthorized" };
     if (message === "MEMBER_NOT_FOUND")
-      return { success: false, error: "Membro não encontrado ou você não tem permissão." };
+      return { success: false, errorCode: "memberNotFound" };
     if (message === "MEMBER_ALREADY_DELETED")
-      return { success: false, error: "Membro já está excluído." };
+      return { success: false, errorCode: "memberAlreadyDeleted" };
 
     console.error("[DELETE_MEMBER_ERROR]:", error);
-    return { success: false, error: "Erro ao tentar remover o membro." };
+    return { success: false, errorCode: "errorDelete" };
   }
 }

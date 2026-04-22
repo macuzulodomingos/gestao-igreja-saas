@@ -86,7 +86,19 @@
     "errorForm": "Vérifiez les erreurs dans le formulaire.",
     "historyTitle": "Historique de",
     "historyDesc": "Suivi complet des modifications apportées à cet enregistrement.",
-    "historyLoading": "Chargement de la ligne du temps..."
+    "historyLoading": "Chargement de la ligne du temps...",
+    "errors": {
+      "unauthorized": "Non authentifié.",
+      "planLimitMembers": "Limite de membres atteinte. Mettez à niveau votre plan.",
+      "invalidRole": "Le rôle sélectionné n'appartient pas à cette église.",
+      "memberNotFound": "Membre introuvable.",
+      "memberAlreadyDeleted": "Le membre a déjà été supprimé.",
+      "emailTaken": "Cet e-mail est déjà utilisé dans cette église.",
+      "invalidDate": "Le format de la date d'entrée est invalide.",
+      "errorCreate": "Échec de l'enregistrement du membre.",
+      "errorUpdate": "Échec de la mise à jour du membre.",
+      "errorDelete": "Erreur lors de la suppression du membre."
+    }
   },
   "finance": {
     "title": "Finances",

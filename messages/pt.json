@@ -86,7 +86,19 @@
     "errorForm": "Verifique os erros no formulário.",
     "historyTitle": "Histórico de",
     "historyDesc": "Rastreio completo de alterações feitas neste registo.",
-    "historyLoading": "A carregar linha do tempo..."
+    "historyLoading": "A carregar linha do tempo...",
+    "errors": {
+      "unauthorized": "Não autenticado.",
+      "planLimitMembers": "Limite de membros atingido. Actualize o seu plano.",
+      "invalidRole": "O cargo seleccionado não pertence a esta igreja.",
+      "memberNotFound": "Membro não encontrado.",
+      "memberAlreadyDeleted": "Membro já foi eliminado.",
+      "emailTaken": "Este e-mail já está em uso nesta igreja.",
+      "invalidDate": "O formato da data de entrada é inválido.",
+      "errorCreate": "Falha ao realizar o cadastro do membro.",
+      "errorUpdate": "Falha ao actualizar dados do membro.",
+      "errorDelete": "Erro ao tentar remover o membro."
+    }
   },
   "finance": {
     "title": "Finanças",
