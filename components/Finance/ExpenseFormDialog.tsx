@@ -45,6 +45,7 @@ export function ExpenseFormDialog({ open, onOpenChange, entry, categories, onUpg
   const [isPending, startTransition] = useTransition();
   const t = useTranslations("finance.expenseForm");
   const tc = useTranslations("common");
+  const tf = useTranslations("finance.errors");
 
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -102,9 +103,11 @@ export function ExpenseFormDialog({ open, onOpenChange, entry, categories, onUpg
         onOpenChange(false);
       } else if ("upgrade" in result && result.upgrade) {
         onOpenChange(false);
-        onUpgrade?.(result.error || tc("upgrade"));
+        const errorCode = (result as any).errorCode;
+        onUpgrade?.(errorCode ? tf(errorCode) : tc("upgrade")); // 👈
       } else {
-        toast.error(result.error || t("error"));
+        const errorCode = (result as any).errorCode;
+        toast.error(errorCode ? tf(errorCode) : t("error")); // 👈
       }
     });
   };

@@ -12,7 +12,7 @@ export function amountToCents(amount: number | string): bigint {
   if (isNaN(parsed)) return BigInt(0);
   return BigInt(Math.round(parsed * 100));
 }
-
+  
 
 export function getMonthRangeInTimezone(year: number, month: number, timezone: string) {
   // 👈 usa strings ISO para evitar interpretação do timezone da máquina

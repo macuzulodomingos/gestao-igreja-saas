@@ -57,23 +57,22 @@ export async function saveTransactionAction(
   } catch (error: unknown) {
     const message = getErrorMessage(error);
     if (message === "UNAUTHORIZED")
-      return { success: false, error: "Não autenticado." };
+      return { success: false, errorCode: "unauthorized" };
     if (message === "CHURCH_ID_REQUIRED")
-      return { success: false, error: "Igreja não encontrada." };
+      return { success: false, errorCode: "unauthorized" };
     if (message === "INVALID_AMOUNT")
-      return { success: false, error: "O valor deve ser maior que zero." };
+      return { success: false, errorCode: "invalidAmount" };
     if (message === "INVALID_CATEGORY")
-      return { success: false, error: "Categoria inválida para esta igreja." };
+      return { success: false, errorCode: "invalidCategory" };
     if (message === "CATEGORY_TYPE_MISMATCH")
-      return { success: false, error: "A categoria não corresponde ao tipo de transacção." };
+      return { success: false, errorCode: "categoryTypeMismatch" };
     if (message === "TRANSACTION_NOT_FOUND")
-      return { success: false, error: "Transacção não encontrada." };
+      return { success: false, errorCode: "transactionNotFound" };
     if (message === "PLAN_LIMIT_TRANSACTIONS")
-      return { success: false, error: "Limite de transacções mensais atingido. Actualize o seu plano.", upgrade: true };
+      return { success: false, errorCode: "planLimitTransactions", upgrade: true };
     if (isPrismaError(error) && error.code === "P2025")
-      return { success: false, error: "Registo não encontrado." };
-    console.error("[SAVE_TRANSACTION_ERROR]:", error);
-    return { success: false, error: "Falha ao registar transacção." };
+      return { success: false, errorCode: "transactionNotFound" };
+    return { success: false, errorCode: "errorSave" };
   }
 }
 
@@ -94,13 +93,12 @@ export async function deleteTransactionAction(
   } catch (error: unknown) {
     const message = getErrorMessage(error);
     if (message === "UNAUTHORIZED")
-      return { success: false, error: "Não autenticado." };
+      return { success: false, errorCode: "unauthorized" };
     if (message === "TRANSACTION_NOT_FOUND")
-      return { success: false, error: "Transacção não encontrada." };
+      return { success: false, errorCode: "transactionNotFound" };
     if (isPrismaError(error) && error.code === "P2025")
-      return { success: false, error: "Transacção já foi eliminada." };
-    console.error("[DELETE_TRANSACTION_ERROR]:", error);
-    return { success: false, error: "Não foi possível eliminar o registo." };
+      return { success: false, errorCode: "transactionAlreadyDeleted" };
+    return { success: false, errorCode: "errorDelete" };
   }
 }
 

@@ -90,7 +90,7 @@ export const FinanceService = {
       // 👈 findUnique porque id é @id
       const existing = await tx.financeTransaction.findUnique({
         where: { id },
-        select: { id: true, description: true, amount: true, type: true, date: true, churchId: true },
+        select: { id: true, description: true, amount: true, type: true, date: true, churchId: true, category: { select: { name: true } } },
       });
 
       if (!existing) throw new Error("TRANSACTION_NOT_FOUND");
@@ -137,12 +137,15 @@ export const FinanceService = {
           oldData: {
             description: existing.description,
             amount: existing.amount.toString(),
+            amountFormatted: centsToAmount(existing.amount).toFixed(2), // 👈
             type: existing.type,
+            category: existing.category.name,
             date: existing.date,
           },
           newData: {
             description: data.description,
             amount: amountInCents.toString(),
+            amountFormatted: centsToAmount(amountInCents).toFixed(2), // 👈
             type: data.type,
             category: category.name,
             date: data.date,
@@ -236,6 +239,8 @@ export const FinanceService = {
     cursor?: string  // 👈 id da última transacção carregada
   ) {
 
+    const safeLimit = Math.min(limit, 100); // 👈 máximo 100
+
     const dateFilter = month && year ? {
       date: {
         gte: fromZonedTime(
@@ -260,15 +265,15 @@ export const FinanceService = {
         category: { select: { id: true, name: true } },
       },
       orderBy: { date: "desc" },
-      take: limit + 1, // 👈 busca 1 a mais para saber se há próxima página
+      take: safeLimit + 1, // 👈 busca 1 a mais para saber se há próxima página
       ...(cursor && {
         cursor: { id: cursor },
         skip: 1, // 👈 skip o cursor
       }),
     });
 
-    const hasMore = records.length > limit;
-    const data = hasMore ? records.slice(0, limit) : records;
+    const hasMore = records.length > safeLimit;
+    const data = hasMore ? records.slice(0, safeLimit) : records;
     const nextCursor = hasMore ? data[data.length - 1].id : null;
 
     return {

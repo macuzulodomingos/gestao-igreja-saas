@@ -207,6 +207,17 @@
       "amount": "Valor",
       "footer": "ChurchOS — Sistema de Gestão de Igreja",
       "confidential": "Confidencial"
+    },
+    "errors": {
+      "unauthorized": "Não autenticado.",
+      "invalidAmount": "O valor deve ser maior que zero.",
+      "invalidCategory": "Categoria inválida para esta igreja.",
+      "categoryTypeMismatch": "A categoria não corresponde ao tipo de transacção.",
+      "transactionNotFound": "Transacção não encontrada.",
+      "transactionAlreadyDeleted": "Transacção já foi eliminada.",
+      "planLimitTransactions": "Limite de transacções mensais atingido. Actualize o seu plano.",
+      "errorSave": "Falha ao registar transacção.",
+      "errorDelete": "Não foi possível eliminar o registo."
     }
   },
   "events": {

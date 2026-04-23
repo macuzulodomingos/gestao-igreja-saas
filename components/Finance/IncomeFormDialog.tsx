@@ -46,6 +46,7 @@ export function IncomeFormDialog({ open, onOpenChange, entry, categories, onUpgr
   const [isPending, startTransition] = useTransition();
   const t = useTranslations("finance.incomeForm");
   const tc = useTranslations("common");
+  const tf = useTranslations("finance.errors");
 
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -103,9 +104,11 @@ export function IncomeFormDialog({ open, onOpenChange, entry, categories, onUpgr
         onOpenChange(false);
       } else if ("upgrade" in result && result.upgrade) {
         onOpenChange(false);
-        onUpgrade?.(result.error || tc("upgrade"));
+        const errorCode = (result as any).errorCode;
+        onUpgrade?.(errorCode ? tf(errorCode) : tc("upgrade")); // 👈
       } else {
-        toast.error(result.error || t("error"));
+        const errorCode = (result as any).errorCode;
+        toast.error(errorCode ? tf(errorCode) : t("error")); // 👈
       }
     });
   };
@@ -122,7 +125,7 @@ export function IncomeFormDialog({ open, onOpenChange, entry, categories, onUpgr
               <FormItem>
                 <FormLabel>{t("date")}</FormLabel>
                 <FormControl><Input type="date" {...field} /></FormControl>
-                <TranslatedFormMessage /> 
+                <TranslatedFormMessage />
               </FormItem>
             )} />
 

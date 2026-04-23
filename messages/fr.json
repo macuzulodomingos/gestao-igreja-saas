@@ -207,6 +207,17 @@
       "amount": "Montant",
       "footer": "ChurchOS — Système de Gestion d'Église",
       "confidential": "Confidentiel"
+    },
+    "errors": {
+      "unauthorized": "Non authentifié.",
+      "invalidAmount": "La valeur doit être supérieure à zéro.",
+      "invalidCategory": "Catégorie invalide pour cette église.",
+      "categoryTypeMismatch": "La catégorie ne correspond pas au type de transaction.",
+      "transactionNotFound": "Transaction introuvable.",
+      "transactionAlreadyDeleted": "La transaction a déjà été supprimée.",
+      "planLimitTransactions": "Limite de transactions mensuelles atteinte. Mettez à niveau votre plan.",
+      "errorSave": "Échec de l'enregistrement de la transaction.",
+      "errorDelete": "Impossible de supprimer l'enregistrement."
     }
   },
   "events": {
