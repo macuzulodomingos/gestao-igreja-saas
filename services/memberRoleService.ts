@@ -1,5 +1,4 @@
 import prisma from "@/lib/prisma";
-import { Prisma } from "@prisma/client";
 
 export interface CreateRoleDTO {
   name: string;
@@ -25,7 +24,7 @@ export const MemberRoleService = {
         where: { churchId, name: data.name },
       });
 
-      if (existing) throw new Error("Já existe um cargo com este nome.");
+      if (existing) throw new Error("ROLE_DUPLICATE"); // 👈 era "Já existe um cargo com este nome."
 
       const role = await tx.memberRole.create({
         data: { name: data.name, churchId },
@@ -39,7 +38,7 @@ export const MemberRoleService = {
           action: "CREATE_ROLE",
           entityName: "MemberRole",
           entityId: role.id,
-          newData: role as unknown as Prisma.InputJsonValue,
+          newData: { name: role.name }, // 👈 era role as unknown as Prisma.InputJsonValue
         },
       });
 
@@ -54,21 +53,24 @@ export const MemberRoleService = {
     data: CreateRoleDTO
   ) {
     return await prisma.$transaction(async (tx) => {
-      const existing = await tx.memberRole.findFirst({
-        where: { id, churchId },
+      const existing = await tx.memberRole.findUnique({ // 👈 era findFirst
+        where: { id },
+        select: { id: true, name: true, churchId: true }, // 👈 select explícito
       });
 
-      if (!existing) throw new Error("Cargo não encontrado ou acesso negado.");
+      if (!existing || existing.churchId !== churchId) // 👈 verifica churchId separadamente
+        throw new Error("ROLE_NOT_FOUND"); // 👈 era "Cargo não encontrado ou acesso negado."
 
       const duplicate = await tx.memberRole.findFirst({
         where: { churchId, name: data.name, NOT: { id } },
       });
 
-      if (duplicate) throw new Error("Já existe um cargo com este nome.");
+      if (duplicate) throw new Error("ROLE_DUPLICATE"); // 👈 era "Já existe um cargo com este nome."
 
       const updated = await tx.memberRole.update({
         where: { id },
         data: { name: data.name },
+        select: { id: true, name: true }, // 👈 select explícito
       });
 
       await tx.auditLog.create({
@@ -79,8 +81,8 @@ export const MemberRoleService = {
           action: "UPDATE_ROLE",
           entityName: "MemberRole",
           entityId: id,
-          oldData: existing as unknown as Prisma.InputJsonValue,
-          newData: updated as unknown as Prisma.InputJsonValue,
+          oldData: { name: existing.name }, // 👈 era existing as unknown as Prisma.InputJsonValue
+          newData: { name: updated.name },  // 👈 era updated as unknown as Prisma.InputJsonValue
         },
       });
 
@@ -94,18 +96,21 @@ export const MemberRoleService = {
     actor: { userId: string; email: string }
   ) {
     return await prisma.$transaction(async (tx) => {
-      const existing = await tx.memberRole.findFirst({
-        where: { id, churchId },
-        include: { _count: { select: { members: true } } },
+      const existing = await tx.memberRole.findUnique({ // 👈 era findFirst
+        where: { id },
+        select: { // 👈 select explícito em vez de include
+          id: true,
+          name: true,
+          churchId: true,
+          _count: { select: { members: true } },
+        },
       });
 
-      if (!existing) throw new Error("Cargo não encontrado ou acesso negado.");
+      if (!existing || existing.churchId !== churchId) // 👈 verifica churchId separadamente
+        throw new Error("ROLE_NOT_FOUND"); // 👈 era "Cargo não encontrado ou acesso negado."
 
-      if (existing._count.members > 0) {
-        throw new Error(
-          `Não é possível eliminar: este cargo tem ${existing._count.members} membro(s) associado(s).`
-        );
-      }
+      if (existing._count.members > 0)
+        throw new Error("ROLE_HAS_MEMBERS"); // 👈 era mensagem longa com interpolação
 
       await tx.memberRole.delete({ where: { id } });
 
@@ -117,7 +122,7 @@ export const MemberRoleService = {
           action: "DELETE_ROLE",
           entityName: "MemberRole",
           entityId: id,
-          oldData: existing as unknown as Prisma.InputJsonValue,
+          oldData: { name: existing.name }, // 👈 era existing as unknown as Prisma.InputJsonValue
         },
       });
 

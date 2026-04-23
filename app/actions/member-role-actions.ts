@@ -4,9 +4,7 @@ import { MemberRoleService } from "@/services/memberRoleService";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getAuthContext } from "@/lib/auth-context";
-import { getErrorMessage, isPrismaError } from "@/lib/errors"; // 👈 Teu padrão
-
-
+import { getErrorMessage, isPrismaError } from "@/lib/errors";
 
 const roleSchema = z.object({
   name: z.string().min(1, "validation.nameRequired").max(50, "validation.nameTooLong"),
@@ -20,10 +18,7 @@ export async function saveRoleAction(
   try {
     const { churchId, actor } = await getAuthContext(targetChurchId);
 
-    const result = roleSchema.safeParse(
-      Object.fromEntries(formData.entries())
-    );
-
+    const result = roleSchema.safeParse(Object.fromEntries(formData.entries()));
     if (!result.success) {
       return { success: false, fieldErrors: result.error.flatten().fieldErrors };
     }
@@ -43,6 +38,10 @@ export async function saveRoleAction(
       return { success: false, errorCode: "unauthorized" };
     if (message === "CHURCH_ID_REQUIRED")
       return { success: false, errorCode: "unauthorized" };
+    if (message === "ROLE_DUPLICATE") // 👈 era apenas isPrismaError P2002
+      return { success: false, errorCode: "duplicate" };
+    if (message === "ROLE_NOT_FOUND") // 👈 NOVO
+      return { success: false, errorCode: "roleNotFound" };
     if (isPrismaError(error) && error.code === "P2002")
       return { success: false, errorCode: "duplicate" };
     console.error("[SAVE_ROLE_ERROR]:", error);
@@ -66,7 +65,9 @@ export async function deleteRoleAction(
     const message = getErrorMessage(error);
     if (message === "UNAUTHORIZED")
       return { success: false, errorCode: "unauthorized" };
-    if (message.includes("Não é possível eliminar"))
+    if (message === "ROLE_NOT_FOUND") // 👈 NOVO
+      return { success: false, errorCode: "roleNotFound" };
+    if (message === "ROLE_HAS_MEMBERS") // 👈 era message.includes("Não é possível eliminar")
       return { success: false, errorCode: "roleHasMembers" };
     if (isPrismaError(error) && error.code === "P2003")
       return { success: false, errorCode: "roleHasMembers" };
