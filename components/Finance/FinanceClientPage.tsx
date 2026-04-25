@@ -73,6 +73,7 @@ export default function FinanceClientPage({
   const pathname = usePathname();
   const upgrade = useUpgradeModal();
   const t = useTranslations("finance");
+  const tf = useTranslations("finance.errors");
 
   // 👈 detecta locale pelo pathname
   const locale = pathname.startsWith("/fr") ? "fr" : "pt";
@@ -132,8 +133,8 @@ export default function FinanceClientPage({
     const result = await loadMoreTransactionsAction(type, currentMonth, currentYear, cursor);
     setLoadingMore(false);
 
-    if (!result.success || !result.data) {
-      toast.error(t("loading"));
+    if (!result.success) {
+      toast.error(tf((result as any).errorCode) ?? t("errorLoadMore"));
       return;
     }
 

@@ -17,7 +17,6 @@ export const FinanceCategoryService = {
         name: true,
         type: true,
         churchId: true,
-        _count: { select: { transactions: true } },
       },
       orderBy: [{ type: "asc" }, { name: "asc" }],
     });
@@ -31,7 +30,7 @@ export const FinanceCategoryService = {
     return prisma.$transaction(async (tx) => {
       // 🔒 Verifica duplicado
       const existing = await tx.financeCategory.findFirst({
-        where: { churchId, name: data.name, type: data.type },
+        where: { churchId, name: { equals: data.name, mode: "insensitive" }, type: data.type },
         select: { id: true },
       });
       if (existing) throw new Error("CATEGORY_DUPLICATE");
@@ -67,15 +66,18 @@ export const FinanceCategoryService = {
       // 👈 findUnique porque id é @id
       const existing = await tx.financeCategory.findUnique({
         where: { id },
-        select: { id: true, name: true, type: true, churchId: true },
+        select: { id: true, name: true, type: true, churchId: true, _count: { select: { transactions: true } } },
       });
 
       if (!existing) throw new Error("CATEGORY_NOT_FOUND");
       if (existing.churchId !== churchId) throw new Error("CATEGORY_NOT_FOUND");
 
+      if (existing._count.transactions > 0 && existing.type !== data.type)
+        throw new Error("CATEGORY_TYPE_CHANGE_BLOCKED");
+
       // 🔒 Verifica duplicado excluindo a própria
       const duplicate = await tx.financeCategory.findFirst({
-        where: { churchId, name: data.name, type: data.type, NOT: { id } },
+        where: { churchId, name: { equals: data.name, mode: "insensitive" as const }, type: data.type, NOT: { id } },
         select: { id: true },
       });
       if (duplicate) throw new Error("CATEGORY_DUPLICATE");

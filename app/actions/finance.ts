@@ -12,7 +12,7 @@ import { FinanceTransaction } from "@/types/finance";
 
 type LoadMoreResult =
   | { success: true; data: FinanceTransaction[]; nextCursor: string | null; hasMore: boolean }
-  | { success: false; error: string };
+  | { success: false; errorCode: string };
 
 export async function saveTransactionAction(
   formData: FormData,
@@ -132,6 +132,6 @@ export async function loadMoreTransactionsAction(
     };
   } catch (error: unknown) {
     console.error("[LOAD_MORE_ERROR]:", error);
-    return { success: false, error: "Erro ao carregar mais transacções." };
+    return { success: false, errorCode: "errorLoadMore" };
   }
 }

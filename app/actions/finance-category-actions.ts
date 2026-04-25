@@ -8,7 +8,7 @@ import { getErrorMessage, isPrismaError } from "@/lib/errors";
 import { TransactionType } from "@prisma/client";
 
 const categorySchema = z.object({
-  name: z.string().trim().min(1, "Nome obrigatório").max(50, "Máximo 50 caracteres"),
+  name: z.string().trim().min(1, "validation.nameRequired").max(50, "validation.categoryNameTooLong"),
   type: z.nativeEnum(TransactionType),
 });
 
@@ -32,6 +32,7 @@ export async function saveCategoryAction(
     }
 
     revalidatePath(`/[slug]/configuracoes/categorias`, "page");
+    revalidatePath(`/[slug]/financas`, "page");
     return { success: true };
 
   } catch (error: unknown) {
@@ -40,6 +41,8 @@ export async function saveCategoryAction(
       return { success: false, errorCode: "unauthorized" };
     if (message === "CHURCH_ID_REQUIRED")
       return { success: false, errorCode: "churchNotFound" };
+    if (message === "CATEGORY_TYPE_CHANGE_BLOCKED") 
+      return { success: false, errorCode: "categoryTypeChangeBlocked" };
     if (message === "CATEGORY_NOT_FOUND")
       return { success: false, errorCode: "categoryNotFound" };
     if (message === "CATEGORY_DUPLICATE")
@@ -61,6 +64,7 @@ export async function deleteCategoryAction(
     await FinanceCategoryService.deleteCategory(id, churchId, actor);
 
     revalidatePath(`/[slug]/configuracoes/categorias`, "page");
+    revalidatePath(`/[slug]/financas`, "page");
     return { success: true };
 
   } catch (error: unknown) {

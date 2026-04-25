@@ -39,21 +39,19 @@ export const EventService = {
   ) {
     return prisma.$transaction(async (tx) => {
       // 🔒 Verifica que a categoria pertence à igreja
-      const category = await tx.eventCategory.findUnique({
-        where: { id: data.categoryId },
-        select: { id: true, name: true, churchId: true },
+      const category = await tx.eventCategory.findFirst({
+        where: { id: data.categoryId, churchId },
+        select: { name: true },
       });
-      if (!category || category.churchId !== churchId)
-        throw new Error("INVALID_CATEGORY");
+      if (!category) throw new Error("INVALID_CATEGORY");
 
       let departmentName: string | null = null;
       if (data.departmentId) {
-        const dept = await tx.department.findUnique({
-          where: { id: data.departmentId },
-          select: { id: true, name: true, churchId: true },
+        const dept = await tx.department.findFirst({
+          where: { id: data.departmentId, churchId },
+          select: { name: true },
         });
-        if (!dept || dept.churchId !== churchId)
-          throw new Error("INVALID_DEPARTMENT");
+        if (!dept) throw new Error("INVALID_DEPARTMENT");
         departmentName = dept.name;
       }
 
@@ -110,21 +108,19 @@ export const EventService = {
       if (existing.churchId !== churchId) throw new Error("EVENT_NOT_FOUND");
 
       // 🔒 Verifica que a categoria pertence à igreja
-      const category = await tx.eventCategory.findUnique({
-        where: { id: data.categoryId },
-        select: { id: true, name: true, churchId: true },
+      const category = await tx.eventCategory.findFirst({
+        where: { id: data.categoryId, churchId },
+        select: { name: true },
       });
-      if (!category || category.churchId !== churchId)
-        throw new Error("INVALID_CATEGORY");
+      if (!category) throw new Error("INVALID_CATEGORY");
 
       let departmentName: string | null = null;
       if (data.departmentId) {
-        const dept = await tx.department.findUnique({
-          where: { id: data.departmentId },
-          select: { id: true, name: true, churchId: true },
+        const dept = await tx.department.findFirst({
+          where: { id: data.departmentId, churchId }, // 👈 Segurança direto no banco
+          select: { name: true }
         });
-        if (!dept || dept.churchId !== churchId)
-          throw new Error("INVALID_DEPARTMENT");
+        if (!dept) throw new Error("INVALID_DEPARTMENT");
         departmentName = dept.name;
       }
 
@@ -195,9 +191,9 @@ export const EventService = {
           entityName: "Event",
           entityId: id,
           oldData: {
-          name: existing.name,
-          category: existing.category?.name ?? null, // 👈
-        },
+            name: existing.name,
+            category: existing.category?.name ?? null, // 👈
+          },
         },
       });
     });
@@ -218,19 +214,22 @@ export const EventService = {
       if (!event) throw new Error("EVENT_NOT_FOUND");
       if (event.churchId !== churchId) throw new Error("EVENT_NOT_FOUND");
 
-      if (memberIds.length > 0) {
+      const uniqueMemberIds = [...new Set(memberIds)]; // 👈 declara uma vez aqui
+
+      if (uniqueMemberIds.length > 0) {
         const validMembers = await tx.member.count({
-          where: { id: { in: memberIds }, churchId },
+          where: { id: { in: uniqueMemberIds }, churchId },
         });
-        if (validMembers !== memberIds.length)
+        if (validMembers !== uniqueMemberIds.length)
           throw new Error("INVALID_MEMBERS");
       }
 
       await tx.eventAttendee.deleteMany({ where: { eventId } });
 
-      if (memberIds.length > 0) {
+      if (uniqueMemberIds.length > 0) {
         await tx.eventAttendee.createMany({
-          data: memberIds.map(memberId => ({ eventId, memberId })),
+          data: uniqueMemberIds.map(memberId => ({ eventId, memberId })),
+          skipDuplicates: true,
         });
       }
 
@@ -242,7 +241,7 @@ export const EventService = {
           action: "SYNC_EVENT_ATTENDEES",
           entityName: "Event",
           entityId: eventId,
-          newData: { memberIds },
+          newData: { memberIds: uniqueMemberIds }, // 👈 usa uniqueMemberIds
         },
       });
     });

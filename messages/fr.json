@@ -217,7 +217,8 @@
       "transactionAlreadyDeleted": "La transaction a déjà été supprimée.",
       "planLimitTransactions": "Limite de transactions mensuelles atteinte. Mettez à niveau votre plan.",
       "errorSave": "Échec de l'enregistrement de la transaction.",
-      "errorDelete": "Impossible de supprimer l'enregistrement."
+      "errorDelete": "Impossible de supprimer l'enregistrement.",
+      "loadMoreError": "Erreur lors du chargement des transactions."
     }
   },
   "events": {
@@ -280,6 +281,19 @@
       "updated": "Présences mises à jour!",
       "error": "Erreur lors de la mise à jour.",
       "noRole": "Sans rôle"
+    },
+    "errors": {
+      "unauthorized": "Non authentifié.",
+      "invalidDepartment": "Département invalide pour cette église.",
+      "invalidCategory": "Catégorie invalide pour cette église.",
+      "planLimitEvents": "Limite d'événements mensuels atteinte. Mettez à niveau votre plan.",
+      "duplicate": "Un événement avec ces données existe déjà.",
+      "eventNotFound": "Événement introuvable.",
+      "eventAlreadyDeleted": "L'événement a déjà été supprimé.",
+      "invalidMembers": "Un ou plusieurs membres sont invalides.",
+      "errorSave": "Erreur lors de la sauvegarde de l'événement.",
+      "errorDelete": "Impossible de supprimer l'événement.",
+      "errorSync": "Erreur lors de la mise à jour des présences."
     }
   },
   "departments": {
@@ -524,7 +538,8 @@
       "duplicate": "Une catégorie avec ce nom et ce type existe déjà.",
       "errorDelete": "Erreur lors de la suppression.",
       "errorSave": "Erreur lors de la sauvegarde.",
-      "categoryAlreadyDeleted": "La catégorie a déjà été supprimée."
+      "categoryAlreadyDeleted": "La catégorie a déjà été supprimée.",
+      "categoryTypeChangeBlocked": "Il n'est pas possible de modifier le type d'une catégorie avec des transactions associées."
     }
   },
   "roles": {

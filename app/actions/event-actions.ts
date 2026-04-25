@@ -56,21 +56,19 @@ export async function saveEventAction(
   } catch (error: unknown) {
     const message = getErrorMessage(error);
     if (message === "UNAUTHORIZED")
-      return { success: false, error: "Não autenticado." };
+      return { success: false, errorCode: "unauthorized" };
     if (message === "CHURCH_ID_REQUIRED")
-      return { success: false, error: "Igreja não encontrada." };
+      return { success: false, errorCode: "unauthorized" };
     if (message === "INVALID_DEPARTMENT")
-      return { success: false, error: "Departamento inválido para esta igreja." };
+      return { success: false, errorCode: "invalidDepartment" };
     if (message === "INVALID_CATEGORY")
-      return { success: false, error: "Categoria inválida para esta igreja." };
+      return { success: false, errorCode: "invalidCategory" };
     if (message === "PLAN_LIMIT_EVENTS")
-      return { success: false, error: "Limite de eventos mensais atingido. Actualize o seu plano.", upgrade: true };
-    if (isPrismaError(error) && error.code === "P2002")
-      return { success: false, error: "Já existe um evento com estes dados." };
+      return { success: false, errorCode: "planLimitEvents", upgrade: true };
     if (isPrismaError(error) && error.code === "P2025")
-      return { success: false, error: "Registo não encontrado." };
+      return { success: false, errorCode: "eventNotFound" };
     console.error("[SAVE_EVENT_ERROR]:", error);
-    return { success: false, error: "Erro ao salvar evento." };
+    return { success: false, errorCode: "errorSave" };
   }
 }
 
@@ -89,13 +87,13 @@ export async function deleteEventAction(
   } catch (error: unknown) {
     const message = getErrorMessage(error);
     if (message === "UNAUTHORIZED")
-      return { success: false, error: "Não autenticado." };
+      return { success: false, errorCode: "unauthorized" };
     if (message === "EVENT_NOT_FOUND")
-      return { success: false, error: "Evento não encontrado." };
+      return { success: false, errorCode: "eventNotFound" };
     if (isPrismaError(error) && error.code === "P2025")
-      return { success: false, error: "Evento já foi eliminado." };
+      return { success: false, errorCode: "eventAlreadyDeleted" };
     console.error("[DELETE_EVENT_ERROR]:", error);
-    return { success: false, error: "Não foi possível eliminar o evento." };
+    return { success: false, errorCode: "errorDelete" };
   }
 }
 
@@ -115,12 +113,12 @@ export async function syncAttendeesAction(
   } catch (error: unknown) {
     const message = getErrorMessage(error);
     if (message === "UNAUTHORIZED")
-      return { success: false, error: "Não autenticado." };
+      return { success: false, errorCode: "unauthorized" };
     if (message === "EVENT_NOT_FOUND")
-      return { success: false, error: "Evento não encontrado." };
+      return { success: false, errorCode: "eventNotFound" };
     if (message === "INVALID_MEMBERS")
-      return { success: false, error: "Um ou mais membros são inválidos." };
+      return { success: false, errorCode: "invalidMembers" };
     console.error("[SYNC_ATTENDEES_ERROR]:", error);
-    return { success: false, error: "Erro ao actualizar presenças." };
+    return { success: false, errorCode: "errorSync" };
   }
 }

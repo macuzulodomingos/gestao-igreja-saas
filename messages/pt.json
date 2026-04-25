@@ -217,7 +217,8 @@
       "transactionAlreadyDeleted": "Transacção já foi eliminada.",
       "planLimitTransactions": "Limite de transacções mensais atingido. Actualize o seu plano.",
       "errorSave": "Falha ao registar transacção.",
-      "errorDelete": "Não foi possível eliminar o registo."
+      "errorDelete": "Não foi possível eliminar o registo.",
+      "loadMoreError": "Erro ao carregar mais transacções."
     }
   },
   "events": {
@@ -280,6 +281,19 @@
       "updated": "Presenças actualizadas!",
       "error": "Erro ao actualizar presenças.",
       "noRole": "Sem cargo"
+    },
+    "errors": {
+      "unauthorized": "Não autenticado.",
+      "invalidDepartment": "Departamento inválido para esta igreja.",
+      "invalidCategory": "Categoria inválida para esta igreja.",
+      "planLimitEvents": "Limite de eventos mensais atingido. Actualize o seu plano.",
+      "duplicate": "Já existe um evento com estes dados.",
+      "eventNotFound": "Evento não encontrado.",
+      "eventAlreadyDeleted": "Evento já foi eliminado.",
+      "invalidMembers": "Um ou mais membros são inválidos.",
+      "errorSave": "Erro ao salvar evento.",
+      "errorDelete": "Não foi possível eliminar o evento.",
+      "errorSync": "Erro ao actualizar presenças."
     }
   },
   "departments": {
@@ -524,7 +538,8 @@
       "duplicate": "Já existe uma categoria com este nome e tipo.",
       "errorDelete": "Erro ao eliminar categoria.",
       "errorSave": "Erro ao salvar categoria.",
-      "categoryAlreadyDeleted": "Categoria já foi eliminada."
+      "categoryAlreadyDeleted": "Categoria já foi eliminada.",
+      "categoryTypeChangeBlocked": "Não é possível alterar o tipo de uma categoria com transacções associadas."
     }
   },
   "roles": {
