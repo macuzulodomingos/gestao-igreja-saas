@@ -25,10 +25,11 @@ export function DepartmentMembersDialog({ open, onOpenChange, department, allMem
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const t = useTranslations("departments.membersDialog");
+  const td = useTranslations("departments.errors");
 
   useEffect(() => {
     if (open) {
-      setSelectedIds(department.members.map(m => m.memberId));
+      setSelectedIds(department.members.map(m => m.member.id));
       setSearchTerm("");
     }
   }, [open, department]);
@@ -64,7 +65,8 @@ export function DepartmentMembersDialog({ open, onOpenChange, department, allMem
         toast.success(t("updated"));
         onOpenChange(false);
       } else {
-        toast.error(result.error || t("error"));
+        const errorCode = (result as any).errorCode;
+        toast.error(errorCode ? td(errorCode) : t("error"));
       }
     });
   };

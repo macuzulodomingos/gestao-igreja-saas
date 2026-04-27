@@ -88,7 +88,7 @@ export function EventsList({ events, onEdit, onDelete, onManageAttendance, timez
         <TableCell>
           <div className="flex items-center gap-2 text-sm">
             <Users className="h-4 w-4 text-muted-foreground" />
-            {event.attendees.length}
+            {event._count.attendees}
           </div>
         </TableCell>
         <TableCell className="text-right">

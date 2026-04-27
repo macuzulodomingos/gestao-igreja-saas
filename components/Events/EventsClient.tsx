@@ -39,6 +39,7 @@ export default function EventsClient({
   const [eventToDelete, setEventToDelete] = useState<ChurchEvent | null>(null);
   const upgrade = useUpgradeModal();
   const t = useTranslations("events");
+  const te = useTranslations("events.errors");
 
   const handleAdd = () => {
     setEditingEvent(null);
@@ -63,8 +64,12 @@ export default function EventsClient({
   const confirmDelete = async () => {
     if (!eventToDelete) return;
     const result = await deleteEventAction(eventToDelete.id);
-    if (result.success) toast.success(t("successDeleted"));
-    else toast.error(result.error || t("errorDelete"));
+    if (result.success) {
+      toast.success(t("successDeleted"));
+    } else {
+      const errorCode = (result as any).errorCode;
+      toast.error(errorCode ? te(errorCode) : t("errorDelete")); // 👈
+    }
     setEventToDelete(null);
   };
 

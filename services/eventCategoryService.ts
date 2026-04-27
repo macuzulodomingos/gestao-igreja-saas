@@ -5,15 +5,12 @@ export interface CreateEventCategoryDTO {
 }
 
 export const EventCategoryService = {
-  
+
   async getCategories(churchId: string) {
+    if (!churchId) return [];
     return prisma.eventCategory.findMany({
       where: { churchId },
-      select: {
-        id: true,
-        name: true,
-        _count: { select: { events: true } },
-      },
+      select: { id: true, name: true }, // 👈 remove _count
       orderBy: { name: "asc" },
     });
   },
@@ -24,6 +21,13 @@ export const EventCategoryService = {
     data: CreateEventCategoryDTO
   ) {
     return prisma.$transaction(async (tx) => {
+
+      const existing = await tx.eventCategory.findFirst({
+        where: { churchId, name: { equals: data.name, mode: "insensitive" } },
+        select: { id: true },
+      });
+      if (existing) throw new Error("CATEGORY_DUPLICATE");
+
       const category = await tx.eventCategory.create({
         data: { name: data.name, churchId },
         select: { id: true, name: true },
@@ -58,8 +62,15 @@ export const EventCategoryService = {
         select: { id: true, name: true, churchId: true },
       });
 
-      if (!existing) throw new Error("CATEGORY_NOT_FOUND");
-      if (existing.churchId !== churchId) throw new Error("CATEGORY_NOT_FOUND");
+      if (!existing || existing.churchId !== churchId) {
+        throw new Error("CATEGORY_NOT_FOUND");
+      }
+
+      const duplicate = await tx.eventCategory.findFirst({
+        where: { churchId, name: { equals: data.name, mode: "insensitive" }, NOT: { id } },
+        select: { id: true },
+      });
+      if (duplicate) throw new Error("CATEGORY_DUPLICATE");
 
       const updated = await tx.eventCategory.update({
         where: { id },

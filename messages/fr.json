@@ -280,7 +280,8 @@
       "at": "à",
       "updated": "Présences mises à jour!",
       "error": "Erreur lors de la mise à jour.",
-      "noRole": "Sans rôle"
+      "noRole": "Sans rôle",
+      "errorLoadAttendees": "Erreur lors du chargement des présences. Veuillez réessayer."
     },
     "errors": {
       "unauthorized": "Non authentifié.",
@@ -293,7 +294,8 @@
       "invalidMembers": "Un ou plusieurs membres sont invalides.",
       "errorSave": "Erreur lors de la sauvegarde de l'événement.",
       "errorDelete": "Impossible de supprimer l'événement.",
-      "errorSync": "Erreur lors de la mise à jour des présences."
+      "errorSync": "Erreur lors de la mise à jour des présences.",
+      "tooManyMembers": "Il n'est pas possible d'ajouter plus de 1000 membres par événement."
     }
   },
   "departments": {
@@ -348,6 +350,16 @@
       "save": "Enregistrer les membres",
       "updated": "Membres mis à jour!",
       "error": "Erreur lors de la mise à jour."
+    },
+    "errors": {
+      "unauthorized": "Non authentifié.",
+      "invalidLeader": "Leader invalide pour cette église.",
+      "planLimitDepartments": "Limite de départements atteinte. Mettez à niveau votre plan.",
+      "departmentNotFound": "Département introuvable.",
+      "invalidMembers": "Un ou plusieurs membres sont invalides.",
+      "errorSave": "Erreur lors de la sauvegarde du département.",
+      "errorDelete": "Impossible de supprimer le département.",
+      "errorSync": "Erreur lors de la mise à jour des membres."
     }
   },
   "settings": {

@@ -26,12 +26,15 @@ export async function saveEventCategoryAction(
 
     if (categoryId) {
       await EventCategoryService.updateCategory(categoryId, churchId, actor, result.data);
+      revalidatePath(`/[slug]/configuracoes/categorias-eventos`, "page"); // 👈 adiciona
+      revalidatePath(`/[slug]/eventos`, "page"); 
       return { success: true, id: categoryId }; // 👈 id real do banco
     } else {
       const category = await EventCategoryService.createCategory(churchId, actor, result.data);
 
       revalidatePath(`/[slug]/configuracoes/categorias-eventos`, "page");
-      return { success: true, id: category.id }; // 👈 id real do banco
+      revalidatePath(`/[slug]/eventos`, "page"); 
+      return { success: true, id: category.id }; 
     }
 
   } catch (error: unknown) {
@@ -42,6 +45,8 @@ export async function saveEventCategoryAction(
       return { success: false, errorCode: "unauthorized" };
     if (message === "CATEGORY_NOT_FOUND")
       return { success: false, errorCode: "categoryNotFound" };
+    if (message === "CATEGORY_DUPLICATE")
+      return { success: false, fieldErrors: { name: ["eventCategories.errors.duplicate"] } };
     if (isPrismaError(error) && error.code === "P2002")
       return { success: false, fieldErrors: { name: ["eventCategories.errors.duplicate"] } };
     console.error("[SAVE_EVENT_CATEGORY_ERROR]:", error);

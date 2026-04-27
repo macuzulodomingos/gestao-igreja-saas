@@ -1,7 +1,11 @@
 // types/department.ts
 
 export interface DepartmentMember {
-  memberId: string;
+  member: { // 👈 reflecte o que o service retorna
+    id: string;
+    name: string;
+    role: { name: string } | null;
+  };
 }
 
 export interface Department {
@@ -11,9 +15,6 @@ export interface Department {
   leaderId: string | null;
   leader: { id: string; name: string; role: { name: string } | null } | null;
   members: DepartmentMember[];
-  churchId: string;
-  createdAt: Date;
-  updatedAt: Date;
 }
 
 export interface DepartmentListMember {

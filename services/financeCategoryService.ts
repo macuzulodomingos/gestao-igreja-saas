@@ -10,6 +10,7 @@ export interface CreateCategoryDTO {
 export const FinanceCategoryService = {
 
   async getCategories(churchId: string, type?: TransactionType) {
+    if (!churchId) return [];
     return prisma.financeCategory.findMany({
       where: { churchId, ...(type && { type }) },
       select: {

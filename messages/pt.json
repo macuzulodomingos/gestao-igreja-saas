@@ -280,7 +280,8 @@
       "at": "às",
       "updated": "Presenças actualizadas!",
       "error": "Erro ao actualizar presenças.",
-      "noRole": "Sem cargo"
+      "noRole": "Sem cargo",
+      "errorLoadAttendees": "Erro ao carregar presenças. Tente novamente."
     },
     "errors": {
       "unauthorized": "Não autenticado.",
@@ -293,7 +294,8 @@
       "invalidMembers": "Um ou mais membros são inválidos.",
       "errorSave": "Erro ao salvar evento.",
       "errorDelete": "Não foi possível eliminar o evento.",
-      "errorSync": "Erro ao actualizar presenças."
+      "errorSync": "Erro ao actualizar presenças.",
+      "tooManyMembers": "Não é possível adicionar mais de 1000 membros por evento."
     }
   },
   "departments": {
@@ -348,6 +350,16 @@
       "save": "Salvar Membros",
       "updated": "Membros actualizados!",
       "error": "Erro ao actualizar membros."
+    },
+    "errors": {
+      "unauthorized": "Não autenticado.",
+      "invalidLeader": "Líder inválido para esta igreja.",
+      "planLimitDepartments": "Limite de departamentos atingido. Actualize o seu plano.",
+      "departmentNotFound": "Departamento não encontrado.",
+      "invalidMembers": "Um ou mais membros são inválidos.",
+      "errorSave": "Erro ao salvar departamento.",
+      "errorDelete": "Não foi possível eliminar o departamento.",
+      "errorSync": "Erro ao actualizar membros."
     }
   },
   "settings": {

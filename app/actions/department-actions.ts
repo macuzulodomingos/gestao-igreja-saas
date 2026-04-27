@@ -31,17 +31,17 @@ export async function saveDepartmentAction(
     const data = {
       name: result.data.name,
       description: result.data.description || undefined,
-      leaderId: result.data.leaderId === "none" || !result.data.leaderId
-        ? undefined
-        : result.data.leaderId,
+      leaderId: result.data.leaderId === "none" ? null : result.data.leaderId,
     };
 
 
     if (departmentId) {
       await DepartmentService.updateDepartment(departmentId, churchId, actor, data);
+      revalidatePath(`/[slug]/departamentos`, "page");
     } else {
       await checkDepartmentLimit(churchId, plan);
       await DepartmentService.createDepartment(churchId, actor, data);
+      revalidatePath(`/[slug]/departamentos`, "page");
     }
 
     revalidatePath(`/[slug]/departamentos`, "page");
@@ -50,15 +50,15 @@ export async function saveDepartmentAction(
   } catch (error: unknown) {
     const message = getErrorMessage(error);
     if (message === "UNAUTHORIZED")
-      return { success: false, error: "Não autenticado." };
+      return { success: false, errorCode: "unauthorized" };
     if (message === "CHURCH_ID_REQUIRED")
-      return { success: false, error: "Igreja não encontrada." };
+      return { success: false, errorCode: "unauthorized" };
     if (message === "INVALID_LEADER")
-      return { success: false, error: "Líder inválido para esta igreja." };
+      return { success: false, errorCode: "invalidLeader" };
     if (message === "PLAN_LIMIT_DEPARTMENTS")
-      return { success: false, error: "Limite de departamentos atingido. Actualize o seu plano.", upgrade: true };
+      return { success: false, errorCode: "planLimitDepartments", upgrade: true };
     console.error("[SAVE_DEPARTMENT_ERROR]:", error);
-    return { success: false, error: "Erro ao salvar departamento." };
+    return { success: false, errorCode: "errorSave" };
   }
 }
 
@@ -77,11 +77,11 @@ export async function deleteDepartmentAction(
   } catch (error: unknown) {
     const message = getErrorMessage(error);
     if (message === "UNAUTHORIZED")
-      return { success: false, error: "Não autenticado." };
+      return { success: false, errorCode: "unauthorized" };
     if (message === "DEPARTMENT_NOT_FOUND")
-      return { success: false, error: "Departamento não encontrado." };
+      return { success: false, errorCode: "departmentNotFound" };
     console.error("[DELETE_DEPARTMENT_ERROR]:", error);
-    return { success: false, error: "Não foi possível eliminar o departamento." };
+    return { success: false, errorCode: "errorDelete" };
   }
 }
 
@@ -106,12 +106,13 @@ export async function syncDepartmentMembersAction(
   } catch (error: unknown) {
     const message = getErrorMessage(error);
     if (message === "UNAUTHORIZED")
-      return { success: false, error: "Não autenticado." };
+      return { success: false, errorCode: "unauthorized" };
     if (message === "INVALID_MEMBERS")
-      return { success: false, error: "Um ou mais membros são inválidos." };
+      return { success: false, errorCode: "invalidMembers" };
     if (message === "DEPARTMENT_NOT_FOUND")
-      return { success: false, error: "Departamento não encontrado." };
+      return { success: false, errorCode: "departmentNotFound" };
     console.error("[SYNC_MEMBERS_ERROR]:", error);
-    return { success: false, error: "Erro ao actualizar membros." };
+    return { success: false, errorCode: "errorSync" };
+   
   }
 }

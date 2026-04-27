@@ -49,6 +49,7 @@ export function DepartmentFormDialog({ open, onOpenChange, department, members, 
   const [isPending, startTransition] = useTransition();
   const t = useTranslations("departments.form");
   const tc = useTranslations("common");
+  const td = useTranslations("departments.errors");
 
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -86,9 +87,11 @@ export function DepartmentFormDialog({ open, onOpenChange, department, members, 
         onOpenChange(false);
       } else if ("upgrade" in result && result.upgrade) {
         onOpenChange(false);
-        onUpgrade?.(result.error || tc("upgrade"));
+        const errorCode = (result as any).errorCode;
+        onUpgrade?.(errorCode ? td(errorCode) : tc("upgrade")); // 👈
       } else {
-        toast.error(result.error || t("error"));
+        const errorCode = (result as any).errorCode;
+        toast.error(errorCode ? td(errorCode) : t("error")); // 👈
       }
     });
   };

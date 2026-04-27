@@ -8,6 +8,7 @@ import { getAuthContext } from "@/lib/auth-context";
 import { fromZonedTime } from "date-fns-tz";
 import { getTimezone } from "@/lib/get-timezone";
 import { checkEventMonthlyLimit } from "@/lib/plan-guard";
+import prisma from "@/lib/prisma";
 
 
 
@@ -102,6 +103,10 @@ export async function syncAttendeesAction(
   memberIds: string[],
   targetChurchId?: string,
 ) {
+  // 👈 protecção contra payload malicioso
+  if (memberIds.length > 1000)
+    return { success: false, errorCode: "tooManyMembers" };
+
   try {
     const { churchId, actor } = await getAuthContext(targetChurchId);
 
@@ -120,5 +125,18 @@ export async function syncAttendeesAction(
       return { success: false, errorCode: "invalidMembers" };
     console.error("[SYNC_ATTENDEES_ERROR]:", error);
     return { success: false, errorCode: "errorSync" };
+  }
+}
+
+
+export async function getEventAttendeesAction(eventId: string, targetChurchId?: string) {
+  try {
+    const { churchId } = await getAuthContext(targetChurchId);
+    const attendees = await EventService.getEventAttendees(eventId, churchId);
+    
+    return { success: true, memberIds: attendees.map(a => a.memberId) };
+  } catch (error: unknown) {
+    console.error("[GET_EVENT_ATTENDEES_ERROR]:", error);
+    return { success: false, memberIds: [] };
   }
 }

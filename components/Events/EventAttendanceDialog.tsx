@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Search, Users, Loader2 } from "lucide-react";
-import { syncAttendeesAction } from "@/app/actions/event-actions";
+import { getEventAttendeesAction, syncAttendeesAction } from "@/app/actions/event-actions";
 import { ChurchEvent, EventListMember } from "@/types/event";
 import { formatInTimeZone } from "date-fns-tz";
 import { ptBR, fr } from "date-fns/locale";
@@ -31,17 +31,29 @@ interface Props {
 export function EventAttendanceDialog({ open, onOpenChange, event, allMembers, timezone }: Props) {
   const [isPending, startTransition] = useTransition();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState(false); // 👈
   const [searchTerm, setSearchTerm] = useState("");
   const t = useTranslations("events.attendance");
+  const te = useTranslations("events.errors");
   const locale = useLocale();
   const dateLocale = dateLocalesMap[locale as keyof typeof dateLocalesMap] ?? ptBR;
 
   useEffect(() => {
     if (open) {
-      setSelectedIds(event.attendees.map(a => a.member.id));
       setSearchTerm("");
+      setLoadError(false); // 👈 reset ao abrir
+      setLoading(true);
+      getEventAttendeesAction(event.id).then(result => {
+        if (result.success) {
+          setSelectedIds(result.memberIds);
+        } else {
+          setLoadError(true); // 👈 bloqueia em vez de toast
+        }
+        setLoading(false);
+      });
     }
-  }, [open, event]);
+  }, [open, event.id]);
 
   const activeMembers = allMembers.filter(m => m.status === "ATIVO");
 
@@ -74,7 +86,8 @@ export function EventAttendanceDialog({ open, onOpenChange, event, allMembers, t
         toast.success(t("updated"));
         onOpenChange(false);
       } else {
-        toast.error(result.error || t("error"));
+        const errorCode = (result as any).errorCode;
+        toast.error(errorCode ? te(errorCode) : t("error"));
       }
     });
   };
@@ -107,6 +120,7 @@ export function EventAttendanceDialog({ open, onOpenChange, event, allMembers, t
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
               className="pl-10"
+              disabled={loading || loadError} // 👈
             />
           </div>
 
@@ -114,37 +128,56 @@ export function EventAttendanceDialog({ open, onOpenChange, event, allMembers, t
             <Badge variant="secondary">
               {selectedIds.length} {t("present")} {activeMembers.length} {t("presentLabel")}
             </Badge>
-            <Button type="button" variant="ghost" size="sm" onClick={handleSelectAll}>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={handleSelectAll}
+              disabled={loading || loadError} // 👈
+            >
               {allFilteredSelected ? t("deselectAll") : t("selectAll")}
             </Button>
           </div>
 
           <ScrollArea className="h-[300px] pr-4">
-            <div className="space-y-2">
-              {filteredMembers.length === 0 ? (
-                <p className="text-center text-muted-foreground py-8">
-                  {t("noMembers")}
+            {/* 👈 loading state */}
+            {loading ? (
+              <div className="flex items-center justify-center h-full py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : loadError ? ( // 👈 erro state
+              <div className="flex flex-col items-center justify-center py-8 gap-2">
+                <p className="text-center text-destructive text-sm">
+                  {t("errorLoadAttendees")}
                 </p>
-              ) : (
-                filteredMembers.map(member => (
-                  <label
-                    key={member.id}
-                    className="flex items-center gap-3 p-3 rounded-lg border cursor-pointer hover:bg-muted/50 transition-colors"
-                  >
-                    <Checkbox
-                      checked={selectedIds.includes(member.id)}
-                      onCheckedChange={() => handleToggle(member.id)}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm">{member.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {member.role?.name || t("noRole")}
-                      </p>
-                    </div>
-                  </label>
-                ))
-              )}
-            </div>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {filteredMembers.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-8">
+                    {t("noMembers")}
+                  </p>
+                ) : (
+                  filteredMembers.map(member => (
+                    <label
+                      key={member.id}
+                      className="flex items-center gap-3 p-3 rounded-lg border cursor-pointer hover:bg-muted/50 transition-colors"
+                    >
+                      <Checkbox
+                        checked={selectedIds.includes(member.id)}
+                        onCheckedChange={() => handleToggle(member.id)}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm">{member.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {member.role?.name || t("noRole")}
+                        </p>
+                      </div>
+                    </label>
+                  ))
+                )}
+              </div>
+            )}
           </ScrollArea>
         </div>
 
@@ -152,7 +185,10 @@ export function EventAttendanceDialog({ open, onOpenChange, event, allMembers, t
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             {t("cancel")}
           </Button>
-          <Button onClick={handleSave} disabled={isPending}>
+          <Button
+            onClick={handleSave}
+            disabled={isPending || loading || loadError} // 👈 bloqueia save
+          >
             {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : t("save")}
           </Button>
         </DialogFooter>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { DepartmentsList } from "./DepartmentsList";
 import { DepartmentFormDialog } from "./DepartmentFormDialog";
 import { DepartmentMembersDialog } from "./DepartmentMembersDialog";
@@ -28,8 +28,15 @@ export default function DepartmentsClient({ initialDepartments, members }: Depar
   const [editingDepartment, setEditingDepartment] = useState<Department | null>(null);
   const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null);
   const [departmentToDelete, setDepartmentToDelete] = useState<Department | null>(null);
+  const [departments, setDepartments] = useState(initialDepartments);
   const upgrade = useUpgradeModal();
   const t = useTranslations("departments");
+  const td = useTranslations("departments.errors");
+
+  // 👈 adiciona este useEffect no DepartmentsClient
+  useEffect(() => {
+    setDepartments(initialDepartments);
+  }, [initialDepartments]);
 
   const handleAdd = () => {
     setEditingDepartment(null);
@@ -42,7 +49,7 @@ export default function DepartmentsClient({ initialDepartments, members }: Depar
   };
 
   const handleDelete = (id: string) => {
-    const dept = initialDepartments.find(d => d.id === id);
+    const dept = departments.find(d => d.id === id);
     if (dept) setDepartmentToDelete(dept);
   };
 
@@ -54,8 +61,12 @@ export default function DepartmentsClient({ initialDepartments, members }: Depar
   const confirmDelete = async () => {
     if (!departmentToDelete) return;
     const result = await deleteDepartmentAction(departmentToDelete.id);
-    if (result.success) toast.success(t("successDeleted"));
-    else toast.error(result.error || t("errorDelete"));
+    if (result.success) {
+      toast.success(t("successDeleted"));
+    } else {
+      const errorCode = (result as any).errorCode;
+      toast.error(errorCode ? td(errorCode) : t("errorDelete")); // 👈
+    }
     setDepartmentToDelete(null);
   };
 
@@ -73,7 +84,7 @@ export default function DepartmentsClient({ initialDepartments, members }: Depar
       </div>
 
       <DepartmentsList
-        departments={initialDepartments}
+        departments={departments}
         onEdit={handleEdit}
         onDelete={handleDelete}
         onManageMembers={handleManageMembers}

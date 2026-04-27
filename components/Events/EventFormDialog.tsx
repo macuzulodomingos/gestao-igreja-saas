@@ -33,6 +33,7 @@ export function EventFormDialog({ open, onOpenChange, event, departments, catego
   const [isPending, startTransition] = useTransition();
   const t = useTranslations("events.form");
   const tc = useTranslations("common");
+  const te = useTranslations("events.errors");
 
   const form = useForm<FormData>({
     resolver: zodResolver(eventSchema),
@@ -94,11 +95,13 @@ export function EventFormDialog({ open, onOpenChange, event, departments, catego
         onOpenChange(false);
       } else if ("upgrade" in result && result.upgrade) {
         onOpenChange(false);
-        onUpgrade?.(result.error || tc("upgrade"));
+        const errorCode = (result as any).errorCode;
+        onUpgrade?.(errorCode ? te(errorCode) : tc("upgrade")); // 👈
       } else if (result.fieldErrors) {
         toast.error(t("checkErrors"));
       } else {
-        toast.error(result.error || t("error"));
+        const errorCode = (result as any).errorCode;
+        toast.error(errorCode ? te(errorCode) : t("error")); // 👈
       }
     });
   };

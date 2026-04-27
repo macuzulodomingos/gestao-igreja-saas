@@ -1,4 +1,5 @@
 import prisma from "@/lib/prisma";
+import { fromZonedTime, toZonedTime } from "date-fns-tz";
 
 export interface CreateEventDTO {
   name: string;
@@ -10,9 +11,13 @@ export interface CreateEventDTO {
 
 export const EventService = {
 
-  async getEvents(churchId: string) {
+  async getEvents(churchId: string, timezone = "Africa/Luanda") {
+    const nowInTimezone = toZonedTime(new Date(), timezone); // 👈
+    const currentYear = nowInTimezone.getFullYear();         // 👈
+    const startOfYear = fromZonedTime(`${currentYear}-01-01T00:00:00`, timezone);
+
     return prisma.event.findMany({
-      where: { churchId },
+      where: { churchId, startAt: { gte: startOfYear } },
       select: {
         id: true,
         name: true,
@@ -22,11 +27,7 @@ export const EventService = {
         startAt: true,  // 👈
         departmentId: true,
         department: { select: { id: true, name: true } },
-        attendees: {
-          select: {
-            member: { select: { id: true, name: true } },
-          },
-        },
+        _count: { select: { attendees: true } },
       },
       orderBy: { startAt: "asc" },
     });
@@ -199,6 +200,14 @@ export const EventService = {
     });
   },
 
+
+  async getEventAttendees(eventId: string, churchId: string) {
+    return prisma.eventAttendee.findMany({
+      where: { eventId, event: { churchId } },
+      select: { memberId: true },
+    });
+  },
+
   async syncAttendees(
     eventId: string,
     churchId: string,
@@ -214,22 +223,35 @@ export const EventService = {
       if (!event) throw new Error("EVENT_NOT_FOUND");
       if (event.churchId !== churchId) throw new Error("EVENT_NOT_FOUND");
 
-      const uniqueMemberIds = [...new Set(memberIds)]; // 👈 declara uma vez aqui
+      const uniqueMemberIds = [...new Set(memberIds)];
 
-      if (uniqueMemberIds.length > 0) {
-        const validMembers = await tx.member.count({
-          where: { id: { in: uniqueMemberIds }, churchId },
+      // 👈 busca presenças actuais para fazer o diff
+      const currentAttendees = await tx.eventAttendee.findMany({
+        where: { eventId },
+        select: { memberId: true },
+      });
+      const currentIds = currentAttendees.map(a => a.memberId);
+
+      const toAdd = uniqueMemberIds.filter(id => !currentIds.includes(id));
+      const toRemove = currentIds.filter(id => !uniqueMemberIds.includes(id));
+
+      // 👈 valida apenas os novos membros
+      if (toAdd.length > 0) {
+        const validCount = await tx.member.count({
+          where: { id: { in: toAdd }, churchId },
         });
-        if (validMembers !== uniqueMemberIds.length)
+        if (validCount !== toAdd.length)
           throw new Error("INVALID_MEMBERS");
+
+        await tx.eventAttendee.createMany({
+          data: toAdd.map(memberId => ({ eventId, memberId })),
+        });
       }
 
-      await tx.eventAttendee.deleteMany({ where: { eventId } });
-
-      if (uniqueMemberIds.length > 0) {
-        await tx.eventAttendee.createMany({
-          data: uniqueMemberIds.map(memberId => ({ eventId, memberId })),
-          skipDuplicates: true,
+      // 👈 remove apenas quem saiu
+      if (toRemove.length > 0) {
+        await tx.eventAttendee.deleteMany({
+          where: { eventId, memberId: { in: toRemove } },
         });
       }
 
@@ -241,7 +263,7 @@ export const EventService = {
           action: "SYNC_EVENT_ATTENDEES",
           entityName: "Event",
           entityId: eventId,
-          newData: { memberIds: uniqueMemberIds }, // 👈 usa uniqueMemberIds
+          newData: { memberIds: uniqueMemberIds },
         },
       });
     });

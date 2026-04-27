@@ -4,19 +4,20 @@ import { getDiff } from "@/lib/utils";
 export interface CreateDepartmentDTO {
   name: string;
   description?: string;
-  leaderId?: string;
+  leaderId?: string | null;
 }
 
 type UpdateDepartmentDTO = {
   name?: string;
   description?: string;
-  leaderId?: string;
+  leaderId?: string | null;
 };
 
 
 export const DepartmentService = {
 
   async getDepartments(churchId: string) {
+    if (!churchId) return [];
     return prisma.department.findMany({
       where: { churchId },
       select: {
@@ -53,13 +54,16 @@ export const DepartmentService = {
     data: CreateDepartmentDTO
   ) {
     return prisma.$transaction(async (tx) => {
+      let leaderName: string | null = null;
+
       if (data.leaderId) {
         const leader = await tx.member.findUnique({
           where: { id: data.leaderId },
-          select: { id: true, churchId: true },
+          select: { id: true, name: true, churchId: true },
         });
         if (!leader || leader.churchId !== churchId)
           throw new Error("INVALID_LEADER");
+        leaderName = leader.name;
       }
 
       const department = await tx.department.create({
@@ -80,7 +84,7 @@ export const DepartmentService = {
           action: "CREATE_DEPARTMENT",
           entityName: "Department",
           entityId: department.id,
-          newData: { name: data.name, leaderId: data.leaderId ?? null },
+          newData: { name: data.name, leader: leaderName },
         },
       });
 
@@ -127,7 +131,7 @@ export const DepartmentService = {
       });
 
       const changes = getDiff(
-        { id: existing.id,name: existing.name, description: existing.description, leaderId: existing.leaderId },
+        { id: existing.id, name: existing.name, description: existing.description, leaderId: existing.leaderId },
         updated
       );
 
@@ -204,11 +208,31 @@ export const DepartmentService = {
           throw new Error("INVALID_MEMBERS");
       }
 
-      await tx.departmentMember.deleteMany({ where: { departmentId } });
+      const uniqueMemberIds = [...new Set(memberIds)];
 
-      if (memberIds.length > 0) {
+      const current = await tx.departmentMember.findMany({
+        where: { departmentId },
+        select: { memberId: true },
+      });
+      const currentIds = current.map(m => m.memberId);
+
+      const toAdd = uniqueMemberIds.filter(id => !currentIds.includes(id));
+      const toRemove = currentIds.filter(id => !uniqueMemberIds.includes(id));
+
+      if (toAdd.length > 0) {
+        const validCount = await tx.member.count({
+          where: { id: { in: toAdd }, churchId },
+        });
+        if (validCount !== toAdd.length) throw new Error("INVALID_MEMBERS");
+
         await tx.departmentMember.createMany({
-          data: memberIds.map(memberId => ({ departmentId, memberId })),
+          data: toAdd.map(memberId => ({ departmentId, memberId })),
+        });
+      }
+
+      if (toRemove.length > 0) {
+        await tx.departmentMember.deleteMany({
+          where: { departmentId, memberId: { in: toRemove } },
         });
       }
 

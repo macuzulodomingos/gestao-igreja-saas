@@ -18,10 +18,10 @@ export interface ChurchEvent {
   description: string | null;
   categoryId: string;           // 👈 substitui type
   category: EventCategory;      // 👈 novo
-  startAt: Date;        // 👈 substitui date + time
+  startAt: Date | string;       
   departmentId: string | null;
   department: EventDepartment | null;
-  attendees: EventAttendee[];
+  _count: { attendees: number };
 }
 
 export interface EventListMember {

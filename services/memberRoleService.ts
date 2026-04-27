@@ -7,6 +7,7 @@ export interface CreateRoleDTO {
 export const MemberRoleService = {
 
   async getRoles(churchId: string) {
+    if (!churchId) return [];
     return await prisma.memberRole.findMany({
       where: { churchId },
       include: { _count: { select: { members: true } } },
