@@ -29,19 +29,18 @@ export async function saveDepartmentAction(
     }
 
     const data = {
-      name: result.data.name,
-      description: result.data.description || undefined,
-      leaderId: result.data.leaderId === "none" ? null : result.data.leaderId,
+      name: result.data.name.trim(),
+      description: result.data.description?.trim() || null, // 👈 null limpa o campo na edição
+      leaderId: result.data.leaderId === "none" || !result.data.leaderId
+        ? null
+        : result.data.leaderId,
     };
-
 
     if (departmentId) {
       await DepartmentService.updateDepartment(departmentId, churchId, actor, data);
-      revalidatePath(`/[slug]/departamentos`, "page");
     } else {
       await checkDepartmentLimit(churchId, plan);
       await DepartmentService.createDepartment(churchId, actor, data);
-      revalidatePath(`/[slug]/departamentos`, "page");
     }
 
     revalidatePath(`/[slug]/departamentos`, "page");
@@ -113,6 +112,6 @@ export async function syncDepartmentMembersAction(
       return { success: false, errorCode: "departmentNotFound" };
     console.error("[SYNC_MEMBERS_ERROR]:", error);
     return { success: false, errorCode: "errorSync" };
-   
+
   }
 }

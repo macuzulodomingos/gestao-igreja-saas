@@ -9,7 +9,7 @@ import { useTranslations, useLocale } from "next-intl";
 type RecentMember = {
   id: string;
   name: string;
-  role: string;
+  role: string | null;
   joinDate: Date;
 };
 
@@ -58,7 +58,7 @@ export function RecentMembers({ members }: RecentMembersProps) {
                 </p>
               </div>
               <Badge variant="secondary" className="bg-primary/10 text-primary">
-                {member.role}
+                {member.role || t("defaultRole")} // 👈
               </Badge>
             </div>
           ))

@@ -39,7 +39,12 @@
     "membersGrowth": "Croissance des membres",
     "membersLabel": "Membres",
     "incomeLabel": "Revenus",
-    "expensesLabel": "Dépenses"
+    "expensesLabel": "Dépenses",
+    "defaultRole": "Membre",
+    "errors": {
+      "unauthorized": "Non authentifié.",
+      "errorLoad": "Erreur lors du chargement du tableau de bord."
+    }
   },
   "members": {
     "title": "Membres",

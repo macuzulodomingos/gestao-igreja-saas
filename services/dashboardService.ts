@@ -85,7 +85,7 @@ export const DashboardService = {
           return members.map(m => ({
             id: m.id,
             name: m.name,
-            role: m.role?.name || "Membro",
+            role: m.role?.name || null,
             joinDate: m.joinDate,
           }));
         } catch (error) {
@@ -134,7 +134,7 @@ export const DashboardService = {
     )();
   },
 
-  async getMembersChartData(churchId: string) {
+  async getMembersChartData(churchId: string, locale = "pt") {
     return unstable_cache(
       async () => {
         try {
@@ -164,7 +164,7 @@ export const DashboardService = {
             return {
               year: d.getUTCFullYear(),
               month: d.getUTCMonth(),
-              label: d.toLocaleString("pt-AO", { month: "short", timeZone: "UTC" }),
+              label: d.toLocaleString(locale === "fr" ? "fr-FR" : "pt-AO", { month: "short", timeZone: "UTC" }),
             };
           });
 
@@ -182,12 +182,12 @@ export const DashboardService = {
           throw error;
         }
       },
-      [`dashboard-members-chart-${churchId}`],
+      [`dashboard-members-chart-${churchId}-${locale}`],
       { revalidate: 300, tags: [`church-${churchId}`, `members-${churchId}`] }
     )();
   },
 
-  async getFinanceChartData(churchId: string) {
+  async getFinanceChartData(churchId: string, locale = "pt") {
     return unstable_cache(
       async () => {
         try {
@@ -215,7 +215,7 @@ export const DashboardService = {
             return {
               year: d.getUTCFullYear(),
               month: d.getUTCMonth(),
-              label: d.toLocaleString("pt-AO", { month: "short", timeZone: "UTC" }),
+              label: d.toLocaleString(locale === "fr" ? "fr-FR" : "pt-AO", { month: "short", timeZone: "UTC" }),
             };
           });
 
@@ -241,7 +241,7 @@ export const DashboardService = {
           throw error;
         }
       },
-      [`dashboard-finance-chart-${churchId}`],
+      [`dashboard-finance-chart-${churchId}-${locale}`],
       { revalidate: 300, tags: [`church-${churchId}`, `finances-${churchId}`] }
     )();
   },

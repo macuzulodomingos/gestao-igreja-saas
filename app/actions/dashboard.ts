@@ -16,10 +16,11 @@ export async function getDashboardStatsAction(targetChurchId?: string) {
   } catch (error: unknown) {
     const message = getErrorMessage(error);
     if (message === "UNAUTHORIZED")
-      return { success: false, error: "Não autenticado." };
+      return { success: false, errorCode: "unauthorized" };
     if (message === "CHURCH_ID_REQUIRED")
-      return { success: false, error: "Igreja não encontrada." };
+      return { success: false, errorCode: "unauthorized" };
     console.error("Erro ao buscar estatísticas do dashboard:", error);
-    return { success: false, error: "Erro interno ao carregar o dashboard." };
+    return { success: false, errorCode: "errorLoad" };
+    
   }
 }

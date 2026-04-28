@@ -3,13 +3,13 @@ import { getDiff } from "@/lib/utils";
 
 export interface CreateDepartmentDTO {
   name: string;
-  description?: string;
+  description?: string | null;
   leaderId?: string | null;
 }
 
 type UpdateDepartmentDTO = {
   name?: string;
-  description?: string;
+  description?: string | null;
   leaderId?: string | null;
 };
 
@@ -200,14 +200,6 @@ export const DepartmentService = {
       if (!department) throw new Error("DEPARTMENT_NOT_FOUND");
       if (department.churchId !== churchId) throw new Error("DEPARTMENT_NOT_FOUND");
 
-      if (memberIds.length > 0) {
-        const validMembers = await tx.member.count({
-          where: { id: { in: memberIds }, churchId },
-        });
-        if (validMembers !== memberIds.length)
-          throw new Error("INVALID_MEMBERS");
-      }
-
       const uniqueMemberIds = [...new Set(memberIds)];
 
       const current = await tx.departmentMember.findMany({
@@ -227,6 +219,7 @@ export const DepartmentService = {
 
         await tx.departmentMember.createMany({
           data: toAdd.map(memberId => ({ departmentId, memberId })),
+          skipDuplicates: true, 
         });
       }
 

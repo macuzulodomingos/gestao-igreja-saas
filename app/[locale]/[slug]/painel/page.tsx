@@ -3,6 +3,7 @@ import { getChurchBySlug } from "@/lib/tenant";
 import { notFound, redirect } from "next/navigation";
 import DashboardShell from "@/components/Dashboard/DashboardShell";
 import { auth } from "@/lib/auth";
+import { getLocale } from "next-intl/server";
 
 export default async function DashboardPage({
   params
@@ -19,13 +20,15 @@ export default async function DashboardPage({
 
   const churchId = church.id;
 
+  const locale = await getLocale();
+
   const [stats, recentMembers, recentTransactions, membersChart, financeChart] =
     await Promise.all([
-      DashboardService.getChurchStats(churchId),
-      DashboardService.getRecentMembers(churchId),
-      DashboardService.getRecentTransactions(churchId),
-      DashboardService.getMembersChartData(churchId),
-      DashboardService.getFinanceChartData(churchId),
+      DashboardService.getChurchStats(churchId).catch(() => null),
+      DashboardService.getRecentMembers(churchId).catch(() => []),
+      DashboardService.getRecentTransactions(churchId).catch(() => []),
+      DashboardService.getMembersChartData(churchId, locale).catch(() => []),
+      DashboardService.getFinanceChartData(churchId, locale).catch(() => []),
     ]);
 
   return (

@@ -19,7 +19,7 @@ type Stats = {
 type RecentMember = {
   id: string;
   name: string;
-  role: string;
+  role: string | null;
   joinDate: Date;
 };
 
@@ -36,7 +36,7 @@ type MembersChartPoint = { month: string; members: number };
 type FinanceChartPoint = { month: string; income: number; expenses: number };
 
 interface DashboardShellProps {
-  stats: Stats;
+  stats: Stats | null;
   recentMembers: RecentMember[];
   recentTransactions: RecentTransaction[];
   membersChart: MembersChartPoint[];
@@ -59,7 +59,12 @@ export default function DashboardShell({
         <p className="text-muted-foreground mt-1">{t("welcome")}</p>
       </div>
 
-      <StatsGrid stats={stats} />
+      {/* 👈 mostra erro se stats falhar mas o resto continua */}
+      {stats ? (
+        <StatsGrid stats={stats} />
+      ) : (
+        <p className="text-sm text-destructive">{t("errors.errorLoad")}</p>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
         <MembersChart data={membersChart} />
