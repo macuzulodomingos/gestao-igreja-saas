@@ -168,15 +168,19 @@ export const DashboardService = {
             };
           });
 
-          // Agrupa por mês no código
-          return months.map(({ year, month, label }) => {
-            const count = rawData.filter(r => {
-              const d = new Date(r.joinDate);
-              return d.getUTCFullYear() === year && d.getUTCMonth() === month;
-            }).reduce((sum, r) => sum + r._count.id, 0);
+          const statsMap = rawData.reduce((acc, curr) => {
+            const d = new Date(curr.joinDate);
+            const key = `${d.getUTCFullYear()}-${d.getUTCMonth()}`;
+            acc[key] = (acc[key] || 0) + curr._count.id;
+            return acc;
+          }, {} as Record<string, number>);
 
-            return { month: label, members: count };
-          });
+          return months.map(({ year, month, label }) => ({
+            month: label,
+            members: statsMap[`${year}-${month}`] || 0,
+          }));
+
+          
         } catch (error) {
           console.error("[DashboardService] getMembersChartData error:", error);
           throw error;
@@ -209,6 +213,15 @@ export const DashboardService = {
             _sum: { amount: true },
           });
 
+          // 👈 lookup table em vez de filter+reduce dentro do map
+          const statsMap = rawData.reduce((acc, curr) => {
+            const d = new Date(curr.date);
+            const key = `${d.getUTCFullYear()}-${d.getUTCMonth()}-${curr.type}`;
+            acc[key] = (acc[key] || 0) + centsToAmount(curr._sum.amount);
+            return acc;
+          }, {} as Record<string, number>);
+
+
           // Monta os últimos 6 meses em UTC
           const months = Array.from({ length: 6 }, (_, i) => {
             const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - (5 - i), 1));
@@ -219,23 +232,12 @@ export const DashboardService = {
             };
           });
 
-          // Agrupa por mês no código
-          return months.map(({ year, month, label }) => {
-            const monthData = rawData.filter(r => {
-              const d = new Date(r.date);
-              return d.getUTCFullYear() === year && d.getUTCMonth() === month;
-            });
+          return months.map(({ year, month, label }) => ({
+            month: label,
+            income: statsMap[`${year}-${month}-INCOME`] || 0,
+            expenses: statsMap[`${year}-${month}-EXPENSE`] || 0,
+          }));
 
-            const income = monthData
-              .filter(r => r.type === "INCOME")
-              .reduce((sum, r) => sum + centsToAmount(r._sum.amount), 0);
-
-            const expenses = monthData
-              .filter(r => r.type === "EXPENSE")
-              .reduce((sum, r) => sum + centsToAmount(r._sum.amount), 0);
-
-            return { month: label, income, expenses };
-          });
         } catch (error) {
           console.error("[DashboardService] getFinanceChartData error:", error);
           throw error;
