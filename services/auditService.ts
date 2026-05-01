@@ -11,7 +11,7 @@ export const AuditService = {
   async getChurchLogs(churchId: string | null, filters: AuditFilters = {}) {
     // 🔒 Última linha de defesa — nunca deve chegar aqui em condições normais
     if (churchId === undefined || (churchId as unknown) === "") {
-      throw new Error("SECURITY_BREACH: churchId inválido");
+      throw new Error("SECURITY_BREACH");
     }
 
     const page = Math.max(1, filters.page ?? 1);

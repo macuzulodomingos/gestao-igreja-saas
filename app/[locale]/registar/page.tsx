@@ -3,12 +3,13 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Church, Loader2, ArrowLeft } from "lucide-react";
+import { Church, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { registerChurchAction } from "@/app/actions/register";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 
 const TIMEZONES = [
   { label: "🇦🇴 Angola (UTC+1)", value: "Africa/Luanda" },
@@ -26,6 +27,7 @@ export default function RegistarPage() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
   const [slugPreview, setSlugPreview] = useState("");
   const [timezone, setTimezone] = useState("Africa/Luanda");
+  const t = useTranslations("register"); // 👈
 
   const generateSlug = (name: string) =>
     name
@@ -47,19 +49,19 @@ export default function RegistarPage() {
     e.preventDefault();
     setFieldErrors({});
     const formData = new FormData(e.currentTarget);
-    formData.set("timezone", timezone); // 👈 adiciona timezone ao formData
+    formData.set("timezone", timezone);
 
     startTransition(async () => {
       const result = await registerChurchAction(formData);
 
       if (result.success) {
-        toast.success("Igreja registada com sucesso!");
+        toast.success(t("successCreated")); // 👈
         router.push(`/login?registered=true`);
       } else if (result.fieldErrors) {
         setFieldErrors(result.fieldErrors);
-        toast.error("Verifique os erros no formulário.");
+        toast.error(t("errorForm")); // 👈
       } else {
-        toast.error(result.error || "Erro ao registar.");
+        toast.error(t("errorCreate")); // 👈
       }
     });
   };
@@ -72,69 +74,66 @@ export default function RegistarPage() {
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground">
             <Church className="h-6 w-6" />
           </div>
-          <h1 className="text-2xl font-bold">Registar Igreja</h1>
-          <p className="text-sm text-muted-foreground">
-            Crie a conta da sua igreja em menos de 2 minutos
-          </p>
+          <h1 className="text-2xl font-bold">{t("title")}</h1> {/* 👈 */}
+          <p className="text-sm text-muted-foreground">{t("subtitle")}</p> {/* 👈 */}
         </div>
 
         <form onSubmit={handleSubmit} className="rounded-lg border bg-card p-8 shadow-sm space-y-6">
 
           <div className="space-y-4">
             <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-              Dados da Igreja
+              {t("churchData")} {/* 👈 */}
             </h2>
 
             <div className="space-y-2">
               <label className="text-sm font-medium" htmlFor="churchName">
-                Nome da Igreja
+                {t("churchName")} {/* 👈 */}
               </label>
               <Input
                 id="churchName"
                 name="churchName"
-                placeholder="Ex: Igreja Central Luanda"
+                placeholder={t("churchNamePlaceholder")} // 👈
                 onChange={handleChurchNameChange}
                 className={fieldErrors.churchName ? "border-destructive" : ""}
               />
               {fieldErrors.churchName && (
-                <p className="text-xs text-destructive">{fieldErrors.churchName[0]}</p>
+                <p className="text-xs text-destructive">
+                  {t(fieldErrors.churchName[0] as any)} {/* 👈 traduz a chave */}
+                </p>
               )}
             </div>
 
             <div className="space-y-2">
               <label className="text-sm font-medium" htmlFor="churchSlug">
-                Endereço no sistema
+                {t("churchSlug")} {/* 👈 */}
               </label>
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground whitespace-nowrap">
-                  churchos.com/
+                  {t("churchSlugPrefix")} {/* 👈 */}
                 </span>
                 <Input
                   id="churchSlug"
                   name="churchSlug"
-                  placeholder="igreja-central-luanda"
+                  placeholder={t("churchSlugPlaceholder")} // 👈
                   value={slugPreview}
                   onChange={(e) => setSlugPreview(e.target.value)}
                   className={fieldErrors.churchSlug ? "border-destructive" : ""}
                 />
               </div>
               {fieldErrors.churchSlug ? (
-                <p className="text-xs text-destructive">{fieldErrors.churchSlug[0]}</p>
-              ) : (
-                <p className="text-xs text-muted-foreground">
-                  Apenas letras minúsculas, números e hífens
+                <p className="text-xs text-destructive">
+                  {t(fieldErrors.churchSlug[0] as any)} {/* 👈 */}
                 </p>
+              ) : (
+                <p className="text-xs text-muted-foreground">{t("churchSlugHint")}</p> // 👈
               )}
             </div>
 
-            {/* 👈 NOVO — Fuso Horário */}
             <div className="space-y-2">
-              <label className="text-sm font-medium">
-                Fuso Horário
-              </label>
+              <label className="text-sm font-medium">{t("timezone")}</label> {/* 👈 */}
               <Select value={timezone} onValueChange={setTimezone}>
                 <SelectTrigger className={fieldErrors.timezone ? "border-destructive" : ""}>
-                  <SelectValue placeholder="Selecione o fuso horário" />
+                  <SelectValue placeholder={t("timezonePlaceholder")} /> {/* 👈 */}
                 </SelectTrigger>
                 <SelectContent>
                   {TIMEZONES.map(tz => (
@@ -147,26 +146,24 @@ export default function RegistarPage() {
               {fieldErrors.timezone ? (
                 <p className="text-xs text-destructive">{fieldErrors.timezone[0]}</p>
               ) : (
-                <p className="text-xs text-muted-foreground">
-                  Define como as datas e horas serão exibidas
-                </p>
+                <p className="text-xs text-muted-foreground">{t("timezoneHint")}</p> // 👈
               )}
             </div>
           </div>
 
           <div className="border-t pt-4 space-y-4">
             <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-              Conta do Administrador
+              {t("adminData")} {/* 👈 */}
             </h2>
 
             <div className="space-y-2">
               <label className="text-sm font-medium" htmlFor="adminName">
-                Nome completo
+                {t("adminName")} {/* 👈 */}
               </label>
               <Input
                 id="adminName"
                 name="adminName"
-                placeholder="Pastor João Silva"
+                placeholder={t("adminNamePlaceholder")} // 👈
                 className={fieldErrors.adminName ? "border-destructive" : ""}
               />
               {fieldErrors.adminName && (
@@ -176,29 +173,31 @@ export default function RegistarPage() {
 
             <div className="space-y-2">
               <label className="text-sm font-medium" htmlFor="adminEmail">
-                E-mail
+                {t("adminEmail")} {/* 👈 */}
               </label>
               <Input
                 id="adminEmail"
                 name="adminEmail"
                 type="email"
-                placeholder="pastor@igreja.com"
+                placeholder={t("adminEmailPlaceholder")} // 👈
                 className={fieldErrors.adminEmail ? "border-destructive" : ""}
               />
               {fieldErrors.adminEmail && (
-                <p className="text-xs text-destructive">{fieldErrors.adminEmail[0]}</p>
+                <p className="text-xs text-destructive">
+                  {t(fieldErrors.adminEmail[0] as any)} {/* 👈 */}
+                </p>
               )}
             </div>
 
             <div className="space-y-2">
               <label className="text-sm font-medium" htmlFor="adminPassword">
-                Palavra-passe
+                {t("adminPassword")} {/* 👈 */}
               </label>
               <Input
                 id="adminPassword"
                 name="adminPassword"
                 type="password"
-                placeholder="Mínimo 6 caracteres"
+                placeholder={t("adminPasswordPlaceholder")} // 👈
                 className={fieldErrors.adminPassword ? "border-destructive" : ""}
               />
               {fieldErrors.adminPassword && (
@@ -211,17 +210,17 @@ export default function RegistarPage() {
             {isPending ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                A criar conta...
+                {t("submitting")} {/* 👈 */}
               </>
             ) : (
-              "Criar Conta Gratuitamente"
+              t("submit") // 👈
             )}
           </Button>
 
           <p className="text-center text-sm text-muted-foreground">
-            Já tem conta?{" "}
+            {t("hasAccount")}{" "} {/* 👈 */}
             <Link href="/login" className="text-primary hover:underline font-medium">
-              Entrar
+              {t("login")} {/* 👈 */}
             </Link>
           </p>
         </form>

@@ -12,20 +12,27 @@ interface RegisterChurchDTO {
 
 export const RegisterChurchService = {
   async registerChurch(data: RegisterChurchDTO) {
+
+    const slug = data.churchSlug.toLowerCase().trim(); // 👈
+    const email = data.adminEmail.toLowerCase().trim(); // 👈
+
+    const existing = await prisma.church.findUnique({ where: { slug } }); // 👈
+    if (existing) throw new Error("SLUG_TAKEN"); // 👈
+
     const hashedPassword = await bcrypt.hash(data.adminPassword, 12);
 
     // 👈 Transacção curta — só operações críticas
     const church = await prisma.$transaction(
       async (tx) => {
         const church = await tx.church.create({
-          data: { name: data.churchName, slug: data.churchSlug, plan: "FREE", timezone: data.timezone, },
+          data: { name: data.churchName, slug, plan: "FREE", timezone: data.timezone }, // 👈 usa slug
           select: { id: true, slug: true, name: true },
         });
 
         await tx.user.create({
           data: {
             name: data.adminName,
-            email: data.adminEmail,
+            email, // 👈 usa email
             password: hashedPassword,
             role: "ADMIN",
             churchId: church.id,
@@ -80,7 +87,7 @@ export const RegisterChurchService = {
           action: "CREATE_CHURCH",
           entityName: "Church",
           entityId: church.id,
-          newData: { name: data.churchName, slug: data.churchSlug, plan: "FREE", timezone: data.timezone, },
+          newData: { name: data.churchName, slug, plan: "FREE", timezone: data.timezone, },
         },
       });
     } catch (auditError) {

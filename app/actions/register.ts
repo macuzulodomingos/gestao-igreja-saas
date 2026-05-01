@@ -21,26 +21,31 @@ export async function registerChurchAction(formData: FormData) {
     return { success: true, slug: result.data.churchSlug };
 
   } catch (error: unknown) {
+    // 👈 verifica SLUG_TAKEN primeiro
+    if (error instanceof Error && error.message === "SLUG_TAKEN") {
+      return {
+        success: false,
+        fieldErrors: { churchSlug: ["register.slugTaken"] },
+      };
+    }
+
     if (isPrismaError(error) && error.code === "P2002") {
       const targets = error.meta?.target as string[] | undefined;
-
       if (targets?.includes("slug")) {
         return {
           success: false,
-          fieldErrors: { churchSlug: ["Este slug já está em uso."] },
+          fieldErrors: { churchSlug: ["register.slugTaken"] },
         };
       }
-
       if (targets?.includes("email")) {
         return {
           success: false,
-          fieldErrors: { adminEmail: ["Este e-mail já está registado."] },
+          fieldErrors: { adminEmail: ["register.emailTaken"] },
         };
       }
     }
 
-    // 👇 AGORA SEMPRE EXECUTA
     console.error("[REGISTER_CHURCH_ERROR]:", error);
-    return { success: false, error: "Erro ao criar conta. Tente novamente." };
+    return { success: false, error: "register.errorCreate" };
   }
 }
