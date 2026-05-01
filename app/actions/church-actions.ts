@@ -27,7 +27,7 @@ export async function updateChurchSettingsAction(
   targetChurchId?: string,
 ) {
   try {
-    const { churchId } = await getAuthContext(targetChurchId);
+    const { churchId, actor } = await getAuthContext(targetChurchId);
 
     const result = churchSettingsSchema.safeParse(
       Object.fromEntries(formData.entries())
@@ -36,13 +36,12 @@ export async function updateChurchSettingsAction(
       return { success: false, fieldErrors: result.error.flatten().fieldErrors };
     }
 
-    await ChurchService.updateSettings(churchId, {
+    await ChurchService.updateSettings(churchId, actor, {
       name: result.data.name,
       timezone: result.data.timezone,
     });
 
-    revalidatePath(`/[slug]/configuracoes`, "page");
-    revalidatePath(`/[slug]/eventos`, "page");
+    revalidatePath(`/[slug]`, "layout"); // 👈 limpa tudo de uma vez
     return { success: true };
 
   } catch (error: unknown) {
