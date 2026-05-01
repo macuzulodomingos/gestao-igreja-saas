@@ -511,6 +511,13 @@
         "Suporte prioritário",
         "Acesso à API"
       ]
+    },
+    "errors": {
+      "unauthorized": "Não autenticado.",
+      "errorSubmit": "Erro ao submeter comprovativo.",
+      "noPendingPayment": "Sem pagamento pendente.",
+      "errorConfirm": "Erro ao confirmar pagamento.",
+      "errorReject": "Erro ao rejeitar pagamento."
     }
   },
   "categories": {
@@ -744,7 +751,11 @@
     "changedFields": "Campos alterados",
     "field": "Campo",
     "oldValue": "Valor anterior",
-    "newValue": "Novo valor"
+    "newValue": "Novo valor",
+    "errors": {
+      "unauthorized": "Não autenticado.",
+      "errorLoad": "Erro ao carregar registos."
+    }
   },
   "auditHistory": {
     "timeline": "Linha do Tempo",

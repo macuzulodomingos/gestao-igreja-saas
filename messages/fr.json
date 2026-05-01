@@ -511,6 +511,13 @@
         "Support prioritaire",
         "Accès à l'API"
       ]
+    },
+    "errors": {
+      "unauthorized": "Non authentifié.",
+      "errorSubmit": "Erreur lors de la soumission du justificatif.",
+      "noPendingPayment": "Aucun paiement en attente.",
+      "errorConfirm": "Erreur lors de la confirmation du paiement.",
+      "errorReject": "Erreur lors du rejet du paiement."
     }
   },
   "categories": {
@@ -744,7 +751,11 @@
     "changedFields": "Champs modifiés",
     "field": "Champ",
     "oldValue": "Ancienne valeur",
-    "newValue": "Nouvelle valeur"
+    "newValue": "Nouvelle valeur",
+    "errors": {
+      "unauthorized": "Non authentifié.",
+      "errorLoad": "Erreur lors du chargement des journaux."
+    }
   },
   "auditHistory": {
     "timeline": "Ligne du temps",

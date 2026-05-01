@@ -1,5 +1,6 @@
+import { BillingCycle, Plan } from "@/app/generated/prisma/enums";
 import prisma from "@/lib/prisma";
-import { Plan, BillingCycle } from "@prisma/client";
+
 
 export const PRICES = {
   PRO: { MONTHLY: 5000, ANNUAL: 55000 },
@@ -7,7 +8,7 @@ export const PRICES = {
 } as const;
 
 export const BillingService = {
-    
+
   async getSubscription(churchId: string) {
     return prisma.subscription.findUnique({
       where: { churchId },
@@ -37,44 +38,46 @@ export const BillingService = {
       proofOfPayment: string;
     }
   ) {
-    // Cria ou actualiza a subscription com o pedido pendente
-    await prisma.subscription.upsert({
-      where: { churchId },
-      create: {
-        churchId,
-        plan: "FREE",
-        billingCycle: "MONTHLY",
-        currentPeriodEnd: new Date(),
-        status: "TRIALING",
-        pendingPlan: data.plan,
-        pendingCycle: data.billingCycle,
-        proofOfPayment: data.proofOfPayment,
-        proofUploadedAt: new Date(),
-      },
-      update: {
-        pendingPlan: data.plan,
-        pendingCycle: data.billingCycle,
-        proofOfPayment: data.proofOfPayment,
-        proofUploadedAt: new Date(),
-        rejectedAt: null,
-        rejectionReason: null,
-      },
-    });
-
-    await prisma.auditLog.create({
-      data: {
-        churchId,
-        userId: actor.userId,
-        userEmail: actor.email,
-        action: "SUBMIT_PAYMENT_PROOF",
-        entityName: "Subscription",
-        entityId: churchId,
-        newData: {
-          plan: data.plan,
-          billingCycle: data.billingCycle,
+    // 👈 audit dentro da transacção
+    await prisma.$transaction(async (tx) => {
+      await tx.subscription.upsert({
+        where: { churchId },
+        create: {
+          churchId,
+          plan: "FREE",
+          billingCycle: "MONTHLY",
+          currentPeriodEnd: new Date(),
+          status: "TRIALING",
+          pendingPlan: data.plan,
+          pendingCycle: data.billingCycle,
           proofOfPayment: data.proofOfPayment,
+          proofUploadedAt: new Date(),
         },
-      },
+        update: {
+          pendingPlan: data.plan,
+          pendingCycle: data.billingCycle,
+          proofOfPayment: data.proofOfPayment,
+          proofUploadedAt: new Date(),
+          rejectedAt: null,
+          rejectionReason: null,
+        },
+      });
+
+      await tx.auditLog.create({ // 👈 dentro da transacção
+        data: {
+          churchId,
+          userId: actor.userId,
+          userEmail: actor.email,
+          action: "SUBMIT_PAYMENT_PROOF",
+          entityName: "Subscription",
+          entityId: churchId,
+          newData: {
+            plan: data.plan,
+            billingCycle: data.billingCycle,
+            proofOfPayment: data.proofOfPayment,
+          },
+        },
+      });
     });
   },
 
@@ -84,58 +87,66 @@ export const BillingService = {
   ) {
     const sub = await prisma.subscription.findUnique({
       where: { churchId },
-      select: { pendingPlan: true, pendingCycle: true },
+      select: {
+        pendingPlan: true,
+        pendingCycle: true,
+        currentPeriodEnd: true, // 👈 adiciona
+      },
     });
 
     if (!sub?.pendingPlan || !sub?.pendingCycle)
       throw new Error("NO_PENDING_PAYMENT");
 
     const now = new Date();
-    const isAnnual = sub.pendingCycle === "ANNUAL";
 
-    // Calcula data de fim do período
-    const currentPeriodEnd = new Date(now);
-    if (isAnnual) {
-      currentPeriodEnd.setFullYear(currentPeriodEnd.getFullYear() + 1);
+    // 👈 soma ao tempo restante em vez de começar do zero
+    const baseDate = (sub.currentPeriodEnd && sub.currentPeriodEnd > now)
+      ? sub.currentPeriodEnd
+      : now;
+
+    const newPeriodEnd = new Date(baseDate);
+    if (sub.pendingCycle === "ANNUAL") {
+      newPeriodEnd.setFullYear(newPeriodEnd.getFullYear() + 1);
     } else {
-      currentPeriodEnd.setMonth(currentPeriodEnd.getMonth() + 1);
+      newPeriodEnd.setMonth(newPeriodEnd.getMonth() + 1);
     }
 
-    // Actualiza subscription e plan da igreja em transacção
-    await prisma.$transaction([
-      prisma.subscription.update({
+    await prisma.$transaction(async (tx) => {
+      await tx.subscription.update({
         where: { churchId },
         data: {
-          plan: sub.pendingPlan,
-          billingCycle: sub.pendingCycle,
+          plan: sub.pendingPlan!,
+          billingCycle: sub.pendingCycle!,
           status: "ACTIVE",
-          currentPeriodEnd,
+          currentPeriodEnd: newPeriodEnd, // 👈 usa newPeriodEnd
           confirmedBy: actor.userId,
           confirmedAt: now,
           pendingPlan: null,
           pendingCycle: null,
+          proofOfPayment: null, // 👈 limpa após confirmação
         },
-      }),
-      prisma.church.update({
-        where: { id: churchId },
-        data: { plan: sub.pendingPlan },
-      }),
-    ]);
+      });
 
-    await prisma.auditLog.create({
-      data: {
-        churchId,
-        userId: actor.userId,
-        userEmail: actor.email,
-        action: "CONFIRM_PAYMENT",
-        entityName: "Subscription",
-        entityId: churchId,
-        newData: {
-          plan: sub.pendingPlan,
-          billingCycle: sub.pendingCycle,
-          currentPeriodEnd,
+      await tx.church.update({
+        where: { id: churchId },
+        data: { plan: sub.pendingPlan! },
+      });
+
+      await tx.auditLog.create({
+        data: {
+          churchId,
+          userId: actor.userId,
+          userEmail: actor.email,
+          action: "CONFIRM_PAYMENT",
+          entityName: "Subscription",
+          entityId: churchId,
+          newData: {
+            plan: sub.pendingPlan,
+            billingCycle: sub.pendingCycle,
+            currentPeriodEnd: newPeriodEnd, // 👈 usa newPeriodEnd
+          },
         },
-      },
+      });
     });
   },
 
@@ -144,31 +155,45 @@ export const BillingService = {
     actor: { userId: string; email: string },
     reason: string
   ) {
-    await prisma.subscription.update({
+    // 👈 busca currentPeriodEnd para não encurtar tempo restante
+    const sub = await prisma.subscription.findUnique({
       where: { churchId },
-      data: {
-        rejectedAt: new Date(),
-        rejectionReason: reason,
-        pendingPlan: null,
-        pendingCycle: null,
-        proofOfPayment: null,
-      },
+      select: { currentPeriodEnd: true },
     });
 
-    await prisma.auditLog.create({
-      data: {
-        churchId,
-        userId: actor.userId,
-        userEmail: actor.email,
-        action: "REJECT_PAYMENT",
-        entityName: "Subscription",
-        entityId: churchId,
-        newData: { reason },
-      },
+    const now = Date.now();
+    const threeDaysFromNow = new Date(now + 3 * 24 * 60 * 60 * 1000);
+
+    await prisma.$transaction(async (tx) => {
+      await tx.subscription.update({
+        where: { churchId },
+        data: {
+          rejectedAt: new Date(),
+          rejectionReason: reason,
+          pendingPlan: null,
+          pendingCycle: null,
+          proofOfPayment: null,
+          // 👈 só extende se já expirou ou está a menos de 3 dias
+          currentPeriodEnd: sub?.currentPeriodEnd && sub.currentPeriodEnd > threeDaysFromNow
+            ? sub.currentPeriodEnd  // mantém o tempo restante
+            : threeDaysFromNow,     // dá 3 dias de carência
+        },
+      });
+
+      await tx.auditLog.create({
+        data: {
+          churchId,
+          userId: actor.userId,
+          userEmail: actor.email,
+          action: "REJECT_PAYMENT",
+          entityName: "Subscription",
+          entityId: churchId,
+          newData: { reason },
+        },
+      });
     });
   },
-
-  // Para o painel do SUPER_ADMIN — lista pedidos pendentes
+  
   async getPendingPayments() {
     return prisma.subscription.findMany({
       where: { pendingPlan: { not: null } },

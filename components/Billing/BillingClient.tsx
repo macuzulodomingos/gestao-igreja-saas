@@ -49,6 +49,7 @@ export function BillingClient({ currentPlan, subscription, prices, churchName }:
   const [showForm, setShowForm] = useState(false);
 
   const t = useTranslations("billing");
+  const tb = useTranslations("billing.errors");
   const locale = useLocale();
   const dateLocale = dateLocalesMap[locale as keyof typeof dateLocalesMap] ?? ptBR;
 
@@ -84,7 +85,7 @@ export function BillingClient({ currentPlan, subscription, prices, churchName }:
 
     if (!uploadResult.success) {
       setIsUploading(false);
-      toast.error(uploadResult.error || t("errorUpload"));
+      toast.error(t("errorUpload"));
       return;
     }
 
@@ -101,7 +102,8 @@ export function BillingClient({ currentPlan, subscription, prices, churchName }:
       setShowForm(false);
       setProofFile(null);
     } else {
-      toast.error(result.error || t("errorSubmit"));
+      const errorCode = (result as any).errorCode;
+      toast.error(errorCode ? tb(errorCode) : t("errorSubmit"));
     }
   };
 

@@ -6,20 +6,20 @@ import { getErrorMessage } from "@/lib/errors";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
-import prisma from "@/lib/prisma";
-import { PlanType } from "@/lib/plans";
+import { Plan, BillingCycle } from "@/app/generated/prisma/enums";
+
 
 const submitProofSchema = z.object({
-  plan: z.enum(["PRO", "ENTERPRISE"]),
-  billingCycle: z.enum(["MONTHLY", "ANNUAL"]),
+  plan: z.nativeEnum(Plan).refine(p => p !== "FREE", {
+    message: "Plano inválido" // 👈 FREE não pode ser comprado
+  }),
+  billingCycle: z.nativeEnum(BillingCycle),
   proofOfPayment: z.string().url("URL inválida"),
 });
 
 export async function submitPaymentProofAction(formData: FormData) {
   try {
     const { churchId, actor } = await getAuthContext();
-    // 👈 TEMPORÁRIO — ver o que está a chegar
-    console.log("[SUBMIT_PROOF] formData entries:", Object.fromEntries(formData.entries()));
 
     const result = submitProofSchema.safeParse(
       Object.fromEntries(formData.entries())
@@ -35,19 +35,17 @@ export async function submitPaymentProofAction(formData: FormData) {
   } catch (error: unknown) {
     const message = getErrorMessage(error);
     if (message === "UNAUTHORIZED")
-      return { success: false, error: "Não autenticado." };
+      return { success: false, errorCode: "unauthorized" };
     console.error("[SUBMIT_PROOF_ERROR]:", error);
-    return { success: false, error: "Erro ao submeter comprovativo." };
+    return { success: false, errorCode: "errorSubmit" };
   }
 }
 
 export async function confirmPaymentAction(churchId: string) {
   try {
-    const session = await auth();
-    if (!session?.user || session.user.role !== "SUPER_ADMIN")
-      return { success: false, error: "Sem permissão." };
+    const { actor, isSuperAdmin } = await getAuthContext();
+    if (!isSuperAdmin) return { success: false, errorCode: "unauthorized" };
 
-    const actor = { userId: session.user.id, email: session.user.email! };
     await BillingService.confirmPayment(churchId, actor);
 
     revalidatePath(`/admin/billing`);
@@ -55,25 +53,24 @@ export async function confirmPaymentAction(churchId: string) {
   } catch (error: unknown) {
     const message = getErrorMessage(error);
     if (message === "NO_PENDING_PAYMENT")
-      return { success: false, error: "Sem pagamento pendente." };
+      return { success: false, errorCode: "noPendingPayment" };
     console.error("[CONFIRM_PAYMENT_ERROR]:", error);
-    return { success: false, error: "Erro ao confirmar pagamento." };
+    return { success: false, errorCode: "errorConfirm" };
   }
 }
 
 export async function rejectPaymentAction(churchId: string, reason: string) {
   try {
-    const session = await auth();
-    if (!session?.user || session.user.role !== "SUPER_ADMIN")
-      return { success: false, error: "Sem permissão." };
 
-    const actor = { userId: session.user.id, email: session.user.email! };
+    const { actor, isSuperAdmin } = await getAuthContext();
+    if (!isSuperAdmin) return { success: false, errorCode: "unauthorized" };
+
     await BillingService.rejectPayment(churchId, actor, reason);
 
     revalidatePath(`/admin/billing`);
     return { success: true };
   } catch (error: unknown) {
     console.error("[REJECT_PAYMENT_ERROR]:", error);
-    return { success: false, error: "Erro ao rejeitar pagamento." };
+    return { success: false, errorCode: "errorReject" };
   }
 }

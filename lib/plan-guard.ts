@@ -78,3 +78,34 @@ export function checkPdfExport(plan: PlanType) {
   if (!limits.pdfExport)
     throw new Error("PLAN_LIMIT_PDF_EXPORT");
 }
+
+
+export async function checkSubscriptionAccess(churchId: string) {
+  const sub = await prisma.subscription.findUnique({
+    where: { churchId },
+    select: {
+      status: true,
+      currentPeriodEnd: true,
+      pendingPlan: true,
+      proofUploadedAt: true,
+    },
+  });
+
+  // sem subscrição — usa plano FREE sem restrições de acesso
+  if (!sub) return;
+
+  // activo — acesso total
+  if (sub.status === "ACTIVE" && sub.currentPeriodEnd > new Date()) return;
+
+  // comprovativo pendente dentro do prazo de 3 dias — grace period
+  if (sub.pendingPlan && sub.proofUploadedAt) {
+    const limit = new Date(sub.proofUploadedAt);
+    limit.setDate(limit.getDate() + 3);
+    if (new Date() <= limit) return;
+  }
+
+  // currentPeriodEnd ainda válido — acesso permitido
+  if (sub.currentPeriodEnd > new Date()) return;
+
+  throw new Error("SUBSCRIPTION_EXPIRED");
+}
