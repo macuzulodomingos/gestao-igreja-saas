@@ -75,17 +75,17 @@ export const UserService = {
     actor: { userId: string; email: string },
     data: UpdateUserDTO
   ) {
-    const existing = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { id: true, name: true, role: true, email: true, churchId: true, deletedAt: true },
-    });
-
-    if (!existing) throw new Error("USER_NOT_FOUND");
-    if (existing.deletedAt) throw new Error("USER_NOT_FOUND"); // 👈 soft deleted
-    if (existing.churchId !== churchId) throw new Error("USER_NOT_FOUND");
-    if (existing.id === actor.userId) throw new Error("CANNOT_EDIT_SELF");
-
     await prisma.$transaction(async (tx) => {
+      const existing = await tx.user.findUnique({ // 👈 usa tx
+        where: { id: userId },
+        select: { id: true, name: true, role: true, email: true, churchId: true, deletedAt: true },
+      });
+
+      if (!existing) throw new Error("USER_NOT_FOUND");
+      if (existing.deletedAt) throw new Error("USER_NOT_FOUND");
+      if (existing.churchId !== churchId) throw new Error("USER_NOT_FOUND");
+      if (existing.id === actor.userId) throw new Error("CANNOT_EDIT_SELF");
+
       await tx.user.update({
         where: { id: userId },
         data: {
@@ -114,29 +114,32 @@ export const UserService = {
     churchId: string,
     actor: { userId: string; email: string }
   ) {
-    const existing = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { id: true, name: true, role: true, email: true, churchId: true, deletedAt: true },
-    });
-
-    if (!existing) throw new Error("USER_NOT_FOUND");
-    if (existing.deletedAt) throw new Error("USER_NOT_FOUND"); // 👈 já apagado
-    if (existing.churchId !== churchId) throw new Error("USER_NOT_FOUND");
-    if (existing.id === actor.userId) throw new Error("CANNOT_DELETE_SELF");
-    if (existing.role === "ADMIN") throw new Error("CANNOT_DELETE_ADMIN");
-    // 🔒 Nunca apagar o último SUPER_ADMIN
-    if (existing.role === "SUPER_ADMIN") {
-      const count = await prisma.user.count({
-        where: { role: "SUPER_ADMIN", deletedAt: null },
+    return prisma.$transaction(async (tx) => {
+      const existing = await tx.user.findUnique({ // 👈 dentro da transacção
+        where: { id: userId },
+        select: { id: true, name: true, role: true, email: true, churchId: true, deletedAt: true },
       });
-      if (count <= 1) throw new Error("CANNOT_DELETE_LAST_SUPER_ADMIN");
-    }
 
-    await prisma.$transaction(async (tx) => {
-      // 👈 Soft Delete — em vez de apagar, marca como eliminado
+      if (!existing) throw new Error("USER_NOT_FOUND");
+      if (existing.deletedAt) throw new Error("USER_NOT_FOUND");
+      if (existing.churchId !== churchId) throw new Error("USER_NOT_FOUND");
+      if (existing.id === actor.userId) throw new Error("CANNOT_DELETE_SELF");
+      if (existing.role === "ADMIN") throw new Error("CANNOT_DELETE_ADMIN");
+
+      // 🔒 Nunca apagar o último SUPER_ADMIN
+      if (existing.role === "SUPER_ADMIN") {
+        const count = await tx.user.count({ // 👈 usa tx
+          where: { role: "SUPER_ADMIN", deletedAt: null },
+        });
+        if (count <= 1) throw new Error("CANNOT_DELETE_LAST_SUPER_ADMIN");
+      }
+
       await tx.user.update({
         where: { id: userId },
-        data: { deletedAt: new Date() },
+        data: {
+          deletedAt: new Date(),
+          email: `deleted_${Date.now()}_${existing.email}`, // 👈 liberta o email original
+        },
       });
 
       await tx.auditLog.create({
