@@ -45,6 +45,13 @@ export async function registerChurchAction(formData: FormData) {
       }
     }
 
+    if (error instanceof Error && error.message === "EMAIL_TAKEN") {
+      return {
+        success: false,
+        fieldErrors: { adminEmail: ["register.emailTaken"] },
+      };
+    }
+
     console.error("[REGISTER_CHURCH_ERROR]:", error);
     return { success: false, error: "register.errorCreate" };
   }

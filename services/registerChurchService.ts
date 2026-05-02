@@ -19,6 +19,9 @@ export const RegisterChurchService = {
     const existing = await prisma.church.findUnique({ where: { slug } }); // 👈
     if (existing) throw new Error("SLUG_TAKEN"); // 👈
 
+    const existingUser = await prisma.user.findUnique({ where: { email } }); // 👈
+    if (existingUser) throw new Error("EMAIL_TAKEN");
+
     const hashedPassword = await bcrypt.hash(data.adminPassword, 12);
 
     // 👈 Transacção curta — só operações críticas
@@ -74,7 +77,7 @@ export const RegisterChurchService = {
       },
       {
         maxWait: 5000,  // 👈 timeout explícito
-        timeout: 10000,
+        timeout: 15000,
       }
     );
 

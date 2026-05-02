@@ -28,7 +28,9 @@ export const PLAN_LIMITS = {
   },
 } as const;
 
-export type PlanType = keyof typeof PLAN_LIMITS;
+export const PLAN_VALUES = ["FREE", "PRO", "ENTERPRISE"] as const; // 👈 move para antes do PlanType
+
+export type PlanType = keyof typeof PLAN_LIMITS; // 👈 mantém apenas esta — é mais robusta
 
 export function getPlanLimits(plan: PlanType) {
   return PLAN_LIMITS[plan] ?? PLAN_LIMITS.FREE;
