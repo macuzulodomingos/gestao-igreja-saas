@@ -27,7 +27,18 @@ export default function RegistarPage() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
   const [slugPreview, setSlugPreview] = useState("");
   const [timezone, setTimezone] = useState("Africa/Luanda");
-  const t = useTranslations("register"); // 👈
+  const t = useTranslations("register");
+  const tv = useTranslations("validation");
+
+  const translateError = (msg: string) => {
+    try {
+      if (msg.startsWith("validation.")) return tv(msg.replace("validation.", "") as any);
+      if (msg.startsWith("register.")) return t(msg.replace("register.", "") as any);
+      return msg;
+    } catch {
+      return msg;
+    }
+  };
 
   const generateSlug = (name: string) =>
     name
@@ -55,13 +66,13 @@ export default function RegistarPage() {
       const result = await registerChurchAction(formData);
 
       if (result.success) {
-        toast.success(t("successCreated")); // 👈
+        toast.success(t("successCreated"));
         router.push(`/login?registered=true`);
       } else if (result.fieldErrors) {
         setFieldErrors(result.fieldErrors);
-        toast.error(t("errorForm")); // 👈
+        toast.error(t("errorForm"));
       } else {
-        toast.error(t("errorCreate")); // 👈
+        toast.error(t("errorCreate"));
       }
     });
   };
@@ -74,47 +85,47 @@ export default function RegistarPage() {
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground">
             <Church className="h-6 w-6" />
           </div>
-          <h1 className="text-2xl font-bold">{t("title")}</h1> {/* 👈 */}
-          <p className="text-sm text-muted-foreground">{t("subtitle")}</p> {/* 👈 */}
+          <h1 className="text-2xl font-bold">{t("title")}</h1>
+          <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="rounded-lg border bg-card p-8 shadow-sm space-y-6">
 
           <div className="space-y-4">
             <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-              {t("churchData")} {/* 👈 */}
+              {t("churchData")}
             </h2>
 
             <div className="space-y-2">
               <label className="text-sm font-medium" htmlFor="churchName">
-                {t("churchName")} {/* 👈 */}
+                {t("churchName")}
               </label>
               <Input
                 id="churchName"
                 name="churchName"
-                placeholder={t("churchNamePlaceholder")} // 👈
+                placeholder={t("churchNamePlaceholder")}
                 onChange={handleChurchNameChange}
                 className={fieldErrors.churchName ? "border-destructive" : ""}
               />
               {fieldErrors.churchName && (
                 <p className="text-xs text-destructive">
-                  {t(fieldErrors.churchName[0] as any)} {/* 👈 traduz a chave */}
+                  {translateError(fieldErrors.churchName[0])}
                 </p>
               )}
             </div>
 
             <div className="space-y-2">
               <label className="text-sm font-medium" htmlFor="churchSlug">
-                {t("churchSlug")} {/* 👈 */}
+                {t("churchSlug")}
               </label>
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground whitespace-nowrap">
-                  {t("churchSlugPrefix")} {/* 👈 */}
+                  {t("churchSlugPrefix")}
                 </span>
                 <Input
                   id="churchSlug"
                   name="churchSlug"
-                  placeholder={t("churchSlugPlaceholder")} // 👈
+                  placeholder={t("churchSlugPlaceholder")}
                   value={slugPreview}
                   onChange={(e) => setSlugPreview(e.target.value)}
                   className={fieldErrors.churchSlug ? "border-destructive" : ""}
@@ -122,18 +133,18 @@ export default function RegistarPage() {
               </div>
               {fieldErrors.churchSlug ? (
                 <p className="text-xs text-destructive">
-                  {t(fieldErrors.churchSlug[0] as any)} {/* 👈 */}
+                  {translateError(fieldErrors.churchSlug[0])}
                 </p>
               ) : (
-                <p className="text-xs text-muted-foreground">{t("churchSlugHint")}</p> // 👈
+                <p className="text-xs text-muted-foreground">{t("churchSlugHint")}</p>
               )}
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">{t("timezone")}</label> {/* 👈 */}
+              <label className="text-sm font-medium">{t("timezone")}</label>
               <Select value={timezone} onValueChange={setTimezone}>
                 <SelectTrigger className={fieldErrors.timezone ? "border-destructive" : ""}>
-                  <SelectValue placeholder={t("timezonePlaceholder")} /> {/* 👈 */}
+                  <SelectValue placeholder={t("timezonePlaceholder")} />
                 </SelectTrigger>
                 <SelectContent>
                   {TIMEZONES.map(tz => (
@@ -144,64 +155,70 @@ export default function RegistarPage() {
                 </SelectContent>
               </Select>
               {fieldErrors.timezone ? (
-                <p className="text-xs text-destructive">{fieldErrors.timezone[0]}</p>
+                <p className="text-xs text-destructive">
+                  {translateError(fieldErrors.timezone[0])}
+                </p>
               ) : (
-                <p className="text-xs text-muted-foreground">{t("timezoneHint")}</p> // 👈
+                <p className="text-xs text-muted-foreground">{t("timezoneHint")}</p>
               )}
             </div>
           </div>
 
           <div className="border-t pt-4 space-y-4">
             <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-              {t("adminData")} {/* 👈 */}
+              {t("adminData")}
             </h2>
 
             <div className="space-y-2">
               <label className="text-sm font-medium" htmlFor="adminName">
-                {t("adminName")} {/* 👈 */}
+                {t("adminName")}
               </label>
               <Input
                 id="adminName"
                 name="adminName"
-                placeholder={t("adminNamePlaceholder")} // 👈
+                placeholder={t("adminNamePlaceholder")}
                 className={fieldErrors.adminName ? "border-destructive" : ""}
               />
               {fieldErrors.adminName && (
-                <p className="text-xs text-destructive">{fieldErrors.adminName[0]}</p>
+                <p className="text-xs text-destructive">
+                  {translateError(fieldErrors.adminName[0])}
+                </p>
               )}
             </div>
 
             <div className="space-y-2">
               <label className="text-sm font-medium" htmlFor="adminEmail">
-                {t("adminEmail")} {/* 👈 */}
+                {t("adminEmail")}
               </label>
               <Input
                 id="adminEmail"
                 name="adminEmail"
                 type="email"
-                placeholder={t("adminEmailPlaceholder")} // 👈
+                placeholder={t("adminEmailPlaceholder")}
                 className={fieldErrors.adminEmail ? "border-destructive" : ""}
               />
               {fieldErrors.adminEmail && (
                 <p className="text-xs text-destructive">
-                  {t(fieldErrors.adminEmail[0] as any)} {/* 👈 */}
+                  {translateError(fieldErrors.adminEmail[0])}
                 </p>
               )}
             </div>
 
             <div className="space-y-2">
               <label className="text-sm font-medium" htmlFor="adminPassword">
-                {t("adminPassword")} {/* 👈 */}
+                {t("adminPassword")}
               </label>
               <Input
                 id="adminPassword"
                 name="adminPassword"
                 type="password"
-                placeholder={t("adminPasswordPlaceholder")} // 👈
+                placeholder={t("adminPasswordPlaceholder")}
                 className={fieldErrors.adminPassword ? "border-destructive" : ""}
               />
               {fieldErrors.adminPassword && (
-                <p className="text-xs text-destructive">{fieldErrors.adminPassword[0]}</p>
+                <p className="text-xs text-destructive">
+                  {translateError(fieldErrors.adminPassword[0])}
+                </p>
               )}
             </div>
           </div>
@@ -210,17 +227,17 @@ export default function RegistarPage() {
             {isPending ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {t("submitting")} {/* 👈 */}
+                {t("submitting")}
               </>
             ) : (
-              t("submit") // 👈
+              t("submit")
             )}
           </Button>
 
           <p className="text-center text-sm text-muted-foreground">
-            {t("hasAccount")}{" "} {/* 👈 */}
+            {t("hasAccount")}{" "}
             <Link href="/login" className="text-primary hover:underline font-medium">
-              {t("login")} {/* 👈 */}
+              {t("login")}
             </Link>
           </p>
         </form>

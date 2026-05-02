@@ -438,7 +438,9 @@
     "departmentNameTooLong": "Nom trop long",
     "departmentDescTooLong": "Maximum 500 caractères",
     "categoryNameTooLong": "Maximum 50 caractères",
-    "passwordTooShort": "Minimum 6 caractères"
+    "passwordTooShort": "Minimum 6 caractères",
+    "passwordUppercase": "Doit contenir au moins une lettre majuscule",
+    "passwordNumber": "Doit contenir au moins un chiffre"
   },
   "billing": {
     "title": "Facturation",
@@ -817,6 +819,7 @@
     "errorForm": "Vérifiez les erreurs dans le formulaire.",
     "slugTaken": "Cette adresse est déjà utilisée.",
     "emailTaken": "Cet e-mail est déjà enregistré.",
-    "errorCreate": "Erreur lors de la création du compte. Veuillez réessayer."
+    "errorCreate": "Erreur lors de la création du compte. Veuillez réessayer.",
+    "slugHint": "Uniquement des lettres minuscules, chiffres et tirets"
   }
 }

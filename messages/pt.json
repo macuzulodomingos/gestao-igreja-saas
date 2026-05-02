@@ -438,7 +438,9 @@
     "departmentNameTooLong": "Nome demasiado longo",
     "departmentDescTooLong": "Máximo 500 caracteres",
     "categoryNameTooLong": "Máximo 50 caracteres",
-    "passwordTooShort": "Mínimo 6 caracteres"
+    "passwordTooShort": "Mínimo 6 caracteres",
+    "passwordUppercase": "Deve conter pelo menos uma letra maiúscula",
+    "passwordNumber": "Deve conter pelo menos um número"
   },
   "billing": {
     "title": "Faturamento",
@@ -817,6 +819,7 @@
     "errorForm": "Verifique os erros no formulário.",
     "slugTaken": "Este endereço já está em uso.",
     "emailTaken": "Este e-mail já está registado.",
-    "errorCreate": "Erro ao criar conta. Tente novamente."
+    "errorCreate": "Erro ao criar conta. Tente novamente.",
+    "slugHint": "Apenas letras minúsculas, números e hífens"
   }
 }
