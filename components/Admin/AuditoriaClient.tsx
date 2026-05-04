@@ -164,6 +164,11 @@ export function AuditoriaClient({ initialLogs }: { initialLogs: AuditLog[] }) {
     setExporting(false);
     if (!result.success || !result.csv) { toast.error("Erro ao exportar."); return; }
 
+    // 👈 aviso se muitos registos
+    if (result.total > 1000) {
+      toast.warning(`Exportados ${result.total} registos. O ficheiro pode ser grande.`);
+    }
+
     // 👈 download automático
     const blob = new Blob([result.csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -172,7 +177,9 @@ export function AuditoriaClient({ initialLogs }: { initialLogs: AuditLog[] }) {
     a.download = `audit-${format(new Date(), "yyyy-MM-dd")}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-    toast.success("CSV exportado com sucesso!");
+    if (result.total <= 1000) {
+      toast.success("CSV exportado com sucesso!");
+    }
   };
 
   return (
