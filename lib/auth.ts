@@ -28,7 +28,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           include: { church: { select: { slug: true } } }
         });
 
-        if (!user || !user.password) return null;
+        // 🛡️ hash falso — mantém tempo de resposta consistente
+        if (!user || !user.password) {
+          await bcrypt.compare(
+            password as string,
+            "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy"
+          );
+          return null;
+        }
+
         if (user.deletedAt) return null; // 👈 bloqueia utilizadores eliminados
 
         const passwordMatch = await bcrypt.compare(password as string, user.password);
@@ -82,7 +90,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       });
 
       // Utilizador apagado ou desactivado — invalida token
-      if (!dbUser) return null;
+      if (!dbUser || dbUser.deletedAt) return null;
 
       // Actualiza token com dados frescos da DB
       token.role = dbUser.role as UserRole;

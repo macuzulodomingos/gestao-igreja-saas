@@ -399,7 +399,9 @@
     "register": "Registar",
     "subtitle": "Introduza os seus dados para aceder ao painel",
     "loading": "A entrar...",
-    "error": "Erro desconhecido."
+    "error": "Erro desconhecido.",
+    "invalidCredentials": "E-mail ou palavra-passe incorrectos.",
+    "authError": "Algo correu mal na autenticação."
   },
   "common": {
     "save": "Guardar",

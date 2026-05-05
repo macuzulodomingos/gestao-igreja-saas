@@ -399,7 +399,9 @@
     "register": "S'inscrire",
     "subtitle": "Entrez vos données pour accéder au panneau",
     "loading": "Connexion...",
-    "error": "Erreur inconnue."
+    "error": "Erreur inconnue.",
+    "invalidCredentials": "E-mail ou mot de passe incorrects.",
+    "authError": "Une erreur s'est produite lors de l'authentification."
   },
   "common": {
     "save": "Enregistrer",

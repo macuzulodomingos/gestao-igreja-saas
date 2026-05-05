@@ -29,6 +29,12 @@ export default function LoginPage() {
     if (result.success && result.redirectTo) {
       // 👈 redirect com locale correcto do utilizador
       window.location.href = result.redirectTo;
+      return;
+    }
+
+    if (result.errorCode) {
+      setError(t(result.errorCode as any)); // 👈
+      return;
     }
   };
 
