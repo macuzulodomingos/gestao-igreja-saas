@@ -155,4 +155,15 @@ export const UserService = {
       });
     });
   },
+  
+
+  // services/userService.ts
+  async updateLocale(userId: string, locale: "pt" | "fr") {
+    return prisma.user.update({
+      where: { id: userId },
+      data: { locale },
+      select: { id: true, locale: true },
+    });
+  },
+
 };
