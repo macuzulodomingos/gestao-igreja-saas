@@ -10,7 +10,7 @@ export async function checkMemberLimit(churchId: string, plan: PlanType) {
   });
 
   if (count >= limits.members)
-    throw new Error("PLAN_LIMIT_MEMBERS");
+    throw new Error("PLAN_LIMIT_MEMBERS"); 
 }
 
 export async function checkUserLimit(churchId: string, plan: PlanType) {
