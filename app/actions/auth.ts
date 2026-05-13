@@ -5,31 +5,33 @@ import { AuthError } from "next-auth";
 import { z } from "zod";
 import prisma from "@/lib/prisma";
 
+// 👈 tipo específico para o authenticate
+type AuthResult =
+  | { success: true; redirectTo: string }
+  | { success: false; errorCode: string };
 
 const loginSchema = z.object({
   email: z.string().email("E-mail inválido"),
   password: z.string().min(1, "Password obrigatória"),
 });
 
-export async function authenticate(formData: FormData) {
+export async function authenticate(formData: FormData): Promise<AuthResult> {
   try {
     const result = loginSchema.safeParse(Object.fromEntries(formData.entries()));
 
-    if (!result.success) return { errorCode: "invalidCredentials" };
+    if (!result.success) return { success: false, errorCode: "invalidCredentials" }; // 👈
 
     await signIn("credentials", {
       email: result.data.email,
       password: result.data.password,
-      redirect: false, // 👈 sem redirect automático
+      redirect: false,
     });
 
-    // 👈 busca o locale do utilizador ANTES de fazer login
     const user = await prisma.user.findUnique({
       where: { email: result.data.email },
       select: { locale: true, role: true, church: { select: { slug: true } } },
     });
 
-    // 👈 retorna locale e destino para o cliente redirecionar
     const locale = user?.locale ?? "pt";
     const slug = user?.church?.slug;
     const role = user?.role;
@@ -48,12 +50,12 @@ export async function authenticate(formData: FormData) {
     if (error instanceof AuthError) {
       switch (error.type) {
         case "CredentialsSignin":
-          return { errorCode: "invalidCredentials" };
+          return { success: false, errorCode: "invalidCredentials" }; // 👈
         default:
-          return { errorCode: "authError" };
+          return { success: false, errorCode: "authError" }; // 👈
       }
     }
-    console.error("[LOGIN_ERROR]:", error); 
-    return { errorCode: "authError" }; 
+    console.error("[LOGIN_ERROR]:", error);
+    return { success: false, errorCode: "authError" }; // 👈
   }
 }

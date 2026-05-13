@@ -6,18 +6,15 @@ import { memberSchema } from "@/lib/validations/member";
 import { getAuthContext } from "@/lib/auth-context";
 import { getErrorMessage, isPrismaError } from "@/lib/errors"; // 👈 Teu padrão
 import { checkMemberLimit } from "@/lib/plan-guard";
+import { ActionResult } from "@/types/action-result";
 
-/**
- * Helper privado para garantir segurança e auditoria em todas as ações.
- * Extrai o usuário logado e define qual igreja será afetada (Multi-tenant).
- */
 
 
 // --- ACTION DE CRIAR ---
 export async function createMemberAction(
   formData: FormData,
   targetChurchId?: string,
-) {
+): Promise<ActionResult> {
   try {
     const { churchId, actor, plan } = await getAuthContext(targetChurchId);
 
@@ -56,13 +53,11 @@ export async function createMemberAction(
   } catch (error: unknown) {
     const message = getErrorMessage(error);
 
-    if (message === "UNAUTHORIZED")
-      return { success: false, errorCode: "unauthorized" };
-    if (message === "CHURCH_ID_REQUIRED")
+    if (message === "UNAUTHORIZED" || message === "CHURCH_ID_REQUIRED")
       return { success: false, errorCode: "unauthorized" };
     if (message === "PLAN_LIMIT_MEMBERS")
       return { success: false, errorCode: "planLimitMembers", upgrade: true };
-    
+
     // 2. Lógica de Negócio do Service
     if (message === "INVALID_ROLE")
       return { success: false, errorCode: "invalidRole" };
@@ -86,7 +81,7 @@ export async function updateMemberAction(
   memberId: string,
   formData: FormData,
   targetChurchId?: string,
-) {
+): Promise<ActionResult> {
   try {
     const { churchId, actor } = await getAuthContext(targetChurchId);
 
@@ -125,9 +120,7 @@ export async function updateMemberAction(
     const message = getErrorMessage(error);
 
     // 1. Erros de Permissão / Auth
-    if (message === "UNAUTHORIZED")
-      return { success: false, errorCode: "unauthorized" };
-    if (message === "CHURCH_ID_REQUIRED")
+    if (message === "UNAUTHORIZED" || message === "CHURCH_ID_REQUIRED")
       return { success: false, errorCode: "unauthorized" };
 
     // 2. Erros vindos diretamente do teu MemberService (Lógica de Negócio)
@@ -137,18 +130,18 @@ export async function updateMemberAction(
       return { success: false, errorCode: "invalidRole" };
     if (message === "INVALID_JOIN_DATE_TYPE") {
       return { success: false, errorCode: "invalidDate" };
-    } 
+    }
 
     // 3. Erros do Banco de Dados (Prisma)
     if (isPrismaError(error)) {
-      if (error.code === "P2002") 
+      if (error.code === "P2002")
         return { success: false, errorCode: "emailTaken" };
     }
 
     console.error("[UPDATE_MEMBER_ERROR]:", error);
-    return { 
-      success: false, 
-      errorCode: "errorUpdate" 
+    return {
+      success: false,
+      errorCode: "errorUpdate"
     };
   }
 }
@@ -157,7 +150,7 @@ export async function updateMemberAction(
 export async function deleteMemberAction(
   memberId: string,
   targetChurchId?: string,
-) {
+): Promise<ActionResult> {
   try {
     const { churchId, actor } = await getAuthContext(targetChurchId);
 
@@ -166,16 +159,16 @@ export async function deleteMemberAction(
     revalidatePath(`/[slug]/membros`, "page");
     updateTag(`members-${churchId}`);
     updateTag(`church-${churchId}`);
-    
+
     return { success: true };
   } catch (error: unknown) {
     const message = getErrorMessage(error);
-    if (message === "UNAUTHORIZED") 
+    if (message === "UNAUTHORIZED")
       return { success: false, errorCode: "unauthorized" };
     if (message === "MEMBER_NOT_FOUND")
       return { success: false, errorCode: "memberNotFound" };
     if (message === "MEMBER_ALREADY_DELETED")
-      return { success: false, errorCode: "memberAlreadyDeleted" };
+      return { success: false, errorCode: "memberAlreadyDeleted" }; 
 
     console.error("[DELETE_MEMBER_ERROR]:", error);
     return { success: false, errorCode: "errorDelete" };

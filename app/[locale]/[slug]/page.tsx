@@ -1,5 +1,6 @@
 import { redirect, notFound } from "next/navigation";
-import prisma from "@/lib/prisma"; // Assumindo que o seu cliente prisma está aqui
+import { auth } from "@/lib/auth";
+import { getChurchBySlug } from "@/lib/tenant";
 
 export default async function ChurchRootPage({
   params,
@@ -8,11 +9,11 @@ export default async function ChurchRootPage({
 }) {
   const { slug } = await params;
 
+  const session = await auth();
+  if (!session?.user) redirect("/login");
+
   // 1. Validamos no banco de dados se esse slug pertence a uma igreja real
-  const church = await prisma.church.findUnique({
-    where: { slug },
-    select: { id: true }, // Buscamos apenas o ID para ser rápido
-  });
+  const church = await getChurchBySlug(slug, session.user.churchId ?? undefined);
 
   // 2. Se a igreja não existir, mostramos a página 404 do Next.js
   if (!church) {
