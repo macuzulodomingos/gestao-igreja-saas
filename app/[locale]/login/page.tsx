@@ -6,6 +6,7 @@ import { Church, Loader2 } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 
 
 
@@ -15,6 +16,9 @@ export default function LoginPage() {
   const t = useTranslations("auth");
 
   const router = useRouter();
+
+  const searchParams = useSearchParams();
+  const justRegistered = searchParams.get("registered") === "true";
 
   const translateError = (code: string) => {
     const validCodes: Record<string, string> = {
@@ -61,6 +65,14 @@ export default function LoginPage() {
             {t("subtitle")}
           </p>
         </div>
+
+        {justRegistered && (
+          <div className="rounded-lg bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800 p-3 text-center">
+            <p className="text-sm text-green-700 dark:text-green-400">
+              {t("registeredSuccess")} 
+            </p>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4 rounded-lg border bg-card p-8 shadow-sm">
           {error && (

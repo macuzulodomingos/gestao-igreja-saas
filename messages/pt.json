@@ -402,7 +402,8 @@
     "loading": "A entrar...",
     "error": "Erro desconhecido.",
     "invalidCredentials": "E-mail ou palavra-passe incorrectos.",
-    "authError": "Algo correu mal na autenticação."
+    "authError": "Algo correu mal na autenticação.",
+    "registeredSuccess": "Conta criada com sucesso! Faça login para continuar."
   },
   "common": {
     "save": "Guardar",

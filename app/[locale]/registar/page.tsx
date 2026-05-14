@@ -31,13 +31,31 @@ export default function RegistarPage() {
   const tv = useTranslations("validation");
 
   const translateError = (msg: string) => {
-    try {
-      if (msg.startsWith("validation.")) return tv(msg.replace("validation.", "") as any);
-      if (msg.startsWith("register.")) return t(msg.replace("register.", "") as any);
-      return msg;
-    } catch {
-      return msg;
+    const validationKeys: Record<string, string> = {
+      nameRequired: tv("nameRequired"),
+      nameTooLong: tv("nameTooLong"),
+      emailInvalid: tv("emailInvalid"),
+      passwordTooShort: tv("passwordTooShort"),
+      passwordUppercase: tv("passwordUppercase"), 
+      passwordNumber: tv("passwordNumber"),      
+      required: tv("required"),
+    };
+    const registerKeys: Record<string, string> = {
+      slugTaken: t("slugTaken"),
+      emailTaken: t("emailTaken"),
+      slugHint: t("slugHint"),
+      errorCreate: t("errorCreate"),
+    };
+
+    if (msg.startsWith("validation.")) {
+      const key = msg.replace("validation.", "");
+      return validationKeys[key] ?? tv("required");
     }
+    if (msg.startsWith("register.")) {
+      const key = msg.replace("register.", "");
+      return registerKeys[key] ?? t("errorCreate");
+    }
+    return msg;
   };
 
   const generateSlug = (name: string) =>
@@ -71,6 +89,9 @@ export default function RegistarPage() {
       } else if (result.fieldErrors) {
         setFieldErrors(result.fieldErrors);
         toast.error(t("errorForm"));
+      } else if (result.errorCode) {
+        // 👈 trata errorCode específico
+        toast.error(translateError(`register.${result.errorCode}`));
       } else {
         toast.error(t("errorCreate"));
       }

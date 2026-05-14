@@ -402,7 +402,8 @@
     "loading": "Connexion...",
     "error": "Erreur inconnue.",
     "invalidCredentials": "E-mail ou mot de passe incorrects.",
-    "authError": "Une erreur s'est produite lors de l'authentification."
+    "authError": "Une erreur s'est produite lors de l'authentification.",
+    "registeredSuccess": "Compte créé avec succès! Connectez-vous pour continuer."
   },
   "common": {
     "save": "Enregistrer",
