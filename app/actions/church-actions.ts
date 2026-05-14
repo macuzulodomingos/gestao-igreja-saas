@@ -1,11 +1,11 @@
 "use server";
 
-import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getAuthContext } from "@/lib/auth-context";
 import { getErrorMessage, isPrismaError } from "@/lib/errors";
 import { ChurchService } from "@/services/churchService";
+import { ActionResult } from "@/types/action-result";
 
 const VALID_TIMEZONES = [
   "Africa/Luanda",
@@ -25,7 +25,7 @@ const churchSettingsSchema = z.object({
 export async function updateChurchSettingsAction(
   formData: FormData,
   targetChurchId?: string,
-) {
+): Promise<ActionResult> {
   try {
     const { churchId, actor } = await getAuthContext(targetChurchId);
 
@@ -46,9 +46,7 @@ export async function updateChurchSettingsAction(
 
   } catch (error: unknown) {
     const message = getErrorMessage(error);
-    if (message === "UNAUTHORIZED")
-      return { success: false, errorCode: "unauthorized" };
-    if (message === "CHURCH_ID_REQUIRED")
+    if (message === "UNAUTHORIZED" || message === "CHURCH_ID_REQUIRED")
       return { success: false, errorCode: "unauthorized" };
     if (isPrismaError(error) && error.code === "P2002")
       return { success: false, errorCode: "nameTaken" };

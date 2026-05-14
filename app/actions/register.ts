@@ -1,13 +1,14 @@
 "use server";
 
 import { RegisterChurchService } from "@/services/registerChurchService";
-import { Prisma } from "@prisma/client";
 import { isPrismaError } from "@/lib/errors";
 import { registerSchema } from "@/lib/validations/register";
+import { ActionResultWithSlug } from "@/types/action-result";
 
 
 
-export async function registerChurchAction(formData: FormData) {
+
+export async function registerChurchAction(formData: FormData): Promise<ActionResultWithSlug> {
   const result = registerSchema.safeParse(
     Object.fromEntries(formData.entries())
   );
@@ -53,6 +54,6 @@ export async function registerChurchAction(formData: FormData) {
     }
 
     console.error("[REGISTER_CHURCH_ERROR]:", error);
-    return { success: false, error: "register.errorCreate" };
+    return { success: false, errorCode: "errorCreate" };
   }
 }

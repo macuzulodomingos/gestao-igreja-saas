@@ -1,16 +1,20 @@
 "use server";
 
-import { AuditService } from "@/services/auditService";
+import { AuditService, ChurchLogsResult } from "@/services/auditService";
 import { MemberService } from "@/services/memberService";
 import { getErrorMessage } from "@/lib/errors";
 import { getAuthContext } from "@/lib/auth-context";
+import { ActionResultWithData } from "@/types/action-result";
+import { AuditLog } from "@/types/audit";
 
-
+type ChurchLogsActionResult =
+  | { success: true } & ChurchLogsResult
+  | { success: false; errorCode: string };
 
 export async function getChurchLogsAction(
   filters?: { entityName?: string; action?: string; page?: number },
   targetChurchId?: string,
-) {
+): Promise<ChurchLogsActionResult> {
   try {
     const { churchId, isSuperAdmin } = await getAuthContext(targetChurchId);
 
@@ -42,7 +46,7 @@ export async function getChurchLogsAction(
 export async function getMemberHistoryAction(
   memberId: string,
   targetChurchId?: string,
-) {
+): Promise<ActionResultWithData<AuditLog[]>> {
   try {
     const { churchId, isSuperAdmin } = await getAuthContext(targetChurchId);
 
@@ -69,7 +73,7 @@ export async function getMemberHistoryAction(
     return { success: true, data: mapped };
   } catch (error: unknown) {
     const message = getErrorMessage(error);
-    if (message === "UNAUTHORIZED")
+    if (message === "UNAUTHORIZED" || message === "CHURCH_ID_REQUIRED")
       return { success: false, errorCode: "unauthorized" };
     console.error("Erro ao buscar histórico:", error);
     return { success: false, errorCode: "errorLoad" };

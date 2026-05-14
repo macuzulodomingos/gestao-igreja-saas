@@ -3,7 +3,8 @@
 import { auth } from "@/lib/auth";
 import { getErrorMessage } from "@/lib/errors";
 import { PLAN_VALUES, PlanType } from "@/lib/plans";
-import { SuperAdminService } from "@/services/superAdminService";
+import { GlobalStats, SuperAdminService } from "@/services/superAdminService";
+import { ActionResult, ActionResultWithData } from "@/types/action-result";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -14,7 +15,7 @@ async function requireSuperAdmin() {
   return session;
 }
 
-export async function getGlobalStatsAction() {
+export async function getGlobalStatsAction(): Promise<ActionResultWithData<GlobalStats>> {
   try {
     await requireSuperAdmin();
     const stats = await SuperAdminService.getGlobalStats();
@@ -28,7 +29,7 @@ export async function getGlobalStatsAction() {
   }
 }
 
-export async function updateChurchPlanAction(churchId: string, plan: PlanType) {
+export async function updateChurchPlanAction(churchId: string, plan: PlanType): Promise<ActionResult> {
   try {
     const session = await requireSuperAdmin();
     const actor = { userId: session.user.id as string, email: session.user.email! as string }; // 👈

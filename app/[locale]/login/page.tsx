@@ -5,11 +5,16 @@ import { authenticate } from "@/app/actions/auth";
 import { Church, Loader2 } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
+import { useRouter } from "next/navigation";
+
+
 
 export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const t = useTranslations("auth");
+
+  const router = useRouter();
 
   const translateError = (code: string) => {
     const validCodes: Record<string, string> = {
@@ -29,7 +34,7 @@ export default function LoginPage() {
       const result = await authenticate(formData);
 
       if (result.success) {
-        window.location.href = result.redirectTo; // 👈 TypeScript sabe que redirectTo existe
+        router.push(result.redirectTo);
         return;
       }
 

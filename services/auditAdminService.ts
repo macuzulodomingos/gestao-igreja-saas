@@ -1,5 +1,9 @@
 import prisma from "@/lib/prisma";
 
+
+export type FilterLogsResult = Awaited<ReturnType<typeof AuditAdminService.filterLogs>>;
+export type ExportLogsResult = Awaited<ReturnType<typeof AuditAdminService.exportLogs>>;
+
 const buildWhere = (filters: {
     churchName?: string;
     action?: string;

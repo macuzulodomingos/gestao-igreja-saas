@@ -5,8 +5,8 @@ import { getAuthContext } from "@/lib/auth-context";
 import { getErrorMessage } from "@/lib/errors";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { auth } from "@/lib/auth";
 import { Plan, BillingCycle } from "@/app/generated/prisma/enums";
+import { ActionResult } from "@/types/action-result";
 
 
 const submitProofSchema = z.object({
@@ -17,7 +17,7 @@ const submitProofSchema = z.object({
   proofOfPayment: z.string().url("URL inválida"),
 });
 
-export async function submitPaymentProofAction(formData: FormData) {
+export async function submitPaymentProofAction(formData: FormData): Promise<ActionResult> {
   try {
     const { churchId, actor } = await getAuthContext();
 
@@ -34,14 +34,14 @@ export async function submitPaymentProofAction(formData: FormData) {
     return { success: true };
   } catch (error: unknown) {
     const message = getErrorMessage(error);
-    if (message === "UNAUTHORIZED")
+    if (message === "UNAUTHORIZED" || message === "CHURCH_ID_REQUIRED")
       return { success: false, errorCode: "unauthorized" };
     console.error("[SUBMIT_PROOF_ERROR]:", error);
     return { success: false, errorCode: "errorSubmit" };
   }
 }
 
-export async function confirmPaymentAction(churchId: string) {
+export async function confirmPaymentAction(churchId: string): Promise<ActionResult> {
   try {
     const { actor, isSuperAdmin } = await getAuthContext();
     if (!isSuperAdmin) return { success: false, errorCode: "unauthorized" };
@@ -52,6 +52,8 @@ export async function confirmPaymentAction(churchId: string) {
     return { success: true };
   } catch (error: unknown) {
     const message = getErrorMessage(error);
+    if (message === "UNAUTHORIZED" || message === "CHURCH_ID_REQUIRED")
+      return { success: false, errorCode: "unauthorized" };
     if (message === "NO_PENDING_PAYMENT")
       return { success: false, errorCode: "noPendingPayment" };
     console.error("[CONFIRM_PAYMENT_ERROR]:", error);
@@ -59,7 +61,7 @@ export async function confirmPaymentAction(churchId: string) {
   }
 }
 
-export async function rejectPaymentAction(churchId: string, reason: string) {
+export async function rejectPaymentAction(churchId: string, reason: string): Promise<ActionResult> {
   try {
 
     const { actor, isSuperAdmin } = await getAuthContext();
@@ -70,6 +72,9 @@ export async function rejectPaymentAction(churchId: string, reason: string) {
     revalidatePath(`/admin/billing`);
     return { success: true };
   } catch (error: unknown) {
+    const message = getErrorMessage(error);
+    if (message === "UNAUTHORIZED" || message === "CHURCH_ID_REQUIRED")
+      return { success: false, errorCode: "unauthorized" };
     console.error("[REJECT_PAYMENT_ERROR]:", error);
     return { success: false, errorCode: "errorReject" };
   }

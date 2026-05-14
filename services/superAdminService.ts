@@ -2,6 +2,8 @@ import { PlanType } from "@/lib/plans";
 import prisma from "@/lib/prisma";
 import { unstable_cache } from "next/cache";
 
+export type GlobalStats = Awaited<ReturnType<typeof SuperAdminService.getGlobalStats>>;
+
 export const SuperAdminService = {
 
   getGlobalStats: unstable_cache(

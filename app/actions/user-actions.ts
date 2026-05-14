@@ -8,6 +8,7 @@ import { checkUserLimit } from "@/lib/plan-guard";
 import prisma from "@/lib/prisma";
 import { PlanType } from "@/lib/plans";
 import { getErrorMessage, isPrismaError } from "@/lib/errors";
+import { ActionResult } from "@/types/action-result";
 
 const ALLOWED_ROLES = ["TREASURER", "SECRETARY", "OPERATOR"] as const;
 
@@ -21,7 +22,7 @@ const createUserSchema = z.object({
 const updateUserSchema = z.object({
   name: z.string().min(2).max(100).optional(),
   role: z.enum(ALLOWED_ROLES).optional(),
-}); 
+});
 
 async function getAuthContext(targetChurchId?: string) {
   const session = await auth();
@@ -56,7 +57,7 @@ async function getAuthContext(targetChurchId?: string) {
   };
 }
 
-export async function createUserAction(formData: FormData, targetChurchId?: string) {
+export async function createUserAction(formData: FormData, targetChurchId?: string): Promise<ActionResult> {
   try {
     const { churchId, actor, plan } = await getAuthContext(targetChurchId);
 
@@ -73,7 +74,7 @@ export async function createUserAction(formData: FormData, targetChurchId?: stri
     return { success: true };
   } catch (error: unknown) {
     const message = getErrorMessage(error);
-    if (message === "UNAUTHORIZED")
+    if (message === "UNAUTHORIZED" || message === "CHURCH_ID_REQUIRED")
       return { success: false, errorCode: "unauthorized" };
     if (message === "FORBIDDEN")
       return { success: false, errorCode: "forbidden" };
@@ -90,7 +91,7 @@ export async function updateUserAction(
   userId: string,
   formData: FormData,
   targetChurchId?: string
-) {
+): Promise<ActionResult> {
   try {
     const { churchId, actor } = await getAuthContext(targetChurchId);
 
@@ -105,7 +106,7 @@ export async function updateUserAction(
     return { success: true };
   } catch (error: unknown) {
     const message = getErrorMessage(error);
-    if (message === "UNAUTHORIZED")
+    if (message === "UNAUTHORIZED" || message === "CHURCH_ID_REQUIRED")
       return { success: false, errorCode: "unauthorized" };
     if (message === "FORBIDDEN")
       return { success: false, errorCode: "forbidden" };
@@ -118,7 +119,7 @@ export async function updateUserAction(
   }
 }
 
-export async function deleteUserAction(userId: string, targetChurchId?: string) {
+export async function deleteUserAction(userId: string, targetChurchId?: string): Promise<ActionResult> {
   try {
     const { churchId, actor } = await getAuthContext(targetChurchId);
 
@@ -128,7 +129,7 @@ export async function deleteUserAction(userId: string, targetChurchId?: string) 
     return { success: true };
   } catch (error: unknown) {
     const message = getErrorMessage(error);
-    if (message === "UNAUTHORIZED")
+    if (message === "UNAUTHORIZED" || message === "CHURCH_ID_REQUIRED")
       return { success: false, errorCode: "unauthorized" };
     if (message === "FORBIDDEN")
       return { success: false, errorCode: "forbidden" };

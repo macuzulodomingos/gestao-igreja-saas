@@ -76,7 +76,7 @@ export default function AdminClient({
       toast.success("Plano actualizado.");
       router.refresh();
     } else {
-      toast.error(result.error || "Erro ao actualizar plano.");
+      toast.error("Erro ao actualizar plano.");
     }
     setUpdatingId(null);
   };

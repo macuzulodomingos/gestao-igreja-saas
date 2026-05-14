@@ -59,3 +59,6 @@ export const AuditService = {
     };
   },
 };
+
+
+export type ChurchLogsResult = Awaited<ReturnType<typeof AuditService.getChurchLogs>>;
