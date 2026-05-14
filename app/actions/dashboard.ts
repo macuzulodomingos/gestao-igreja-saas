@@ -3,10 +3,12 @@
 import { DashboardService } from "@/services/dashboardService";
 import { getErrorMessage } from "@/lib/errors";
 import { getAuthContext } from "@/lib/auth-context";
+import { ActionResultWithData } from "@/types/action-result";
+import type { DashboardStats } from "@/services/dashboardService";
 
 
 
-export async function getDashboardStatsAction(targetChurchId?: string) {
+export async function getDashboardStatsAction(targetChurchId?: string): Promise<ActionResultWithData<DashboardStats>> {
   try {
     const { churchId } = await getAuthContext(targetChurchId);
 
@@ -15,9 +17,7 @@ export async function getDashboardStatsAction(targetChurchId?: string) {
     return { success: true, data: stats };
   } catch (error: unknown) {
     const message = getErrorMessage(error);
-    if (message === "UNAUTHORIZED")
-      return { success: false, errorCode: "unauthorized" };
-    if (message === "CHURCH_ID_REQUIRED")
+    if (message === "UNAUTHORIZED" || message === "CHURCH_ID_REQUIRED")
       return { success: false, errorCode: "unauthorized" };
     console.error("Erro ao buscar estatísticas do dashboard:", error);
     return { success: false, errorCode: "errorLoad" };

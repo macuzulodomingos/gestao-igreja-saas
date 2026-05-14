@@ -93,6 +93,28 @@ export default function MemberClient({
   const t = useTranslations("members"); // 👈 NOVO
   const tc = useTranslations("common"); // 👈 NOVO
   const tm = useTranslations("members.errors");
+  const tv = useTranslations("validation");
+
+  const translateError = (msg: string) => {
+    try {
+      const key = msg.startsWith("validation.")
+        ? msg.replace("validation.", "")
+        : msg;
+      // 👈 Record com fallback em vez de as any
+      const validKeys: Record<string, string> = {
+        nameRequired: tv("nameRequired"),
+        nameTooLong: tv("nameTooLong"),
+        emailInvalid: tv("emailInvalid"),
+        joinDateRequired: tv("joinDateRequired"),
+        phoneFormat: tv("phoneFormat"),
+        phoneTooShort: tv("phoneTooShort"),
+        phoneTooLong: tv("phoneTooLong"),
+      };
+      return validKeys[key] ?? msg;
+    } catch {
+      return msg;
+    }
+  };
 
   useEffect(() => {
     const currentQuery = searchParams.toString();
@@ -133,29 +155,21 @@ export default function MemberClient({
       });
       toast.success(editingMember ? t("successUpdated") : t("successCreated"));
       (event.target as HTMLFormElement).reset();
-    } else if ("upgrade" in result && result.upgrade) {
-      const errorCode = (result as any).errorCode;
-      upgrade.showUpgrade(errorCode ? tm(errorCode) : tc("upgrade"));
-    } else if (result.fieldErrors) {
+    } else if (!result.success && result.upgrade) {
+      // 👈 TypeScript já sabe que errorCode existe
+      upgrade.showUpgrade(result.errorCode ? tm(result.errorCode) : tc("upgrade"));
+    } else if (!result.success && result.fieldErrors) {
       setFieldErrors(result.fieldErrors);
       toast.error(t("errorForm"));
-    } else {
-      const errorCode = (result as any).errorCode;
-      toast.error(errorCode ? tm(errorCode) : tc("error"));
+    } else if (!result.success) {
+      // 👈 TypeScript já sabe que errorCode existe
+      toast.error(result.errorCode ? tm(result.errorCode) : tc("error"));
     }
   }
 
-  const tv = useTranslations("validation");
+  
 
-  const translateError = (msg: string) => {
-    try {
-      // 👈 remove o prefixo "validation." se existir antes de passar ao tv
-      const key = msg.startsWith("validation.") ? msg.replace("validation.", "") : msg;
-      return tv(key as any);
-    } catch {
-      return msg;
-    }
-  };
+
 
   return (
     <div className="space-y-6">
@@ -455,8 +469,7 @@ export default function MemberClient({
                     if (result.success) {
                       toast.success(t("successDeleted"));
                     } else {
-                      const errorCode = (result as any).errorCode;
-                      toast.error(errorCode ? tm(errorCode) : tc("error"));
+                      toast.error(result.errorCode ? tm(result.errorCode) : tc("error"));
                     }
                     setMemberToDelete(null);
                   }}

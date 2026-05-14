@@ -8,7 +8,7 @@ import { getAuthContext } from "@/lib/auth-context";
 import { fromZonedTime } from "date-fns-tz";
 import { getTimezone } from "@/lib/get-timezone";
 import { checkEventMonthlyLimit } from "@/lib/plan-guard";
-import prisma from "@/lib/prisma";
+import { ActionResult, ActionResultWithMemberIds } from "@/types/action-result";
 
 
 
@@ -16,7 +16,7 @@ export async function saveEventAction(
   formData: FormData,
   eventId?: string,
   targetChurchId?: string,
-) {
+): Promise<ActionResult> {
   try {
     const { churchId, actor, plan } = await getAuthContext(targetChurchId);
 
@@ -56,9 +56,7 @@ export async function saveEventAction(
 
   } catch (error: unknown) {
     const message = getErrorMessage(error);
-    if (message === "UNAUTHORIZED")
-      return { success: false, errorCode: "unauthorized" };
-    if (message === "CHURCH_ID_REQUIRED")
+    if (message === "UNAUTHORIZED" || message === "CHURCH_ID_REQUIRED")
       return { success: false, errorCode: "unauthorized" };
     if (message === "INVALID_DEPARTMENT")
       return { success: false, errorCode: "invalidDepartment" };
@@ -76,7 +74,7 @@ export async function saveEventAction(
 export async function deleteEventAction(
   id: string,
   targetChurchId?: string,
-) {
+): Promise<ActionResult> {
   try {
     const { churchId, actor } = await getAuthContext(targetChurchId);
 
@@ -87,7 +85,7 @@ export async function deleteEventAction(
 
   } catch (error: unknown) {
     const message = getErrorMessage(error);
-    if (message === "UNAUTHORIZED")
+    if (message === "UNAUTHORIZED" || message === "CHURCH_ID_REQUIRED")
       return { success: false, errorCode: "unauthorized" };
     if (message === "EVENT_NOT_FOUND")
       return { success: false, errorCode: "eventNotFound" };
@@ -102,7 +100,7 @@ export async function syncAttendeesAction(
   eventId: string,
   memberIds: string[],
   targetChurchId?: string,
-) {
+): Promise<ActionResult> {
   // 👈 protecção contra payload malicioso
   if (memberIds.length > 1000)
     return { success: false, errorCode: "tooManyMembers" };
@@ -117,7 +115,7 @@ export async function syncAttendeesAction(
 
   } catch (error: unknown) {
     const message = getErrorMessage(error);
-    if (message === "UNAUTHORIZED")
+    if (message === "UNAUTHORIZED" || message === "CHURCH_ID_REQUIRED")
       return { success: false, errorCode: "unauthorized" };
     if (message === "EVENT_NOT_FOUND")
       return { success: false, errorCode: "eventNotFound" };
@@ -129,14 +127,17 @@ export async function syncAttendeesAction(
 }
 
 
-export async function getEventAttendeesAction(eventId: string, targetChurchId?: string) {
+export async function getEventAttendeesAction(eventId: string, targetChurchId?: string): Promise<ActionResultWithMemberIds> {
   try {
     const { churchId } = await getAuthContext(targetChurchId);
     const attendees = await EventService.getEventAttendees(eventId, churchId);
-    
+
     return { success: true, memberIds: attendees.map(a => a.memberId) };
   } catch (error: unknown) {
+    const message = getErrorMessage(error);
+    if (message === "UNAUTHORIZED" || message === "CHURCH_ID_REQUIRED")
+      return { success: false, errorCode: "unauthorized" };
     console.error("[GET_EVENT_ATTENDEES_ERROR]:", error);
-    return { success: false, memberIds: [] };
+    return { success: false, errorCode: "errorLoad" };
   }
 }

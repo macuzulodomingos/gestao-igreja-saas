@@ -5,6 +5,8 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getErrorMessage, isPrismaError } from "@/lib/errors";
 import { getAuthContext } from "@/lib/auth-context";
+import { ActionResult, ActionResultWithId } from "@/types/action-result";
+
 
 const categorySchema = z.object({
   name: z.string().min(1, "validation.nameRequired").max(100, "validation.nameTooLong").trim(),
@@ -15,7 +17,7 @@ export async function saveEventCategoryAction(
   formData: FormData,
   categoryId?: string,
   targetChurchId?: string,
-) {
+): Promise<ActionResultWithId> {
   try {
     const { churchId, actor } = await getAuthContext(targetChurchId);
 
@@ -27,21 +29,19 @@ export async function saveEventCategoryAction(
     if (categoryId) {
       await EventCategoryService.updateCategory(categoryId, churchId, actor, result.data);
       revalidatePath(`/[slug]/configuracoes/categorias-eventos`, "page"); // 👈 adiciona
-      revalidatePath(`/[slug]/eventos`, "page"); 
+      revalidatePath(`/[slug]/eventos`, "page");
       return { success: true, id: categoryId }; // 👈 id real do banco
     } else {
       const category = await EventCategoryService.createCategory(churchId, actor, result.data);
 
       revalidatePath(`/[slug]/configuracoes/categorias-eventos`, "page");
-      revalidatePath(`/[slug]/eventos`, "page"); 
-      return { success: true, id: category.id }; 
+      revalidatePath(`/[slug]/eventos`, "page");
+      return { success: true, id: category.id };
     }
 
   } catch (error: unknown) {
     const message = getErrorMessage(error);
-    if (message === "UNAUTHORIZED")
-      return { success: false, errorCode: "unauthorized" };
-    if (message === "CHURCH_ID_REQUIRED")
+    if (message === "UNAUTHORIZED" || message === "CHURCH_ID_REQUIRED")
       return { success: false, errorCode: "unauthorized" };
     if (message === "CATEGORY_NOT_FOUND")
       return { success: false, errorCode: "categoryNotFound" };
@@ -57,7 +57,7 @@ export async function saveEventCategoryAction(
 export async function deleteEventCategoryAction(
   id: string,
   targetChurchId?: string,
-) {
+): Promise<ActionResult> {
   try {
     const { churchId, actor } = await getAuthContext(targetChurchId);
 
@@ -68,7 +68,7 @@ export async function deleteEventCategoryAction(
 
   } catch (error: unknown) {
     const message = getErrorMessage(error);
-    if (message === "UNAUTHORIZED")
+    if (message === "UNAUTHORIZED" || message === "CHURCH_ID_REQUIRED")
       return { success: false, errorCode: "unauthorized" };
     if (message === "CATEGORY_NOT_FOUND")
       return { success: false, errorCode: "categoryNotFound" };

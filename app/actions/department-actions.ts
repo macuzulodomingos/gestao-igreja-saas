@@ -6,6 +6,7 @@ import { z } from "zod";
 import { getErrorMessage } from "@/lib/errors";
 import { getAuthContext } from "@/lib/auth-context";
 import { checkDepartmentLimit } from "@/lib/plan-guard";
+import { ActionResult } from "@/types/action-result";
 
 const departmentSchema = z.object({
   name: z.string().min(1, "validation.nameRequired").max(100, "validation.departmentNameTooLong"),
@@ -19,7 +20,7 @@ export async function saveDepartmentAction(
   formData: FormData,
   departmentId?: string,
   targetChurchId?: string,
-) {
+): Promise<ActionResult> {
   try {
     const { churchId, actor, plan } = await getAuthContext(targetChurchId);
 
@@ -48,9 +49,7 @@ export async function saveDepartmentAction(
 
   } catch (error: unknown) {
     const message = getErrorMessage(error);
-    if (message === "UNAUTHORIZED")
-      return { success: false, errorCode: "unauthorized" };
-    if (message === "CHURCH_ID_REQUIRED")
+    if (message === "UNAUTHORIZED" || message === "CHURCH_ID_REQUIRED")
       return { success: false, errorCode: "unauthorized" };
     if (message === "INVALID_LEADER")
       return { success: false, errorCode: "invalidLeader" };
@@ -64,7 +63,7 @@ export async function saveDepartmentAction(
 export async function deleteDepartmentAction(
   id: string,
   targetChurchId?: string,
-) {
+): Promise<ActionResult> {
   try {
     const { churchId, actor } = await getAuthContext(targetChurchId);
 
@@ -75,7 +74,7 @@ export async function deleteDepartmentAction(
 
   } catch (error: unknown) {
     const message = getErrorMessage(error);
-    if (message === "UNAUTHORIZED")
+    if (message === "UNAUTHORIZED" || message === "CHURCH_ID_REQUIRED")
       return { success: false, errorCode: "unauthorized" };
     if (message === "DEPARTMENT_NOT_FOUND")
       return { success: false, errorCode: "departmentNotFound" };
@@ -88,7 +87,7 @@ export async function syncDepartmentMembersAction(
   departmentId: string,
   memberIds: string[],
   targetChurchId?: string,
-) {
+): Promise<ActionResult> {
   try {
     const { churchId, actor } = await getAuthContext(targetChurchId);
 
@@ -104,7 +103,7 @@ export async function syncDepartmentMembersAction(
 
   } catch (error: unknown) {
     const message = getErrorMessage(error);
-    if (message === "UNAUTHORIZED")
+    if (message === "UNAUTHORIZED" || message === "CHURCH_ID_REQUIRED")
       return { success: false, errorCode: "unauthorized" };
     if (message === "INVALID_MEMBERS")
       return { success: false, errorCode: "invalidMembers" };

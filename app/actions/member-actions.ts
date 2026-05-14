@@ -163,7 +163,7 @@ export async function deleteMemberAction(
     return { success: true };
   } catch (error: unknown) {
     const message = getErrorMessage(error);
-    if (message === "UNAUTHORIZED")
+   if (message === "UNAUTHORIZED" || message === "CHURCH_ID_REQUIRED")
       return { success: false, errorCode: "unauthorized" };
     if (message === "MEMBER_NOT_FOUND")
       return { success: false, errorCode: "memberNotFound" };

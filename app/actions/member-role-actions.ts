@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getAuthContext } from "@/lib/auth-context";
 import { getErrorMessage, isPrismaError } from "@/lib/errors";
+import { ActionResult } from "@/types/action-result";
 
 const roleSchema = z.object({
   name: z.string().min(1, "validation.nameRequired").max(50, "validation.nameTooLong"),
@@ -14,7 +15,7 @@ export async function saveRoleAction(
   formData: FormData,
   roleId?: string,
   targetChurchId?: string,
-) {
+): Promise<ActionResult> {
   try {
     const { churchId, actor } = await getAuthContext(targetChurchId);
 
@@ -34,9 +35,7 @@ export async function saveRoleAction(
 
   } catch (error: unknown) {
     const message = getErrorMessage(error);
-    if (message === "UNAUTHORIZED")
-      return { success: false, errorCode: "unauthorized" };
-    if (message === "CHURCH_ID_REQUIRED")
+   if (message === "UNAUTHORIZED" || message === "CHURCH_ID_REQUIRED")
       return { success: false, errorCode: "unauthorized" };
     if (message === "ROLE_DUPLICATE") // 👈 era apenas isPrismaError P2002
       return { success: false, errorCode: "duplicate" };
@@ -52,7 +51,7 @@ export async function saveRoleAction(
 export async function deleteRoleAction(
   id: string,
   targetChurchId?: string,
-) {
+): Promise<ActionResult> {
   try {
     const { churchId, actor } = await getAuthContext(targetChurchId);
 
@@ -63,7 +62,7 @@ export async function deleteRoleAction(
 
   } catch (error: unknown) {
     const message = getErrorMessage(error);
-    if (message === "UNAUTHORIZED")
+    if (message === "UNAUTHORIZED" || message === "CHURCH_ID_REQUIRED")
       return { success: false, errorCode: "unauthorized" };
     if (message === "ROLE_NOT_FOUND") // 👈 NOVO
       return { success: false, errorCode: "roleNotFound" };

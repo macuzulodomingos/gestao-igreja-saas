@@ -2,6 +2,8 @@ import prisma from "@/lib/prisma";
 import { unstable_cache } from "next/cache";
 import { centsToAmount } from "@/lib/money";
 
+export type DashboardStats = Awaited<ReturnType<typeof DashboardService.getChurchStats>>;
+
 
 // 👈 Datas sempre em UTC — evita bug de fuso horário na Vercel
 function getMonthRangeUTC(year: number, month: number) {
@@ -248,3 +250,5 @@ export const DashboardService = {
     )();
   },
 };
+
+

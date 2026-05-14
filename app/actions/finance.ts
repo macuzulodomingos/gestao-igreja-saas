@@ -9,6 +9,7 @@ import { fromZonedTime } from "date-fns-tz";
 import { getTimezone } from "@/lib/get-timezone";
 import { checkTransactionMonthlyLimit } from "@/lib/plan-guard";
 import { FinanceTransaction } from "@/types/finance";
+import { ActionResult } from "@/types/action-result";
 
 type LoadMoreResult =
   | { success: true; data: FinanceTransaction[]; nextCursor: string | null; hasMore: boolean }
@@ -18,7 +19,7 @@ export async function saveTransactionAction(
   formData: FormData,
   transactionId?: string,
   targetChurchId?: string,
-) {
+): Promise<ActionResult> {
   try {
     const { churchId, actor, plan } = await getAuthContext(targetChurchId);
 
@@ -56,9 +57,7 @@ export async function saveTransactionAction(
 
   } catch (error: unknown) {
     const message = getErrorMessage(error);
-    if (message === "UNAUTHORIZED")
-      return { success: false, errorCode: "unauthorized" };
-    if (message === "CHURCH_ID_REQUIRED")
+    if (message === "UNAUTHORIZED" || message === "CHURCH_ID_REQUIRED")
       return { success: false, errorCode: "unauthorized" };
     if (message === "INVALID_AMOUNT")
       return { success: false, errorCode: "invalidAmount" };
@@ -72,6 +71,7 @@ export async function saveTransactionAction(
       return { success: false, errorCode: "planLimitTransactions", upgrade: true };
     if (isPrismaError(error) && error.code === "P2025")
       return { success: false, errorCode: "transactionNotFound" };
+    console.error("[SAVE_TRANSACTION_ERROR]:", error); // 👈 adiciona
     return { success: false, errorCode: "errorSave" };
   }
 }
@@ -79,7 +79,7 @@ export async function saveTransactionAction(
 export async function deleteTransactionAction(
   id: string,
   targetChurchId?: string,
-) {
+): Promise<ActionResult> {
   try {
     const { churchId, actor } = await getAuthContext(targetChurchId);
 
@@ -92,12 +92,13 @@ export async function deleteTransactionAction(
 
   } catch (error: unknown) {
     const message = getErrorMessage(error);
-    if (message === "UNAUTHORIZED")
+    if (message === "UNAUTHORIZED" || message === "CHURCH_ID_REQUIRED")
       return { success: false, errorCode: "unauthorized" };
     if (message === "TRANSACTION_NOT_FOUND")
       return { success: false, errorCode: "transactionNotFound" };
     if (isPrismaError(error) && error.code === "P2025")
       return { success: false, errorCode: "transactionAlreadyDeleted" };
+    console.error("[DELETE_TRANSACTION_ERROR]:", error); // 👈 adiciona
     return { success: false, errorCode: "errorDelete" };
   }
 }
@@ -131,6 +132,9 @@ export async function loadMoreTransactionsAction(
       hasMore: result.hasMore,
     };
   } catch (error: unknown) {
+    const message = getErrorMessage(error);
+    if (message === "UNAUTHORIZED" || message === "CHURCH_ID_REQUIRED")
+      return { success: false, errorCode: "unauthorized" };
     console.error("[LOAD_MORE_ERROR]:", error);
     return { success: false, errorCode: "errorLoadMore" };
   }

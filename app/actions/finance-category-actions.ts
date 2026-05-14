@@ -6,6 +6,7 @@ import { z } from "zod";
 import { getAuthContext } from "@/lib/auth-context";
 import { getErrorMessage, isPrismaError } from "@/lib/errors";
 import { TransactionType } from "@prisma/client";
+import { ActionResult } from "@/types/action-result";
 
 const categorySchema = z.object({
   name: z.string().trim().min(1, "validation.nameRequired").max(50, "validation.categoryNameTooLong"),
@@ -16,7 +17,7 @@ export async function saveCategoryAction(
   formData: FormData,
   categoryId?: string,
   targetChurchId?: string,
-) {
+): Promise<ActionResult> {
   try {
     const { churchId, actor } = await getAuthContext(targetChurchId);
 
@@ -57,7 +58,7 @@ export async function saveCategoryAction(
 export async function deleteCategoryAction(
   id: string,
   targetChurchId?: string,
-) {
+): Promise<ActionResult> {
   try {
     const { churchId, actor } = await getAuthContext(targetChurchId);
 
@@ -69,7 +70,7 @@ export async function deleteCategoryAction(
 
   } catch (error: unknown) {
     const message = getErrorMessage(error);
-    if (message === "UNAUTHORIZED")
+    if (message === "UNAUTHORIZED" || message === "CHURCH_ID_REQUIRED")
       return { success: false, errorCode: "unauthorized" };
     if (message === "CATEGORY_NOT_FOUND")
       return { success: false, errorCode: "categoryNotFound" };

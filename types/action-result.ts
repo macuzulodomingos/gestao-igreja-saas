@@ -14,3 +14,13 @@ export type ActionResultWithData<T> =
       errorCode?: string;
       fieldErrors?: Record<string, string[]>;
     };
+
+  
+export type ActionResultWithId =
+  | { success: true; id: string }
+  | { success: false; errorCode?: string; fieldErrors?: Record<string, string[]> };
+
+
+export type ActionResultWithMemberIds =
+  | { success: true; memberIds: string[] }
+  | { success: false; errorCode?: string };

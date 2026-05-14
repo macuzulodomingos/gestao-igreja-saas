@@ -300,7 +300,8 @@
       "errorSave": "Erro ao salvar evento.",
       "errorDelete": "Não foi possível eliminar o evento.",
       "errorSync": "Erro ao actualizar presenças.",
-      "tooManyMembers": "Não é possível adicionar mais de 1000 membros por evento."
+      "tooManyMembers": "Não é possível adicionar mais de 1000 membros por evento.",
+      "errorLoad": "Erro ao carregar presenças."
     }
   },
   "departments": {

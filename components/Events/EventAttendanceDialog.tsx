@@ -47,6 +47,8 @@ export function EventAttendanceDialog({ open, onOpenChange, event, allMembers, t
       getEventAttendeesAction(event.id).then(result => {
         if (result.success) {
           setSelectedIds(result.memberIds);
+        } else if (result.errorCode === "unauthorized") {
+          window.location.href = "/login"; // 👈 redireciona
         } else {
           setLoadError(true); // 👈 bloqueia em vez de toast
         }
@@ -86,8 +88,7 @@ export function EventAttendanceDialog({ open, onOpenChange, event, allMembers, t
         toast.success(t("updated"));
         onOpenChange(false);
       } else {
-        const errorCode = (result as any).errorCode;
-        toast.error(errorCode ? te(errorCode) : t("error"));
+        toast.error(result.errorCode ? te(result.errorCode) : t("error"));
       }
     });
   };
