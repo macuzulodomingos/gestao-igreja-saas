@@ -21,5 +21,6 @@ export default async function ChurchRootPage({
   }
 
   // 3. Se existir, redirecionamos para o dashboard interno daquela igreja
-  redirect(`/${slug}/painel`);
+  const locale = session.user.locale ?? "pt";
+  redirect(`/${locale}/${slug}/painel`);
 }

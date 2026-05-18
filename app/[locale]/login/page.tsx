@@ -1,13 +1,39 @@
 "use client";
 
-import { useState } from "react";
 import { authenticate } from "@/app/actions/auth";
 import { Church, Loader2 } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
-import { useRouter } from "next/navigation";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
 
+
+// 2. 👈 cria este subcomponente ANTES do LoginPage
+function RegistrationAlert() {
+  const t = useTranslations("auth");
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const justRegistered = searchParams.get("registered") === "true";
+
+  // 👈 limpa ?registered=true da URL após montar
+  useEffect(() => {
+    if (justRegistered) {
+      const newParams = new URLSearchParams(searchParams.toString());
+      newParams.delete("registered");
+      router.replace(`?${newParams.toString()}`, { scroll: false });
+    }
+  }, [justRegistered, searchParams, router]);
+
+  if (!justRegistered) return null;
+
+  return (
+    <div className="rounded-lg bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800 p-3 text-center">
+      <p className="text-sm text-green-700 dark:text-green-400">
+        {t("registeredSuccess")}
+      </p>
+    </div>
+  );
+}
 
 
 export default function LoginPage() {
@@ -16,9 +42,6 @@ export default function LoginPage() {
   const t = useTranslations("auth");
 
   const router = useRouter();
-
-  const searchParams = useSearchParams();
-  const justRegistered = searchParams.get("registered") === "true";
 
   const translateError = (code: string) => {
     const validCodes: Record<string, string> = {
@@ -66,17 +89,13 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {justRegistered && (
-          <div className="rounded-lg bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800 p-3 text-center">
-            <p className="text-sm text-green-700 dark:text-green-400">
-              {t("registeredSuccess")} 
-            </p>
-          </div>
-        )}
+        <Suspense fallback={null}>
+          <RegistrationAlert />
+        </Suspense>
 
         <form onSubmit={handleSubmit} className="space-y-4 rounded-lg border bg-card p-8 shadow-sm">
           {error && (
-            <p className="text-sm text-destructive text-center">{error}</p>
+            <p role="alert" className="text-sm text-destructive text-center">{error}</p>
           )}
 
           <div className="space-y-2">

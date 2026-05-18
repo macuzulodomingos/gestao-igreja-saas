@@ -41,7 +41,7 @@ export default async function TenantLayout({
   const church = await getChurchBySlug(slug, session.user.churchId ?? undefined);
 
   if (!church) {
-    return notFound();
+     notFound();
   }
 
   return (
