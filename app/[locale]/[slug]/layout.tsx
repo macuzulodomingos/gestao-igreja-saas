@@ -6,7 +6,6 @@ import { auth } from "@/lib/auth";
 import { TenantClientWrapper } from "@/components/Layout/TenantClientWrapper";
 import { setRequestLocale } from "next-intl/server";
 
-export const dynamic = "force-dynamic";
 
 interface TenantLayoutProps {
   children: React.ReactNode;
