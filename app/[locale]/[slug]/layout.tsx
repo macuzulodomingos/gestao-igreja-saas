@@ -1,5 +1,5 @@
 import { AppSidebar } from "@/components/Layout/AppSidebar";
-import { DashboardHeader } from "@/components/Layout/DashboardHeader";
+import { DashboardHeaderClient } from "@/components/Layout/DashboardHeaderClient";
 import { getChurchBySlug } from "@/lib/tenant";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
@@ -7,10 +7,12 @@ import { TenantClientWrapper } from "@/components/Layout/TenantClientWrapper";
 import { setRequestLocale } from "next-intl/server";
 
 
+
 interface TenantLayoutProps {
   children: React.ReactNode;
   params: Promise<{ slug: string; locale: string }>;
 }
+
 
 export default async function TenantLayout({
   children,
@@ -48,7 +50,7 @@ export default async function TenantLayout({
       <div className="min-h-screen flex w-full bg-background" suppressHydrationWarning>
         <AppSidebar slug={slug} initialRole={session.user.role} />
         <div className="flex-1 flex flex-col min-w-0">
-          <DashboardHeader church={church} user={session.user} />
+          <DashboardHeaderClient church={church} user={session.user} />
           <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-auto">
             {children}
           </main>
