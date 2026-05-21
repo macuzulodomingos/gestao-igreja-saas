@@ -1,4 +1,6 @@
-import { UserRole } from "@prisma/client";
+import { UserRole } from "@/app/generated/prisma/enums";
+
+
 
 // Mapeamento com a inclusão do SUPER_ADMIN
 const roleConfig: Record<UserRole, { label: string; classes: string }> = {
