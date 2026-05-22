@@ -32,6 +32,7 @@ model Church {
   memberRoles  MemberRole[]
   events Event[]
   eventCategories EventCategory[]
+  impersonations ImpersonationSession[]
 }
 
 enum Plan {
@@ -63,6 +64,8 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   deletedAt     DateTime? // 👈 NOVO — Soft Delete
+
+  impersonations ImpersonationSession[] @relation
 
   @@index([churchId])
   @@index([deletedAt]) // 👈 índice para filtrar activos rapidamente
@@ -335,6 +338,23 @@ model EventAttendee {
   @@id([eventId, memberId])
   @@index([eventId])
   @@index([memberId])
+}
+
+
+model ImpersonationSession {
+  id           String   @id @default(cuid())
+  superAdminId String
+  superAdmin   User     @relation(fields: [superAdminId], references: [id])
+  churchId     String
+  church       Church   @relation(fields: [churchId], references: [id], onDelete: Cascade)
+  reason       String   // motivo obrigatório
+  expiresAt    DateTime // 1 hora
+  createdAt    DateTime @default(now())
+  endedAt      DateTime? // quando o admin saiu manualmente
+
+  @@index([superAdminId])
+  @@index([churchId])
+  @@index([expiresAt])
 }
 
 // 8. AUDITORIA
