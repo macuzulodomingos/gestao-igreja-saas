@@ -2,7 +2,7 @@
 import { cache } from "react"; // 👈 adiciona
 import prisma from "./prisma";
 
-export const getChurchBySlug = cache(async (slug: string, churchId?: string) => { // 👈
+export const getChurchBySlug = cache(async (slug: string, churchId?: string | null) => { // 👈
   if (!churchId) return null;
   return await prisma.church.findUnique({
     where: { slug, id: churchId },
