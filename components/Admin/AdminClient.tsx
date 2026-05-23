@@ -5,12 +5,17 @@ import { useRouter, usePathname } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import {
-  Church, Users, Wallet, FileText,
-  ChevronLeft, ChevronRight, Search, ExternalLink
+  AlertDialog, AlertDialogAction, AlertDialogCancel,
+  AlertDialogContent, AlertDialogDescription,
+  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Church, Users, Wallet,
+  ChevronLeft, ChevronRight, Search, ExternalLink, ShieldAlert,
 } from "lucide-react";
 import { updateChurchPlanAction } from "@/app/actions/super-admin-actions";
+import { startImpersonationAction } from "@/app/actions/impersonation-actions";
 import { toast } from "sonner";
 import Link from "next/link";
 
@@ -53,6 +58,13 @@ export default function AdminClient({
   const [isPending, startTransition] = useTransition();
   const [search, setSearch] = useState(filters.search);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [impersonationModal, setImpersonationModal] = useState<{
+    churchId: string;
+    churchSlug: string;
+    churchName: string;
+  } | null>(null);
+  const [reason, setReason] = useState("");
+  const [isStarting, setIsStarting] = useState(false);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,6 +91,29 @@ export default function AdminClient({
       toast.error("Erro ao actualizar plano.");
     }
     setUpdatingId(null);
+  };
+
+  const handleStartImpersonation = async () => {
+    if (!impersonationModal || reason.trim().length < 10) {
+      toast.error("O motivo deve ter pelo menos 10 caracteres.");
+      return;
+    }
+    setIsStarting(true);
+    const formData = new FormData();
+    formData.append("reason", reason);
+
+    const result = await startImpersonationAction(
+      impersonationModal.churchId,
+      impersonationModal.churchSlug,
+      formData
+    );
+
+    if (result.success && result.redirectTo) {
+      window.location.href = result.redirectTo; // 👈 redirect com locale
+    } else {
+      toast.error("Erro ao iniciar sessão de suporte.");
+      setIsStarting(false);
+    }
   };
 
   return (
@@ -118,9 +153,9 @@ export default function AdminClient({
       {/* Planos */}
       <div className="grid grid-cols-3 gap-4">
         {[
-          { plan: "FREE", count: stats.planCounts.FREE, color: "bg-slate-500" },
-          { plan: "PRO", count: stats.planCounts.PRO, color: "bg-blue-500" },
-          { plan: "ENTERPRISE", count: stats.planCounts.ENTERPRISE, color: "bg-amber-500" },
+          { plan: "FREE", count: stats.planCounts.FREE },
+          { plan: "PRO", count: stats.planCounts.PRO },
+          { plan: "ENTERPRISE", count: stats.planCounts.ENTERPRISE },
         ].map((p) => (
           <Card key={p.plan}>
             <CardContent className="pt-6 text-center">
@@ -179,6 +214,24 @@ export default function AdminClient({
                     </div>
 
                     <div className="flex items-center gap-3">
+                      {/* 👈 botão de impersonation */}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-1 text-yellow-700 border-yellow-300 hover:bg-yellow-50"
+                        onClick={() => {
+                          setReason("");
+                          setImpersonationModal({
+                            churchId: church.id,
+                            churchSlug: church.slug,
+                            churchName: church.name,
+                          });
+                        }}
+                      >
+                        <ShieldAlert className="h-3 w-3" />
+                        Suporte
+                      </Button>
+
                       <select
                         value={church.plan}
                         disabled={updatingId === church.id}
@@ -191,7 +244,7 @@ export default function AdminClient({
                       </select>
 
                       <p className="text-xs text-muted-foreground hidden md:block">
-                        {new Date(church.createdAt).toLocaleDateString("pt-BR")}
+                        {new Date(church.createdAt).toLocaleDateString("pt-AO")}
                       </p>
                     </div>
                   </div>
@@ -228,6 +281,54 @@ export default function AdminClient({
           </div>
         )}
       </div>
+
+      {/* 👈 Modal de Impersonation */}
+      <AlertDialog
+        open={!!impersonationModal}
+        onOpenChange={(open) => {
+          if (!open) setImpersonationModal(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <ShieldAlert className="h-5 w-5 text-yellow-600" />
+              Aceder como {impersonationModal?.churchName}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta sessão dura <strong>1 hora</strong> e fica registada no audit log.
+              Introduz o motivo do acesso de suporte.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">
+              Motivo do acesso <span className="text-destructive">*</span>
+            </label>
+            <textarea
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="Ex: Cliente reportou erro no gráfico de finanças — ticket #1234"
+              className="w-full rounded-md border px-3 py-2 text-sm min-h-[100px] resize-none focus:ring-2 focus:ring-primary outline-none"
+              minLength={10}
+            />
+            <p className="text-xs text-muted-foreground">
+              Mínimo 10 caracteres — {reason.length}/500
+            </p>
+          </div>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleStartImpersonation}
+              disabled={reason.trim().length < 10 || isStarting}
+              className="bg-yellow-500 hover:bg-yellow-600 text-white"
+            >
+              {isStarting ? "A iniciar..." : "Iniciar Sessão de Suporte"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

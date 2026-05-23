@@ -23,7 +23,7 @@ export async function startImpersonationAction(
   churchId: string,
   churchSlug: string,
   formData: FormData
-): Promise<ActionResult> {
+): Promise<ActionResult & { redirectTo?: string }> {
   try {
     const session = await requireSuperAdmin();
 
@@ -40,7 +40,7 @@ export async function startImpersonationAction(
     );
 
     const locale = await getLocale();
-    redirect(`/${locale}/${churchSlug}/painel`);
+    return { success: true, redirectTo: `/${locale}/${churchSlug}/painel` }; // 👈 retorna redirect
   } catch (error: unknown) {
     const message = getErrorMessage(error);
     if (message === "UNAUTHORIZED")
@@ -50,23 +50,15 @@ export async function startImpersonationAction(
   }
 }
 
-export async function endImpersonationAction(
-  sessionId: string
-): Promise<ActionResult> {
+export async function endImpersonationAction(sessionId: string): Promise<void> {
   try {
     const session = await requireSuperAdmin();
-
     await ImpersonationService.endImpersonation(sessionId, session.user.id);
-
     const locale = await getLocale();
     redirect(`/${locale}/admin`);
   } catch (error: unknown) {
     const message = getErrorMessage(error);
-    if (message === "UNAUTHORIZED")
-      return { success: false, errorCode: "unauthorized" };
-    if (message === "IMPERSONATION_NOT_FOUND")
-      return { success: false, errorCode: "notFound" };
+    if (message === "NEXT_REDIRECT") throw error; // 👈 re-lança o redirect
     console.error("[END_IMPERSONATION_ERROR]:", error);
-    return { success: false, errorCode: "errorSave" };
   }
 }
