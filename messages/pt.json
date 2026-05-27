@@ -752,7 +752,8 @@
       "MemberRole": "Cargos",
       "EventCategory": "Categorias de Eventos",
       "User": "Utilizadores",
-      "Subscription": "Subscrições"
+      "Subscription": "Subscrições",
+      "Church": "Igreja"
     },
     "changedFields": "Campos alterados",
     "field": "Campo",

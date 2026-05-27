@@ -752,7 +752,8 @@
       "MemberRole": "Rôles",
       "EventCategory": "Catégories d'événements",
       "User": "Utilisateurs",
-      "Subscription": "Abonnements"
+      "Subscription": "Abonnements",
+      "Church": "Église"
     },
     "changedFields": "Champs modifiés",
     "field": "Champ",

@@ -108,9 +108,8 @@ export default function AdminClient({
       formData
     );
 
-    if (result.success && result.redirectTo) {
-      window.location.href = result.redirectTo; // 👈 redirect com locale
-    } else {
+    // se chegou aqui é porque houve erro — redirect corta a execução
+    if (result && !result.success) {
       toast.error("Erro ao iniciar sessão de suporte.");
       setIsStarting(false);
     }

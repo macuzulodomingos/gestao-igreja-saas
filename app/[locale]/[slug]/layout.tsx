@@ -7,6 +7,7 @@ import { TenantClientWrapper } from "@/components/Layout/TenantClientWrapper";
 import { setRequestLocale } from "next-intl/server";
 import { ImpersonationService } from "@/services/impersonationService";
 import { endImpersonationAction } from "@/app/actions/impersonation-actions";
+export const dynamic = "force-dynamic";
 
 interface TenantLayoutProps {
   children: React.ReactNode;
@@ -36,7 +37,8 @@ export default async function TenantLayout({
   // 👈 verifica impersonation APÓS ter a igreja
   let impersonation = null;
   if (isSuperAdmin) {
-    impersonation = await ImpersonationService.isImpersonating(session.user.id);
+    impersonation = await ImpersonationService.isImpersonating(session.user.id, slug);
+    
 
     if (!impersonation || impersonation.churchId !== church.id) {
       redirect(`/${locale}/admin`);
@@ -55,19 +57,20 @@ export default async function TenantLayout({
 
   return (
     <>
-      {/* 👈 banner de impersonation */}
+      {/* 👈 Opção 1 — banner fixo no topo cobrindo tudo */}
       {isSuperAdmin && impersonation && (
-        <div className="bg-yellow-400 text-yellow-900 px-4 py-2 flex items-center justify-between text-sm font-medium">
-          <span>
-            ⚠️ Modo Suporte — A aceder como esta igreja. Motivo: {impersonation.reason}
+        <div className="fixed top-0 left-0 right-0 z-[9999] bg-yellow-400 text-yellow-900 px-4 py-2 flex items-center justify-between text-sm font-medium h-9 shadow-md">
+          <span className="truncate pr-4">
+            ⚠️ Modo Suporte — A aceder como <strong>{church.name}</strong>. Motivo: {impersonation.reason}
           </span>
-          <form action={endImpersonationAction.bind(null, impersonation.id)}>
-            <button type="submit" className="underline font-bold">
+          <form action={endImpersonationAction.bind(null, impersonation.id)} className="shrink-0">
+            <button type="submit" className="underline font-bold hover:text-yellow-950 transition-colors">
               Sair do Modo Suporte
             </button>
           </form>
         </div>
       )}
+
       <TenantClientWrapper>
         <div className="min-h-screen flex w-full bg-background" suppressHydrationWarning>
           <AppSidebar slug={slug} initialRole={session.user.role} />

@@ -72,12 +72,16 @@ export const ImpersonationService = {
     });
   },
 
-  async isImpersonating(superAdminId: string) {
+  async isImpersonating(superAdminId: string, slug: string) {
     return prisma.impersonationSession.findFirst({
       where: {
         superAdminId,
         endedAt: null,
         expiresAt: { gt: new Date() },
+        church: { slug }, // 👈 filtra pela church com este slug
+      },
+      orderBy: {
+        createdAt: "desc", // 👈 sempre a sessão mais recente
       },
       select: { id: true, churchId: true, reason: true, expiresAt: true },
     });

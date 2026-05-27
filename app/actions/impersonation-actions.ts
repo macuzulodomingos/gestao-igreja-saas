@@ -2,14 +2,15 @@
 
 import { auth } from "@/lib/auth";
 import { ImpersonationService } from "@/services/impersonationService";
-import { getErrorMessage } from "@/lib/errors";
 import { redirect } from "next/navigation";
 import { getLocale } from "next-intl/server";
+import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import { z } from "zod";
-import type { ActionResult } from "@/types/action-result";
+import { getErrorMessage } from "@/lib/errors";
 
 const startSchema = z.object({
-  reason: z.string().min(10, "Motivo obrigatório — mínimo 10 caracteres").max(500),
+  reason: z.string().min(10, "Mínimo 10 caracteres").max(500),
 });
 
 async function requireSuperAdmin() {
@@ -23,13 +24,12 @@ export async function startImpersonationAction(
   churchId: string,
   churchSlug: string,
   formData: FormData
-): Promise<ActionResult & { redirectTo?: string }> {
+) {
+  let targetUrl = "";
   try {
     const session = await requireSuperAdmin();
 
-    const result = startSchema.safeParse(
-      Object.fromEntries(formData.entries())
-    );
+    const result = startSchema.safeParse(Object.fromEntries(formData.entries()));
     if (!result.success)
       return { success: false, fieldErrors: result.error.flatten().fieldErrors };
 
@@ -39,26 +39,44 @@ export async function startImpersonationAction(
       result.data.reason
     );
 
+    const cookieStore = await cookies();
+    cookieStore.set("impersonated_church_slug", churchSlug, {
+      maxAge: 60 * 60,
+      path: "/",
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+    });
+
+    revalidatePath("/", "layout");
     const locale = await getLocale();
-    return { success: true, redirectTo: `/${locale}/${churchSlug}/painel` }; // 👈 retorna redirect
-  } catch (error: unknown) {
-    const message = getErrorMessage(error);
-    if (message === "UNAUTHORIZED")
-      return { success: false, errorCode: "unauthorized" };
+    targetUrl = `/${locale}/${churchSlug}/painel`;
+  } catch (error) {
     console.error("[START_IMPERSONATION_ERROR]:", error);
-    return { success: false, errorCode: "errorSave" };
+    return { success: false };
   }
+
+  if (targetUrl) redirect(targetUrl);
 }
 
-export async function endImpersonationAction(sessionId: string): Promise<void> {
+export async function endImpersonationAction(sessionId: string) {
+  let targetUrl = "";
   try {
     const session = await requireSuperAdmin();
+
     await ImpersonationService.endImpersonation(sessionId, session.user.id);
+
+    const cookieStore = await cookies();
+    cookieStore.delete("impersonated_church_slug");
+
+    revalidatePath("/", "layout");
     const locale = await getLocale();
-    redirect(`/${locale}/admin`);
-  } catch (error: unknown) {
+    targetUrl = `/${locale}/admin`;
+  } catch (error) {
     const message = getErrorMessage(error);
-    if (message === "NEXT_REDIRECT") throw error; // 👈 re-lança o redirect
+    if (message === "NEXT_REDIRECT") throw error;
     console.error("[END_IMPERSONATION_ERROR]:", error);
   }
+
+  if (targetUrl) redirect(targetUrl);
 }

@@ -56,6 +56,7 @@ const statusColors: Record<string, string> = {
 interface MemberClientProps {
   initialMembers: Member[];
   slug: string;
+  churchId: string;
   metadata: {
     currentPage: number;
     totalPages: number;
@@ -78,7 +79,7 @@ const formatarDataSemFuso = (
 };
 
 export default function MemberClient({
-  initialMembers, slug, metadata, roles,
+  initialMembers, slug, churchId, metadata, roles,
 }: MemberClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -143,9 +144,9 @@ export default function MemberClient({
 
     let result;
     if (editingMember) {
-      result = await updateMemberAction(editingMember.id, formData, slug);
+      result = await updateMemberAction(editingMember.id, formData, churchId);
     } else {
-      result = await createMemberAction(formData);
+      result = await createMemberAction(formData, churchId);
     }
 
     if (result.success) {
@@ -465,7 +466,7 @@ export default function MemberClient({
                   className="bg-destructive text-white hover:bg-destructive/90"
                   onClick={async () => {
                     if (!memberToDelete) return;
-                    const result = await deleteMemberAction(memberToDelete.id);
+                    const result = await deleteMemberAction(memberToDelete.id, churchId);
                     if (result.success) {
                       toast.success(t("successDeleted"));
                     } else {
