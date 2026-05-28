@@ -10,7 +10,7 @@ export const EventCategoryService = {
     if (!churchId) return [];
     return prisma.eventCategory.findMany({
       where: { churchId },
-      select: { id: true, name: true }, // 👈 remove _count
+      select: { id: true, name: true, _count: { select: { events: true } } }, // 👈 remove _count
       orderBy: { name: "asc" },
     });
   },

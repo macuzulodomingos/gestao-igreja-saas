@@ -17,6 +17,11 @@ const submitProofSchema = z.object({
   proofOfPayment: z.string().url("URL inválida"),
 });
 
+const rejectPaymentSchema = z.object({
+  churchId: z.string().min(1),
+  reason: z.string().min(3, "Motivo muito curto").max(500, "Motivo demasiado longo"),
+});
+
 export async function submitPaymentProofAction(formData: FormData, targetChurchId?: string): Promise<ActionResult> {
   try {
     const { churchId, actor } = await getAuthContext(targetChurchId);
@@ -43,7 +48,7 @@ export async function submitPaymentProofAction(formData: FormData, targetChurchI
 
 export async function confirmPaymentAction(churchId: string): Promise<ActionResult> {
   try {
-    const { actor, isSuperAdmin } = await getAuthContext();
+    const { actor, isSuperAdmin } = await getAuthContext(churchId);
     if (!isSuperAdmin) return { success: false, errorCode: "unauthorized" };
 
     await BillingService.confirmPayment(churchId, actor);
@@ -64,10 +69,20 @@ export async function confirmPaymentAction(churchId: string): Promise<ActionResu
 export async function rejectPaymentAction(churchId: string, reason: string): Promise<ActionResult> {
   try {
 
-    const { actor, isSuperAdmin } = await getAuthContext();
+    // 👈 valida antes de passar ao service
+    const validated = rejectPaymentSchema.safeParse({ churchId, reason });
+    if (!validated.success) return { success: false, errorCode: "invalidData" };
+
+    const { actor, isSuperAdmin } = await getAuthContext(validated.data.churchId);
     if (!isSuperAdmin) return { success: false, errorCode: "unauthorized" };
 
-    await BillingService.rejectPayment(churchId, actor, reason);
+
+    await BillingService.rejectPayment(
+      validated.data.churchId,
+      actor,
+      validated.data.reason
+    );
+
 
     revalidatePath(`/admin/billing`);
     return { success: true };

@@ -30,7 +30,7 @@ export function AdminBillingClient({ pendingPayments }: { pendingPayments: Pendi
     const result = await confirmPaymentAction(churchId);
     setProcessing(null);
     if (result.success) toast.success("Pagamento confirmado! Plano actualizado.");
-    else toast.error(result.error || "Erro ao confirmar.");
+    else toast.error("Erro ao confirmar.");
   };
 
   const handleReject = async (churchId: string) => {
@@ -42,8 +42,12 @@ export function AdminBillingClient({ pendingPayments }: { pendingPayments: Pendi
     setProcessing(churchId);
     const result = await rejectPaymentAction(churchId, reason);
     setProcessing(null);
-    if (result.success) toast.success("Pagamento rejeitado.");
-    else toast.error(result.error || "Erro ao rejeitar.");
+    if (result.success) {
+      toast.success("Pagamento rejeitado.");
+      setRejectionReasons(prev => ({ ...prev, [churchId]: "" })); // 👈 limpa o input
+    } else {
+      toast.error("Erro ao rejeitar pagamento.");
+    }
   };
 
   return (

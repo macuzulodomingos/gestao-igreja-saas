@@ -7,6 +7,17 @@ export async function getAuthContext(targetChurchId?: string) {
   if (!session?.user) throw new Error("UNAUTHORIZED");
 
   const isSuperAdmin = session.user.role === "SUPER_ADMIN";
+
+  // 👈 SUPER_ADMIN no painel global — sem targetChurchId
+  if (isSuperAdmin && !targetChurchId) {
+    return {
+      churchId: "",
+      plan: "ENTERPRISE" as PlanType,
+      actor: { userId: session.user.id, email: session.user.email! },
+      isSuperAdmin: true,
+    };
+  }
+
   const churchId = isSuperAdmin && targetChurchId
     ? targetChurchId
     : session.user.churchId;
