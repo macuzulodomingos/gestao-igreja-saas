@@ -27,9 +27,10 @@ interface Props {
   departments: EventListDepartment[];
   categories: EventCategory[];
   onUpgrade?: (message: string) => void;
+  churchId: string;
 }
 
-export function EventFormDialog({ open, onOpenChange, event, departments, categories, onUpgrade }: Props) {
+export function EventFormDialog({ open, onOpenChange, event, departments, categories, onUpgrade, churchId }: Props) {
   const [isPending, startTransition] = useTransition();
   const t = useTranslations("events.form");
   const tc = useTranslations("common");
@@ -88,7 +89,7 @@ export function EventFormDialog({ open, onOpenChange, event, departments, catego
       formData.append("time", data.time);
       formData.append("departmentId", data.departmentId || "none");
 
-      const result = await saveEventAction(formData, event?.id ?? undefined);
+      const result = await saveEventAction(formData, event?.id ?? undefined, churchId);
 
       if (result.success) {
         toast.success(event ? t("updated") : t("created"));

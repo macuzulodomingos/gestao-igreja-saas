@@ -1,7 +1,8 @@
 import { auth } from "@/lib/auth";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import ChurchSettingsClient from "@/components/Settings/Church/ChurchSettingsClient";
+import { getChurchBySlug } from "@/lib/tenant";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -10,14 +11,29 @@ interface PageProps {
 export default async function ChurchSettingsPage({ params }: PageProps) {
   const { slug } = await params;
   const session = await auth();
-  if (!session?.user?.churchId) redirect("/login");
+  if (!session?.user) redirect("/login");
 
-  const church = await prisma.church.findUnique({
-    where: { id: session.user.churchId },
-    select: { id: true, name: true, slug: true, timezone: true, plan: true },
-  });
+  const isSuperAdmin = session.user.role === "SUPER_ADMIN";
 
-  if (!church) redirect("/login");
+  if (!isSuperAdmin && session.user.churchSlug !== slug) {
+    redirect("/login");
+  }
+
+  let churchId = session.user.churchId;
+
+  if (isSuperAdmin) {
+    const church = await getChurchBySlug(slug, undefined);
+    if (!church) notFound();
+    churchId = church.id;
+  } else {
+    const church = await getChurchBySlug(slug, churchId);
+    if (!church) notFound();
+  }
+
+  if (!churchId) redirect("/login");
+
+  const church = await getChurchBySlug(slug, isSuperAdmin ? undefined : churchId);
+  if (!church) notFound();
 
   return <ChurchSettingsClient church={church} />;
 }

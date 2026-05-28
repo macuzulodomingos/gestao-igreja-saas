@@ -16,9 +16,10 @@ import { useTranslations } from "next-intl";
 
 interface Props {
   initialCategories: FinanceCategory[];
+  churchId: string;
 }
 
-export default function CategoriesClient({ initialCategories }: Props) {
+export default function CategoriesClient({ initialCategories, churchId }: Props) {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<FinanceCategory | null>(null);
   const [categoryToDelete, setCategoryToDelete] = useState<FinanceCategory | null>(null);
@@ -41,7 +42,7 @@ export default function CategoriesClient({ initialCategories }: Props) {
 
   const confirmDelete = async () => {
     if (!categoryToDelete) return;
-    const result = await deleteCategoryAction(categoryToDelete.id);
+    const result = await deleteCategoryAction(categoryToDelete.id, churchId);
     if (result.success) {
       toast.success(t("successDeleted"));
     } else {
@@ -75,6 +76,7 @@ export default function CategoriesClient({ initialCategories }: Props) {
         open={isFormOpen}
         onOpenChange={setIsFormOpen}
         category={editingCategory}
+        churchId={churchId}
       />
 
       <AlertDialog

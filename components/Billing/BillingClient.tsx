@@ -39,9 +39,10 @@ interface BillingClientProps {
   subscription: Subscription | null;
   prices: { PRO: { MONTHLY: number; ANNUAL: number }; ENTERPRISE: { MONTHLY: number; ANNUAL: number } };
   churchName: string;
+  churchId: string;
 }
 
-export function BillingClient({ currentPlan, subscription, prices, churchName }: BillingClientProps) {
+export function BillingClient({ currentPlan, subscription, prices, churchName, churchId }: BillingClientProps) {
   const [selectedPlan, setSelectedPlan] = useState<"PRO" | "ENTERPRISE">("PRO");
   const [billingCycle, setBillingCycle] = useState<BillingCycle>("MONTHLY");
   const [proofFile, setProofFile] = useState<File | null>(null);
@@ -94,7 +95,7 @@ export function BillingClient({ currentPlan, subscription, prices, churchName }:
     formData.append("billingCycle", billingCycle);
     formData.append("proofOfPayment", uploadResult.url!);
 
-    const result = await submitPaymentProofAction(formData);
+    const result = await submitPaymentProofAction(formData, churchId);
     setIsUploading(false);
 
     if (result.success) {

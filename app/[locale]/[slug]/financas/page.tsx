@@ -1,30 +1,44 @@
 import { auth } from "@/lib/auth";
-import { redirect } from "next/navigation";
+import { redirect, notFound } from "next/navigation";
 import { FinanceService } from "@/services/financeService";
 import FinanceClientPage from "@/components/Finance/FinanceClientPage";
-import prisma from "@/lib/prisma";
 import { getPlanLimits, PlanType } from "@/lib/plans";
-import { getTimezone } from "@/lib/get-timezone";
+import { getChurchBySlug } from "@/lib/tenant";
 
 interface FinancasPageProps {
+  params: Promise<{ slug: string }>; // 👈 adiciona params
   searchParams: Promise<{ month?: string; year?: string }>;
 }
 
-export default async function FinancasPage({ searchParams }: FinancasPageProps) {
+export default async function FinancasPage({ params, searchParams }: FinancasPageProps) {
   const session = await auth();
-  if (!session?.user?.churchId) redirect("/login");
-
-  const { churchId } = session.user;
+  const { slug } = await params; // 👈 adiciona
   const sParams = await searchParams;
 
-  const church = await prisma.church.findUnique({
-    where: { id: churchId },
-    select: { name: true, timezone: true, plan: true },
-  });
+  if (!session?.user) redirect("/login");
 
-  if (!church) redirect("/login");
+  const isSuperAdmin = session.user.role === "SUPER_ADMIN";
 
-  const timezone = church.timezone ?? "Africa/Luanda";
+  if (!isSuperAdmin && session.user.churchSlug !== slug) {
+    redirect("/login");
+  }
+
+  // 👈 SUPER_ADMIN busca churchId pelo slug
+  let churchId = session.user.churchId;
+  let church;
+
+  if (isSuperAdmin) {
+    church = await getChurchBySlug(slug, undefined);
+    if (!church) notFound();
+    churchId = church.id;
+  } else {
+    church = await getChurchBySlug(slug, churchId);
+    if (!church) redirect("/login");
+  }
+
+  if (!churchId) redirect("/login");
+
+  const timezone = church.timezone ?? "Africa/Luanda"; // 👈 getChurchBySlug não retorna timezone — adiciona ao select
   const planLimits = getPlanLimits(church.plan as PlanType);
 
   const now = new Date();
@@ -55,6 +69,7 @@ export default async function FinancasPage({ searchParams }: FinancasPageProps) 
       currentYear={year}
       churchName={church.name}
       canExportPdf={planLimits.pdfExport}
+      churchId={churchId} // 👈 passa churchId para o client
     />
   );
 }

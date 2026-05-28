@@ -1,14 +1,33 @@
 import { auth } from "@/lib/auth";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { DepartmentService } from "@/services/departmentService";
 import { MemberService } from "@/services/memberService";
 import DepartmentsClient from "@/components/Departments/DepartmentsClient";
+import { getChurchBySlug } from "@/lib/tenant";
 
-export default async function DepartamentosPage() {
+interface DepartamentosPageProps {
+  params: Promise<{ slug: string }>;
+}
+
+export default async function DepartamentosPage({ params }: DepartamentosPageProps) {
   const session = await auth();
-  if (!session?.user?.churchId) redirect("/login");
+  const { slug } = await params;
 
-  const { churchId } = session.user;
+  if (!session?.user) redirect("/login");
+
+  const isSuperAdmin = session.user.role === "SUPER_ADMIN";
+
+  if (!isSuperAdmin && session.user.churchSlug !== slug) {
+    redirect("/login");
+  }
+
+  let churchId = session.user.churchId;
+  const church = await getChurchBySlug(slug, isSuperAdmin ? undefined : churchId);
+  if (!church) notFound();
+  if (isSuperAdmin) churchId = church.id;
+
+  if (!churchId) redirect("/login");
+
 
   const [departments, membersData] = await Promise.all([
     DepartmentService.getDepartments(churchId),
@@ -19,6 +38,7 @@ export default async function DepartamentosPage() {
     <DepartmentsClient
       initialDepartments={departments}
       members={membersData.members}
+      churchId={churchId}
     />
   );
 }

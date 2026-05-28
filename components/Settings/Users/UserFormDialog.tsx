@@ -23,9 +23,10 @@ interface UserFormDialogProps {
   editingUser: User | null;
   onSuccess: (user: User) => void;
   onUpgrade?: (message: string) => void;
+  churchId: string;
 }
 
-export function UserFormDialog({ open, onOpenChange, editingUser, onSuccess, onUpgrade }: UserFormDialogProps) {
+export function UserFormDialog({ open, onOpenChange, editingUser, onSuccess, onUpgrade, churchId }: UserFormDialogProps) {
   const [isPending, startTransition] = useTransition();
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
   const isEditing = !!editingUser;
@@ -48,8 +49,8 @@ export function UserFormDialog({ open, onOpenChange, editingUser, onSuccess, onU
 
     startTransition(async () => {
       const result = isEditing
-        ? await updateUserAction(editingUser.id, formData)
-        : await createUserAction(formData);
+        ? await updateUserAction(editingUser.id, formData, churchId)
+        : await createUserAction(formData, churchId);
 
       if (result.success) {
         toast.success(isEditing ? t("updated") : t("created"));

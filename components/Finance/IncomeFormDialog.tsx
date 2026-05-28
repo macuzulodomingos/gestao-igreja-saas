@@ -39,10 +39,11 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   entry: FinanceTransaction | null;
   categories: Category[];
+  churchId: string;
   onUpgrade?: (message: string) => void;
 }
 
-export function IncomeFormDialog({ open, onOpenChange, entry, categories, onUpgrade }: Props) {
+export function IncomeFormDialog({ open, onOpenChange, entry, categories, churchId, onUpgrade }: Props) {
   const [isPending, startTransition] = useTransition();
   const t = useTranslations("finance.incomeForm");
   const tc = useTranslations("common");
@@ -97,7 +98,7 @@ export function IncomeFormDialog({ open, onOpenChange, entry, categories, onUpgr
       formData.append("categoryId", data.categoryId);
       formData.append("date", data.date);
 
-      const result = await saveTransactionAction(formData, entry?.id ?? undefined);
+      const result = await saveTransactionAction(formData, entry?.id ?? undefined, churchId);
 
       if (result.success) {
         toast.success(entry ? t("updated") : t("created"));

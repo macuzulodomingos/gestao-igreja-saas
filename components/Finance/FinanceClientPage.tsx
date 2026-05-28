@@ -52,6 +52,7 @@ interface FinanceClientProps {
   currentYear: number;
   churchName: string;
   canExportPdf: boolean;
+  churchId: string;
 }
 
 export default function FinanceClientPage({
@@ -68,6 +69,7 @@ export default function FinanceClientPage({
   currentYear,
   churchName,
   canExportPdf,
+  churchId
 }: FinanceClientProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -130,7 +132,7 @@ export default function FinanceClientPage({
     if (!cursor) return;
 
     setLoadingMore(true);
-    const result = await loadMoreTransactionsAction(type, currentMonth, currentYear, cursor);
+    const result = await loadMoreTransactionsAction(type, currentMonth, currentYear, churchId, cursor);
     setLoadingMore(false);
 
     if (!result.success) {
@@ -168,7 +170,7 @@ export default function FinanceClientPage({
 
   const confirmDelete = async () => {
     if (!entryToDelete) return;
-    const result = await deleteTransactionAction(entryToDelete.id);
+    const result = await deleteTransactionAction(entryToDelete.id, churchId);
     if (result.success) toast.success(t("deleted"));
     else toast.error(t("errorDelete"));
     setEntryToDelete(null);
@@ -288,6 +290,7 @@ export default function FinanceClientPage({
         onOpenChange={setIsIncomeFormOpen}
         entry={editingEntry}
         categories={incomeCategories}
+        churchId={churchId}
         onUpgrade={(message) => upgrade.showUpgrade(message)}
       />
 
@@ -296,6 +299,7 @@ export default function FinanceClientPage({
         onOpenChange={setIsExpenseFormOpen}
         entry={editingEntry}
         categories={expenseCategories}
+        churchId={churchId}
         onUpgrade={(message) => upgrade.showUpgrade(message)}
       />
 

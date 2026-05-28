@@ -30,6 +30,7 @@ interface EventCategoryFormDialogProps {
   onOpenChange: (open: boolean) => void;
   editingCategory: EventCategory | null;
   onSuccess: (category: EventCategory) => void;
+  churchId: string;
 }
 
 export function EventCategoryFormDialog({
@@ -37,6 +38,7 @@ export function EventCategoryFormDialog({
   onOpenChange,
   editingCategory,
   onSuccess,
+  churchId
 }: EventCategoryFormDialogProps) {
   const [isPending, startTransition] = useTransition();
   const t = useTranslations("eventCategories.form");
@@ -60,7 +62,7 @@ export function EventCategoryFormDialog({
       const formData = new FormData();
       formData.append("name", data.name);
 
-      const result = await saveEventCategoryAction(formData, editingCategory?.id);
+      const result = await saveEventCategoryAction(formData, editingCategory?.id, churchId);
 
       if (result.success) {
         toast.success(editingCategory ? t("updated") : t("created"));

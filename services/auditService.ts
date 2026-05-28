@@ -30,6 +30,7 @@ export const AuditService = {
         where,
         select: {
           id: true,
+          churchId: true, 
           action: true,
           entityName: true,
           entityId: true,

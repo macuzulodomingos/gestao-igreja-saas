@@ -20,9 +20,10 @@ import { useTranslations } from "next-intl";
 interface DepartmentsClientProps {
   initialDepartments: Department[];
   members: DepartmentListMember[];
+  churchId: string;
 }
 
-export default function DepartmentsClient({ initialDepartments, members }: DepartmentsClientProps) {
+export default function DepartmentsClient({ initialDepartments, members, churchId }: DepartmentsClientProps) {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isMembersOpen, setIsMembersOpen] = useState(false);
   const [editingDepartment, setEditingDepartment] = useState<Department | null>(null);
@@ -60,7 +61,7 @@ export default function DepartmentsClient({ initialDepartments, members }: Depar
 
   const confirmDelete = async () => {
     if (!departmentToDelete) return;
-    const result = await deleteDepartmentAction(departmentToDelete.id);
+    const result = await deleteDepartmentAction(departmentToDelete.id, churchId);
     if (result.success) {
       toast.success(t("successDeleted"));
     } else {
@@ -95,6 +96,7 @@ export default function DepartmentsClient({ initialDepartments, members }: Depar
         onOpenChange={setIsFormOpen}
         department={editingDepartment}
         members={members}
+        churchId={churchId}
         onUpgrade={(message) => upgrade.showUpgrade(message)}
       />
 
@@ -104,6 +106,7 @@ export default function DepartmentsClient({ initialDepartments, members }: Depar
           onOpenChange={setIsMembersOpen}
           department={selectedDepartment}
           allMembers={members}
+          churchId={churchId}
         />
       )}
 

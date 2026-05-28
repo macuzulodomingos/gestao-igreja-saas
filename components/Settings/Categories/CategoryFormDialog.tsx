@@ -27,9 +27,10 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   category: FinanceCategory | null;
+  churchId: string;
 }
 
-export function CategoryFormDialog({ open, onOpenChange, category }: Props) {
+export function CategoryFormDialog({ open, onOpenChange, category, churchId }: Props) {
   const [isPending, startTransition] = useTransition();
   const t = useTranslations("categories.form");
   const tc = useTranslations("common");
@@ -54,7 +55,7 @@ export function CategoryFormDialog({ open, onOpenChange, category }: Props) {
       formData.append("name", data.name);
       formData.append("type", data.type);
 
-      const result = await saveCategoryAction(formData, category?.id);
+      const result = await saveCategoryAction(formData, category?.id, churchId);
 
       if (result.success) {
         toast.success(category ? t("updated") : t("created"));

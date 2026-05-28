@@ -25,9 +25,10 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   role: MemberRole | null;
+  churchId: string;
 }
 
-export function RoleFormDialog({ open, onOpenChange, role }: Props) {
+export function RoleFormDialog({ open, onOpenChange, role, churchId }: Props) {
   const [isPending, startTransition] = useTransition();
   const t = useTranslations("roles.form");
   const tc = useTranslations("common");
@@ -48,7 +49,7 @@ export function RoleFormDialog({ open, onOpenChange, role }: Props) {
       const formData = new FormData();
       formData.append("name", data.name);
 
-      const result = await saveRoleAction(formData, role?.id);
+      const result = await saveRoleAction(formData, role?.id, churchId);
 
       if (result.success) {
         toast.success(role ? t("updated") : t("created"));

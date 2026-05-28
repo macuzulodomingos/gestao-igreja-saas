@@ -22,9 +22,10 @@ type EventCategory = {
 
 interface EventCategoriesClientProps {
   initialCategories: EventCategory[];
+  churchId: string;
 }
 
-export default function EventCategoriesClient({ initialCategories }: EventCategoriesClientProps) {
+export default function EventCategoriesClient({ initialCategories, churchId }: EventCategoriesClientProps) {
   const [categories, setCategories] = useState(initialCategories);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<EventCategory | null>(null);
@@ -36,7 +37,7 @@ export default function EventCategoriesClient({ initialCategories }: EventCatego
   const handleDelete = () => {
     if (!categoryToDelete) return;
     startTransition(async () => {
-      const result = await deleteEventCategoryAction(categoryToDelete.id);
+      const result = await deleteEventCategoryAction(categoryToDelete.id, churchId);
       if (result.success) {
         setCategories(prev => prev.filter(c => c.id !== categoryToDelete.id));
         toast.success(t("successDeleted"));
@@ -110,6 +111,7 @@ export default function EventCategoriesClient({ initialCategories }: EventCatego
         open={isFormOpen}
         onOpenChange={setIsFormOpen}
         editingCategory={editingCategory}
+        churchId={churchId}
         onSuccess={(updated) => {
           if (editingCategory) {
             setCategories(prev => prev.map(c => c.id === updated.id ? { ...c, ...updated } : c));

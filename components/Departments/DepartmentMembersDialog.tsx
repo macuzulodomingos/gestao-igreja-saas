@@ -18,9 +18,10 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   department: Department;
   allMembers: DepartmentListMember[];
+  churchId: string;
 }
 
-export function DepartmentMembersDialog({ open, onOpenChange, department, allMembers }: Props) {
+export function DepartmentMembersDialog({ open, onOpenChange, department, allMembers, churchId }: Props) {
   const [isPending, startTransition] = useTransition();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -60,7 +61,7 @@ export function DepartmentMembersDialog({ open, onOpenChange, department, allMem
 
   const handleSave = () => {
     startTransition(async () => {
-      const result = await syncDepartmentMembersAction(department.id, selectedIds);
+      const result = await syncDepartmentMembersAction(department.id, selectedIds, churchId);
       if (result.success) {
         toast.success(t("updated"));
         onOpenChange(false);

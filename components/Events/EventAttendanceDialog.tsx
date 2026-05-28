@@ -26,9 +26,10 @@ interface Props {
   event: ChurchEvent;
   allMembers: EventListMember[];
   timezone: string;
+  churchId: string;
 }
 
-export function EventAttendanceDialog({ open, onOpenChange, event, allMembers, timezone }: Props) {
+export function EventAttendanceDialog({ open, onOpenChange, event, allMembers, timezone, churchId }: Props) {
   const [isPending, startTransition] = useTransition();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
@@ -44,7 +45,7 @@ export function EventAttendanceDialog({ open, onOpenChange, event, allMembers, t
       setSearchTerm("");
       setLoadError(false); // 👈 reset ao abrir
       setLoading(true);
-      getEventAttendeesAction(event.id).then(result => {
+      getEventAttendeesAction(event.id, churchId).then(result => {
         if (result.success) {
           setSelectedIds(result.memberIds);
         } else if (result.errorCode === "unauthorized") {
@@ -83,7 +84,7 @@ export function EventAttendanceDialog({ open, onOpenChange, event, allMembers, t
 
   const handleSave = () => {
     startTransition(async () => {
-      const result = await syncAttendeesAction(event.id, selectedIds);
+      const result = await syncAttendeesAction(event.id, selectedIds, churchId);
       if (result.success) {
         toast.success(t("updated"));
         onOpenChange(false);

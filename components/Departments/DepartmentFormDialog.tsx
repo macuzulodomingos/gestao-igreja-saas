@@ -43,9 +43,10 @@ interface Props {
   department: Department | null;
   members: Member[];
   onUpgrade?: (message: string) => void;
+  churchId: string;
 }
 
-export function DepartmentFormDialog({ open, onOpenChange, department, members, onUpgrade }: Props) {
+export function DepartmentFormDialog({ open, onOpenChange, department, members, onUpgrade, churchId }: Props) {
   const [isPending, startTransition] = useTransition();
   const t = useTranslations("departments.form");
   const tc = useTranslations("common");
@@ -79,7 +80,8 @@ export function DepartmentFormDialog({ open, onOpenChange, department, members, 
 
       const result = await saveDepartmentAction(
         formData,
-        department?.id ?? undefined
+        department?.id ?? undefined,
+        churchId
       );
 
       if (result.success) {

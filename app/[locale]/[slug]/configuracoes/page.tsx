@@ -4,6 +4,8 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tags, ShieldCheck, Shield, Users, CalendarDays, Globe, Languages } from "lucide-react";
 import { getTranslations } from "next-intl/server";
+import { getLocale } from "next-intl/server";
+
 
 interface ConfiguracoesPageProps {
   params: Promise<{ slug: string }>;
@@ -13,57 +15,63 @@ export default async function ConfiguracoesPage({ params }: ConfiguracoesPagePro
   const session = await auth();
   const { slug } = await params;
 
-  if (!session?.user?.churchId) redirect("/login");
+  if (!session?.user) redirect("/login");
+
+  const isSuperAdmin = session.user.role === "SUPER_ADMIN";
+  if (!isSuperAdmin && session.user.churchSlug !== slug) {
+    redirect("/login");
+  }
 
   const t = await getTranslations("settings");
+  const locale = await getLocale();
 
   const items = [
     {
       title: t("financialCategories"),
       description: t("financialCategoriesDesc"),
-      href: `/${slug}/configuracoes/categorias`,
+      href: `/${locale}/${slug}/configuracoes/categorias`,
       icon: Tags,
       color: "bg-emerald-500/10 text-emerald-600",
     },
     {
       title: t("roles"),
       description: t("rolesDesc"),
-      href: `/${slug}/configuracoes/cargos`,
+      href: `/${locale}/${slug}/configuracoes/cargos`,
       icon: ShieldCheck,
       color: "bg-primary/10 text-primary",
     },
     {
       title: t("users"),
       description: t("usersDesc"),
-      href: `/${slug}/configuracoes/utilizadores`,
+      href: `/${locale}/${slug}/configuracoes/utilizadores`,
       icon: Users,
       color: "bg-blue-500/10 text-blue-600",
     },
     {
       title: t("eventCategories"),
       description: t("eventCategoriesDesc"),
-      href: `/${slug}/configuracoes/categorias-eventos`,
+      href: `/${locale}/${slug}/configuracoes/categorias-eventos`,
       icon: CalendarDays,
       color: "bg-blue-500/10 text-blue-600",
     },
     {
       title: t("church"),
       description: t("churchDesc"),
-      href: `/${slug}/configuracoes/igreja`,
+      href: `/${locale}/${slug}/configuracoes/igreja`,
       icon: Globe,
       color: "bg-violet-500/10 text-violet-600",
     },
     {
       title: t("language"),
       description: t("languageDesc"),
-      href: `/${slug}/configuracoes/idioma`,
+      href: `/${locale}/${slug}/configuracoes/idioma`,
       icon: Languages,
       color: "bg-rose-500/10 text-rose-600",
     },
     {
       title: t("audit"),
       description: t("auditDesc"),
-      href: `/${slug}/configuracoes/auditoria`,
+      href: `/${locale}/${slug}/configuracoes/auditoria`,
       icon: Shield,
       color: "bg-amber-500/10 text-amber-600",
     },

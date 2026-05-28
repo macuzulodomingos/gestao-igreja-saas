@@ -1,13 +1,39 @@
 import { auth } from "@/lib/auth";
-import { redirect } from "next/navigation";
+import { redirect, notFound } from "next/navigation";
 import { FinanceCategoryService } from "@/services/financeCategoryService";
 import CategoriesClient from "@/components/Settings/Categories/CategoriesClient";
+import { getChurchBySlug } from "@/lib/tenant";
 
-export default async function CategoriasPage() {
+interface CategoriasPageProps {
+  params: Promise<{ slug: string }>;
+}
+
+export default async function CategoriasPage({ params }: CategoriasPageProps) {
   const session = await auth();
-  if (!session?.user?.churchId) redirect("/login");
+  const { slug } = await params;
 
-  const categories = await FinanceCategoryService.getCategories(session.user.churchId);
+  if (!session?.user) redirect("/login");
 
-  return <CategoriesClient initialCategories={categories} />;
+  const isSuperAdmin = session.user.role === "SUPER_ADMIN";
+
+  if (!isSuperAdmin && session.user.churchSlug !== slug) {
+    redirect("/login");
+  }
+
+  let churchId = session.user.churchId;
+
+  if (isSuperAdmin) {
+    const church = await getChurchBySlug(slug, undefined);
+    if (!church) notFound();
+    churchId = church.id;
+  } else {
+    const church = await getChurchBySlug(slug, churchId);
+    if (!church) notFound();
+  }
+
+  if (!churchId) redirect("/login");
+
+  const categories = await FinanceCategoryService.getCategories(churchId);
+
+  return <CategoriesClient initialCategories={categories} churchId={churchId} />;
 }

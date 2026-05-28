@@ -1,24 +1,43 @@
 import { auth } from "@/lib/auth";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { BillingService, PRICES } from "@/services/billingService";
 import { BillingClient } from "@/components/Billing/BillingClient";
 import prisma from "@/lib/prisma";
+import { getChurchBySlug } from "@/lib/tenant";
 
-export default async function BillingPage() {
+interface BillingPageProps {
+  params: Promise<{ slug: string }>;
+}
+
+export default async function BillingPage({ params }: BillingPageProps) {
   const session = await auth();
-  if (!session?.user?.churchId) redirect("/login");
+  const { slug } = await params;
 
-  const { churchId } = session.user;
+  if (!session?.user) redirect("/login");
 
-  const [church, subscription] = await Promise.all([
-    prisma.church.findUnique({
-      where: { id: churchId },
-      select: { name: true, plan: true },
-    }),
-    BillingService.getSubscription(churchId),
-  ]);
+  const isSuperAdmin = session.user.role === "SUPER_ADMIN";
 
-  if (!church) redirect("/login");
+  if (!isSuperAdmin && session.user.churchSlug !== slug) {
+    redirect("/login");
+  }
+
+  let churchId = session.user.churchId;
+
+  if (isSuperAdmin) {
+    const church = await getChurchBySlug(slug, undefined);
+    if (!church) notFound();
+    churchId = church.id;
+  } else {
+    const church = await getChurchBySlug(slug, churchId);
+    if (!church) notFound();
+  }
+
+  if (!churchId) redirect("/login");
+
+  const church = await getChurchBySlug(slug, isSuperAdmin ? undefined : churchId);
+  if (!church) notFound();
+
+  const subscription = await BillingService.getSubscription(churchId);
 
   return (
     <BillingClient
@@ -26,6 +45,7 @@ export default async function BillingPage() {
       subscription={subscription}
       prices={PRICES}
       churchName={church.name}
+      churchId={churchId}
     />
   );
 }

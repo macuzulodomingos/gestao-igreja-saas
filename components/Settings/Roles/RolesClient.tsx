@@ -16,9 +16,10 @@ import { useTranslations } from "next-intl";
 
 interface Props {
   initialRoles: MemberRole[];
+  churchId: string;
 }
 
-export default function RolesClient({ initialRoles }: Props) {
+export default function RolesClient({ initialRoles, churchId }: Props) {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingRole, setEditingRole] = useState<MemberRole | null>(null);
   const [roleToDelete, setRoleToDelete] = useState<MemberRole | null>(null);
@@ -41,7 +42,7 @@ export default function RolesClient({ initialRoles }: Props) {
 
   const confirmDelete = async () => {
     if (!roleToDelete) return;
-    const result = await deleteRoleAction(roleToDelete.id);
+    const result = await deleteRoleAction(roleToDelete.id, churchId);
     if (result.success) {
       toast.success(t("successDeleted"));
     } else {
@@ -74,6 +75,7 @@ export default function RolesClient({ initialRoles }: Props) {
         open={isFormOpen}
         onOpenChange={setIsFormOpen}
         role={editingRole}
+        churchId={churchId}
       />
 
       <AlertDialog

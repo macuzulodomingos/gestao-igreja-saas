@@ -33,9 +33,10 @@ const roleColors: Record<string, string> = {
 interface UsersClientProps {
   initialUsers: User[];
   currentUserId: string;
+  churchId: string;
 }
 
-export default function UsersClient({ initialUsers, currentUserId }: UsersClientProps) {
+export default function UsersClient({ initialUsers, currentUserId, churchId }: UsersClientProps) {
   const [users, setUsers] = useState(initialUsers);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -48,7 +49,7 @@ export default function UsersClient({ initialUsers, currentUserId }: UsersClient
   const handleDelete = () => {
     if (!userToDelete) return;
     startTransition(async () => {
-      const result = await deleteUserAction(userToDelete.id);
+      const result = await deleteUserAction(userToDelete.id, churchId);
       if (result.success) {
         setUsers((prev) => prev.filter((u) => u.id !== userToDelete.id));
         toast.success(t("successDeleted"));
@@ -140,6 +141,7 @@ export default function UsersClient({ initialUsers, currentUserId }: UsersClient
         onOpenChange={setIsFormOpen}
         editingUser={editingUser}
         onUpgrade={(message) => upgrade.showUpgrade(message)}
+        churchId={churchId}
         onSuccess={(updatedUser) => {
           if (editingUser) {
             setUsers((prev) => prev.map((u) => u.id === updatedUser.id ? updatedUser : u));

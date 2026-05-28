@@ -17,9 +17,9 @@ const submitProofSchema = z.object({
   proofOfPayment: z.string().url("URL inválida"),
 });
 
-export async function submitPaymentProofAction(formData: FormData): Promise<ActionResult> {
+export async function submitPaymentProofAction(formData: FormData, targetChurchId?: string): Promise<ActionResult> {
   try {
-    const { churchId, actor } = await getAuthContext();
+    const { churchId, actor } = await getAuthContext(targetChurchId);
 
     const result = submitProofSchema.safeParse(
       Object.fromEntries(formData.entries())

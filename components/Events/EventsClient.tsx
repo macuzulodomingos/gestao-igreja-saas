@@ -23,6 +23,7 @@ interface EventsClientProps {
   departments: EventListDepartment[];
   categories: EventCategory[];
   timezone: string;
+  churchId: string;
 }
 
 export default function EventsClient({
@@ -31,6 +32,7 @@ export default function EventsClient({
   departments,
   categories,
   timezone,
+  churchId,
 }: EventsClientProps) {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isAttendanceOpen, setIsAttendanceOpen] = useState(false);
@@ -63,7 +65,7 @@ export default function EventsClient({
 
   const confirmDelete = async () => {
     if (!eventToDelete) return;
-    const result = await deleteEventAction(eventToDelete.id);
+    const result = await deleteEventAction(eventToDelete.id, churchId);
     if (result.success) {
       toast.success(t("successDeleted"));
     } else {
@@ -100,6 +102,7 @@ export default function EventsClient({
         event={editingEvent}
         departments={departments}
         categories={categories}
+        churchId={churchId}
         onUpgrade={(message) => upgrade.showUpgrade(message)}
       />
 
@@ -110,6 +113,7 @@ export default function EventsClient({
           event={selectedEvent}
           allMembers={members}
           timezone={timezone}
+          churchId={churchId}
         />
       )}
 

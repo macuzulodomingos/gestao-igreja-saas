@@ -7,12 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ChevronLeft, ChevronRight, Shield, Filter, ChevronDown, ChevronUp } from "lucide-react";
-import { AuditLog } from "@/types/audit";
 import { useTranslations, useLocale } from "next-intl";
 import { Prisma } from "@prisma/client";
+import { ChurchLogsResult } from "@/services/auditService";
 
 interface AuditoriaClientProps {
-  initialLogs: AuditLog[];
+  initialLogs: ChurchLogsResult["logs"];
   metadata: {
     total: number;
     totalPages: number;

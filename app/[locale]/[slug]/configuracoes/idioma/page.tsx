@@ -13,6 +13,12 @@ export default async function IdiomaPage({ params }: Props) {
 
   if (!session?.user) redirect("/login");
 
+  // 👈 valida acesso ao slug
+  const isSuperAdmin = session.user.role === "SUPER_ADMIN";
+  if (!isSuperAdmin && session.user.churchSlug !== slug) {
+    redirect("/login");
+  }
+
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
     select: { locale: true },
