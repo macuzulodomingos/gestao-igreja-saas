@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Church, LayoutDashboard, LogOut, ShieldCheck, Wallet } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AdminLogoutButton } from "@/components/Admin/AdminLogoutButton";
+import { BillingService } from "@/services/billingService";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
@@ -11,6 +12,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   if (!session?.user || session.user.role !== "SUPER_ADMIN") {
     redirect("/login");
   }
+
+  const pendingCount = await BillingService.getPendingPayments()
+    .then(p => p.length)
+    .catch(() => 0);
 
   return (
     <div className="min-h-screen flex bg-background">
@@ -46,6 +51,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm hover:bg-accent transition-colors"
           >
             <Wallet className="h-4 w-4" /> Pagamentos
+            {pendingCount > 0 && (
+              <span className="ml-auto bg-destructive text-destructive-foreground text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                {pendingCount}
+              </span>
+            )}
           </Link>
         </nav>
 
@@ -61,6 +71,25 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
       {/* Main */}
       <main className="flex-1 p-6 md:p-8 overflow-auto">
+
+        {/* 👈 banner de pagamentos pendentes */}
+        {pendingCount > 0 && (
+          <div className="mb-6 rounded-lg bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 px-4 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm text-amber-800 dark:text-amber-400">
+              <Wallet className="h-4 w-4 shrink-0" />
+              <span>
+                <strong>{pendingCount}</strong> pagamento(s) pendente(s) a aguardar confirmação.
+              </span>
+            </div>
+            <Link
+              href="/admin/billing"
+              className="text-xs font-medium text-amber-700 dark:text-amber-400 hover:underline shrink-0"
+            >
+              Ver agora →
+            </Link>
+          </div>
+        )}
+
         {children}
       </main>
     </div>
