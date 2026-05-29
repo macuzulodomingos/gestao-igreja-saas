@@ -10,6 +10,7 @@ import { confirmPaymentAction, rejectPaymentAction } from "@/app/actions/billing
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { pt } from "date-fns/locale";
+import { useRouter } from "next/navigation";
 
 type PendingPayment = {
   id: string;
@@ -22,6 +23,7 @@ type PendingPayment = {
 };
 
 export function AdminBillingClient({ pendingPayments }: { pendingPayments: PendingPayment[] }) {
+   const router = useRouter();
   const [rejectionReasons, setRejectionReasons] = useState<Record<string, string>>({});
   const [processing, setProcessing] = useState<string | null>(null);
 
@@ -29,8 +31,12 @@ export function AdminBillingClient({ pendingPayments }: { pendingPayments: Pendi
     setProcessing(churchId);
     const result = await confirmPaymentAction(churchId);
     setProcessing(null);
-    if (result.success) toast.success("Pagamento confirmado! Plano actualizado.");
-    else toast.error("Erro ao confirmar.");
+    if (result.success) {
+      toast.success("Pagamento confirmado! Plano actualizado.");
+      router.refresh(); // 👈
+    } else {
+      toast.error("Erro ao confirmar.");
+    }
   };
 
   const handleReject = async (churchId: string) => {
@@ -44,6 +50,7 @@ export function AdminBillingClient({ pendingPayments }: { pendingPayments: Pendi
     setProcessing(null);
     if (result.success) {
       toast.success("Pagamento rejeitado.");
+      router.refresh(); // 👈
       setRejectionReasons(prev => ({ ...prev, [churchId]: "" })); // 👈 limpa o input
     } else {
       toast.error("Erro ao rejeitar pagamento.");
