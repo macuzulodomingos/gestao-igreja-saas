@@ -28,6 +28,15 @@ export default async function TenantLayout({
   }
 
   const isSuperAdmin = session.user.role === "SUPER_ADMIN";
+  const isCorrectChurch = session.user.churchSlug === slug;
+
+  if (!isCorrectChurch && !isSuperAdmin) {
+    if (session.user.churchSlug) {
+      redirect(`/${locale}/${session.user.churchSlug}/painel`);
+    } else {
+      redirect(`/${locale}/login`);
+    }
+  }
 
   // 👈 busca a igreja primeiro — necessário para validar impersonation
   const church = await getChurchBySlug(slug, isSuperAdmin ? undefined : session.user.churchId ?? undefined);
@@ -45,16 +54,6 @@ export default async function TenantLayout({
     }
   }
 
-  const isCorrectChurch = session.user.churchSlug === slug;
-
-  if (!isCorrectChurch && !isSuperAdmin) {
-    if (session.user.churchSlug) {
-      redirect(`/${locale}/${session.user.churchSlug}/painel`);
-    } else {
-      redirect(`/${locale}/login`);
-    }
-  }
-
   return (
     <>
       {/* 👈 Opção 1 — banner fixo no topo cobrindo tudo */}
@@ -63,7 +62,7 @@ export default async function TenantLayout({
           <span className="truncate pr-4">
             ⚠️ Modo Suporte — A aceder como <strong>{church.name}</strong>. Motivo: {impersonation.reason}
           </span>
-          <form action={endImpersonationAction.bind(null, impersonation.id)} className="shrink-0">
+          <form action={endImpersonationAction} className="shrink-0">
             <button type="submit" className="underline font-bold hover:text-yellow-950 transition-colors">
               Sair do Modo Suporte
             </button>

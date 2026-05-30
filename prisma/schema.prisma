@@ -352,9 +352,9 @@ model ImpersonationSession {
   createdAt    DateTime @default(now())
   endedAt      DateTime? // quando o admin saiu manualmente
 
-  @@index([superAdminId])
-  @@index([churchId])
-  @@index([expiresAt])
+  @@index([superAdminId, churchId, endedAt])  
+  @@index([superAdminId, endedAt, expiresAt]) 
+  @@index([churchId])                         
 }
 
 // 8. AUDITORIA
