@@ -2,12 +2,14 @@ import { Users, Wallet, TrendingUp, TrendingDown } from "lucide-react";
 import { StatsCard } from "./StatsCard";
 import { useTranslations } from "next-intl";
 
-const formatCurrency = (amount: number) =>
-  new Intl.NumberFormat("pt-AO", {
+const formatCurrency = (amount: number) => {
+  const formatted = new Intl.NumberFormat("pt-AO", {
     style: "currency",
     currency: "AOA",
     minimumFractionDigits: 0,
-  }).format(amount).replace("AOA", "Kz");
+  }).format(amount);
+  return formatted.replace(/AOA\s?/, "").trim() + " Kz";
+};
 
 type Stats = {
   totalMembers: number;
@@ -24,6 +26,7 @@ interface StatsGridProps {
 
 export function StatsGrid({ stats }: StatsGridProps) {
   const t = useTranslations("dashboard.stats");
+  const isBalancePositive = stats.monthlyBalance >= 0;
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
@@ -40,6 +43,7 @@ export function StatsGrid({ stats }: StatsGridProps) {
         subtitle={t("monthlyIncomeSubtitle")}
         icon={TrendingUp}
         valueClassName="text-green-600 dark:text-green-400"
+        iconContainerClassName="bg-green-500/10 text-green-600 dark:text-green-400"
       />
       <StatsCard
         title={t("monthlyExpenses")}
@@ -47,13 +51,15 @@ export function StatsGrid({ stats }: StatsGridProps) {
         subtitle={t("monthlyExpensesSubtitle")}
         icon={TrendingDown}
         valueClassName="text-red-600 dark:text-red-400"
+        iconContainerClassName="bg-red-500/10 text-red-600 dark:text-red-400"
       />
       <StatsCard
         title={t("monthlyBalance")}
         value={formatCurrency(stats.monthlyBalance)}
         subtitle={t("monthlyBalanceSubtitle")}
         icon={Wallet}
-        trend={{ value: 0, isPositive: stats.monthlyBalance >= 0 }}
+        valueClassName={isBalancePositive ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}
+        iconContainerClassName={isBalancePositive ? "bg-green-500/10 text-green-600 dark:text-green-400" : "bg-red-500/10 text-red-600 dark:text-red-400"}
       />
     </div>
   );

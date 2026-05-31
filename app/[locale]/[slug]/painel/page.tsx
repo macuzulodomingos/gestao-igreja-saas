@@ -22,7 +22,9 @@ export default async function DashboardPage({
     redirect(`/${locale}/login`);
   }
 
-  const church = await getChurchBySlug(slug, session.user.churchId);
+  const isSuperAdmin = session.user.role === "SUPER_ADMIN";
+  
+  const church = await getChurchBySlug(slug, isSuperAdmin ? undefined : session.user.churchId);
   if (!church) return notFound();
 
   const churchId = church.id;

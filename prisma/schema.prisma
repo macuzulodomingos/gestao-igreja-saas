@@ -65,7 +65,7 @@ model User {
   updatedAt     DateTime  @updatedAt
   deletedAt     DateTime? // 👈 NOVO — Soft Delete
 
-  impersonations ImpersonationSession[] @relation
+  impersonations ImpersonationSession[] @relation("SuperAdminImpersonations")
 
   @@index([churchId])
   @@index([deletedAt]) // 👈 índice para filtrar activos rapidamente
@@ -186,7 +186,7 @@ model FinanceTransaction {
   churchId String
   church   Church @relation(fields: [churchId], references: [id], onDelete: Cascade)
 
-  @@index([churchId, date])
+  @@index([churchId, date, categoryId])
 }
 
 enum TransactionType {
@@ -344,7 +344,7 @@ model EventAttendee {
 model ImpersonationSession {
   id           String   @id @default(cuid())
   superAdminId String
-  superAdmin   User     @relation(fields: [superAdminId], references: [id])
+  superAdmin   User @relation("SuperAdminImpersonations", fields: [superAdminId], references: [id])
   churchId     String
   church       Church   @relation(fields: [churchId], references: [id], onDelete: Cascade)
   reason       String   // motivo obrigatório

@@ -11,7 +11,7 @@ type RecentTransaction = {
   amount: number;
   type: "INCOME" | "EXPENSE";
   category: string;
-  date: Date;
+  date: string;
 };
 
 interface RecentTransactionsProps {

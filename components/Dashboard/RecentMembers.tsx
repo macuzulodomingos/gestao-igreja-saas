@@ -10,7 +10,7 @@ type RecentMember = {
   id: string;
   name: string;
   role: string | null;
-  joinDate: Date;
+  joinDate: string;
 };
 
 interface RecentMembersProps {

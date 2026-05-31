@@ -88,7 +88,7 @@ export const DashboardService = {
             id: m.id,
             name: m.name,
             role: m.role?.name || null,
-            joinDate: m.joinDate,
+            joinDate: m.joinDate.toISOString(),
           }));
         } catch (error) {
           console.error("[DashboardService] getRecentMembers error:", error);
@@ -124,7 +124,7 @@ export const DashboardService = {
             amount: centsToAmount(t.amount),
             type: t.type as "INCOME" | "EXPENSE",
             category: t.category.name,
-            date: t.date,
+            date: t.date.toISOString(),
           }));
         } catch (error) {
           console.error("[DashboardService] getRecentTransactions error:", error);

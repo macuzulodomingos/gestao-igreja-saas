@@ -20,7 +20,7 @@ type RecentMember = {
   id: string;
   name: string;
   role: string | null;
-  joinDate: Date;
+  joinDate: string;
 };
 
 type RecentTransaction = {
@@ -29,7 +29,7 @@ type RecentTransaction = {
   amount: number;
   type: "INCOME" | "EXPENSE";
   category: string;
-  date: Date;
+  date: string;
 };
 
 type MembersChartPoint = { month: string; members: number };
