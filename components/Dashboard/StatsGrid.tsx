@@ -8,7 +8,7 @@ const formatCurrency = (amount: number) => {
     currency: "AOA",
     minimumFractionDigits: 0,
   }).format(amount);
-  return formatted.replace(/AOA\s?/, "").trim() + " Kz";
+  return formatted.replace(/AOA/g, "Kz").trim();
 };
 
 type Stats = {
@@ -32,14 +32,14 @@ export function StatsGrid({ stats }: StatsGridProps) {
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
       <StatsCard
         title={t("totalMembers")}
-        value={stats.totalMembers}
+        value={stats.totalMembers ?? 0}
         subtitle={`+${stats.newMembersThisMonth} ${t("newMembersThisMonth")}`}
         icon={Users}
         trend={{ value: stats.memberGrowth, isPositive: stats.memberGrowth >= 0 }}
       />
       <StatsCard
         title={t("monthlyIncome")}
-        value={formatCurrency(stats.monthlyIncome)}
+        value={formatCurrency(stats.monthlyIncome ?? 0)}
         subtitle={t("monthlyIncomeSubtitle")}
         icon={TrendingUp}
         valueClassName="text-green-600 dark:text-green-400"
@@ -47,7 +47,7 @@ export function StatsGrid({ stats }: StatsGridProps) {
       />
       <StatsCard
         title={t("monthlyExpenses")}
-        value={formatCurrency(stats.monthlyExpenses)}
+        value={formatCurrency(stats.monthlyExpenses ?? 0)}
         subtitle={t("monthlyExpensesSubtitle")}
         icon={TrendingDown}
         valueClassName="text-red-600 dark:text-red-400"
@@ -55,7 +55,7 @@ export function StatsGrid({ stats }: StatsGridProps) {
       />
       <StatsCard
         title={t("monthlyBalance")}
-        value={formatCurrency(stats.monthlyBalance)}
+        value={formatCurrency(stats.monthlyBalance ?? 0)}
         subtitle={t("monthlyBalanceSubtitle")}
         icon={Wallet}
         valueClassName={isBalancePositive ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}

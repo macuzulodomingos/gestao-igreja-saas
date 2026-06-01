@@ -2,7 +2,7 @@ import { UserPlus } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { format } from "date-fns";
+import { format, parseISO, isValid } from "date-fns";
 import { ptBR, fr } from "date-fns/locale";
 import { useTranslations, useLocale } from "next-intl";
 
@@ -17,12 +17,18 @@ interface RecentMembersProps {
   members: RecentMember[];
 }
 
-const dateLocalesMap = { pt: ptBR, fr: fr };
+const localeConfigs = {
+  pt: { locale: ptBR, pattern: "dd 'de' MMMM 'de' yyyy" },
+  fr: { locale: fr, pattern: "d MMMM yyyy" },
+};
+
+const getInitials = (name: string) =>
+  name.trim().split(/\s+/).map(n => n[0]).join("").substring(0, 2).toUpperCase();
 
 export function RecentMembers({ members }: RecentMembersProps) {
   const t = useTranslations("dashboard");
   const locale = useLocale();
-  const dateLocale = dateLocalesMap[locale as keyof typeof dateLocalesMap] ?? ptBR;
+  const currentConfig = localeConfigs[locale as keyof typeof localeConfigs] ?? localeConfigs.pt;
 
   return (
     <Card className="card-shadow rounded-2xl">
@@ -39,29 +45,36 @@ export function RecentMembers({ members }: RecentMembersProps) {
             {t("noRecentMembers")}
           </p>
         ) : (
-          members.map((member) => (
-            <div
-              key={member.id}
-              className="flex items-center gap-4 p-3 rounded-xl hover:bg-muted/50 transition-colors"
-            >
-              <Avatar className="h-10 w-10">
-                <AvatarFallback className="bg-primary/10 text-primary text-sm">
-                  {member.name.split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">
-                  {member.name}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {t("joinedOn")} {format(new Date(member.joinDate), "dd 'de' MMM, yyyy", { locale: dateLocale })}
-                </p>
+          members.map((member) => {
+            const date = parseISO(member.joinDate);
+            const displayDate = isValid(date)
+              ? format(date, currentConfig.pattern, { locale: currentConfig.locale })
+              : "--/--/----";
+
+            return (
+              <div
+                key={member.id}
+                className="flex items-center gap-4 p-3 rounded-xl hover:bg-muted/50 transition-colors"
+              >
+                <Avatar className="h-10 w-10">
+                  <AvatarFallback className="bg-primary/10 text-primary text-sm">
+                    {getInitials(member.name || "?")}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground truncate">
+                    {member.name}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {t("joinedOn")} {displayDate}
+                  </p>
+                </div>
+                <Badge variant="secondary" className="bg-primary/10 text-primary shrink-0">
+                  {member.role || t("defaultRole")}
+                </Badge>
               </div>
-              <Badge variant="secondary" className="bg-primary/10 text-primary">
-                {member.role || t("defaultRole")} // 👈
-              </Badge>
-            </div>
-          ))
+            );
+          })
         )}
       </CardContent>
     </Card>

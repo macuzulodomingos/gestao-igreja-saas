@@ -30,7 +30,7 @@ export function FinanceChart({ data }: FinanceChartProps) {
       </CardHeader>
       <CardContent className="pt-4">
         <ChartContainer config={chartConfig} className="h-[300px] w-full">
-          <BarChart data={data} margin={{ top: 5, right: 10, left: 40, bottom: 5 }}>
+          <BarChart data={data} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border)" />
             <XAxis dataKey="month" axisLine={false} tickLine={false}
               tick={{ fill: "var(--color-muted-foreground)", fontSize: 12 }} dy={10} />

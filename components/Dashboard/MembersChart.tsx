@@ -23,13 +23,13 @@ export function MembersChart({ data }: MembersChartProps) {
       </CardHeader>
       <CardContent className="pt-4">
         <ChartContainer config={chartConfig} className="h-[300px] w-full">
-          <LineChart data={data} margin={{ top: 5, right: 10, left: 35, bottom: 5 }}>
+          <LineChart data={data} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border)" />
             <XAxis dataKey="month" axisLine={false} tickLine={false}
               tick={{ fill: "var(--color-muted-foreground)", fontSize: 12 }} dy={10} />
             <YAxis axisLine={false} tickLine={false}
               tick={{ fill: "var(--color-muted-foreground)", fontSize: 12 }}
-              domain={["dataMin - 5", "dataMax + 5"]} />
+              domain={[0, "dataMax + 1"]} />
             <ChartTooltip cursor={{ stroke: "var(--color-border)", strokeWidth: 1 }}
               content={<ChartTooltipContent />} />
             <Line type="monotone" dataKey="members" stroke="var(--color-members)"
