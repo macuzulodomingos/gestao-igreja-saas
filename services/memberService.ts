@@ -40,8 +40,8 @@ const sanitizeForLog = (data: Record<string, unknown> | null) => {
 
 export const MemberService = {
   async getMembersByChurch(churchId: string, page = 1, limit = 10, search = "") {
-    const safePage = Math.max(1, page);
-    const safeLimit = Math.min(100, Math.max(1, limit));
+    const safePage = isNaN(page) ? 1 : Math.max(1, page);
+    const safeLimit = isNaN(limit) ? 10 : Math.min(100, Math.max(1, limit));
     const searchTerm = search.trim();
     const isSearchValid = searchTerm.length >= 2;
 

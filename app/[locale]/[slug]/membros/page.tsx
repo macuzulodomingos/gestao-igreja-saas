@@ -20,7 +20,7 @@ export default async function MembersPage({ params, searchParams }: MembersPageP
   const isSuperAdmin = session.user.role === "SUPER_ADMIN";
 
   if (!isSuperAdmin && session.user.churchSlug !== slug) {
-    redirect("/login");
+    notFound();
   }
 
   // 👈 SUPER_ADMIN busca churchId pelo slug
