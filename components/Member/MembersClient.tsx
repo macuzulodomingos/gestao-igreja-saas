@@ -38,6 +38,7 @@ import { MemberHistorySheet } from "@/components/Member/MemberHistorySheet";
 import { Member, MemberRole } from "@/types/member";
 import { UpgradeModal } from "@/components/UpgradeModal";
 import { useUpgradeModal } from "@/hooks/useUpgradeModal";
+import { parseISO, isValid } from "date-fns";
 
 const roleColors: Record<string, string> = {
   Pastor: "bg-primary/10 text-primary",
@@ -70,7 +71,8 @@ const formatarDataSemFuso = (
   formato: "input" | "exibicao" = "exibicao",
 ) => {
   if (!dataInput) return "";
-  const d = new Date(dataInput);
+  const d = typeof dataInput === "string" ? parseISO(dataInput) : dataInput;
+  if (!isValid(d)) return "--/--/----";
   const dia = String(d.getUTCDate()).padStart(2, "0");
   const mes = String(d.getUTCMonth() + 1).padStart(2, "0");
   const ano = d.getUTCFullYear();
@@ -142,33 +144,32 @@ export default function MemberClient({
     setFieldErrors({});
     const formData = new FormData(event.currentTarget);
 
-    let result;
-    if (editingMember) {
-      result = await updateMemberAction(editingMember.id, formData, churchId);
-    } else {
-      result = await createMemberAction(formData, churchId);
-    }
+    startTransition(async () => {
+      let result;
+      if (editingMember) {
+        result = await updateMemberAction(editingMember.id, formData, churchId);
+      } else {
+        result = await createMemberAction(formData, churchId);
+      }
 
-    if (result.success) {
-      startTransition(() => {
+      if (result.success) {
         setIsModalOpen(false);
         setEditingMember(null);
-      });
-      toast.success(editingMember ? t("successUpdated") : t("successCreated"));
-      (event.target as HTMLFormElement).reset();
-    } else if (!result.success && result.upgrade) {
-      // 👈 TypeScript já sabe que errorCode existe
-      upgrade.showUpgrade(result.errorCode ? tm(result.errorCode) : tc("upgrade"));
-    } else if (!result.success && result.fieldErrors) {
-      setFieldErrors(result.fieldErrors);
-      toast.error(t("errorForm"));
-    } else if (!result.success) {
-      // 👈 TypeScript já sabe que errorCode existe
-      toast.error(result.errorCode ? tm(result.errorCode) : tc("error"));
-    }
+        setFieldErrors({});
+        toast.success(editingMember ? t("successUpdated") : t("successCreated"));
+        (event.target as HTMLFormElement).reset();
+      } else if (!result.success && result.upgrade) {
+        upgrade.showUpgrade(result.errorCode ? tm(result.errorCode) : tc("upgrade"));
+      } else if (!result.success && result.fieldErrors) {
+        setFieldErrors(result.fieldErrors);
+        toast.error(t("errorForm"));
+      } else if (!result.success) {
+        toast.error(result.errorCode ? tm(result.errorCode) : tc("error"));
+      }
+    });
   }
 
-  
+
 
 
 
@@ -185,6 +186,7 @@ export default function MemberClient({
         <Dialog
           open={isModalOpen}
           onOpenChange={(open) => {
+            if (isPending) return;
             setIsModalOpen(open);
             if (!open) {
               setEditingMember(null);
@@ -204,7 +206,7 @@ export default function MemberClient({
                 {editingMember ? t("editMember") : t("addMember")}
               </DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="grid gap-4 py-4">
+            <form key={editingMember?.id || "new"} onSubmit={handleSubmit} className="grid gap-4 py-4">
               <div className="grid gap-2">
                 <label htmlFor="name" className={`text-sm font-medium ${fieldErrors.name ? "text-destructive" : ""}`}>
                   {t("fullName")}
@@ -431,10 +433,7 @@ export default function MemberClient({
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             className="text-destructive"
-                            onSelect={(e) => {
-                              e.preventDefault();
-                              setMemberToDelete(member);
-                            }}
+                            onClick={() => setMemberToDelete(member)}
                           >
                             {t("delete")}
                           </DropdownMenuItem>
@@ -449,7 +448,7 @@ export default function MemberClient({
 
           <AlertDialog
             open={!!memberToDelete}
-            onOpenChange={(open) => !open && setMemberToDelete(null)}
+            onOpenChange={(open) => { if (!open && !isPending) setMemberToDelete(null); }}
           >
             <AlertDialogContent>
               <AlertDialogHeader>
@@ -460,19 +459,24 @@ export default function MemberClient({
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+                <AlertDialogCancel disabled={isPending}>{t("cancel")}</AlertDialogCancel>
                 <AlertDialogAction
                   disabled={isPending}
                   className="bg-destructive text-white hover:bg-destructive/90"
-                  onClick={async () => {
+                  onClick={async (e) => {
+                    e.preventDefault();
                     if (!memberToDelete) return;
-                    const result = await deleteMemberAction(memberToDelete.id, churchId);
-                    if (result.success) {
-                      toast.success(t("successDeleted"));
-                    } else {
-                      toast.error(result.errorCode ? tm(result.errorCode) : tc("error"));
-                    }
-                    setMemberToDelete(null);
+                    startTransition(async () => {
+                      const result = await deleteMemberAction(memberToDelete.id, churchId);
+                      if (result.success) {
+                        toast.success(t("successDeleted"));
+                        setMemberToDelete(null);
+                        router.refresh();
+                      } else {
+                        toast.error(result.errorCode ? tm(result.errorCode) : tc("error"));
+                        setMemberToDelete(null);
+                      }
+                    });
                   }}
                 >
                   {isPending
