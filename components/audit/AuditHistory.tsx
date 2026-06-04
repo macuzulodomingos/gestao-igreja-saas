@@ -3,6 +3,7 @@
 import { Prisma } from "@prisma/client";
 import { AuditLog } from "@/types/audit";
 import { useTranslations, useLocale } from "next-intl";
+import { parseISO, isValid } from "date-fns";
 
 const IGNORED_FIELDS = [
   "id", "churchId", "updatedAt", "createdAt",
@@ -29,37 +30,48 @@ export function AuditHistory({ logs }: { logs: AuditLog[] }) {
   const t = useTranslations("auditHistory");
   const locale = useLocale();
 
+  const knownFields: Record<string, string> = {
+      name: t("fields.name"),
+      email: t("fields.email"),
+      phone: t("fields.phone"),
+      status: t("fields.status"),
+      joinDate: t("fields.joinDate"),
+      role: t("fields.role"),
+      description: t("fields.description"),
+      amount: t("fields.amount"),
+      type: t("fields.type"),
+      date: t("fields.date"),
+      category: t("fields.category"),
+      leaderId: t("fields.leaderId"),
+      memberIds: t("fields.memberIds"),
+      time: t("fields.time"),
+    };
+
   const formatValue = (key: string, value: Prisma.JsonValue): string => {
     if (value === null || value === undefined) return t("empty");
     if (typeof value === "object" && !Array.isArray(value)) {
       const obj = value as Record<string, Prisma.JsonValue>;
       if (obj.name) return String(obj.name);
-      return JSON.stringify(obj);
+      const json = JSON.stringify(obj);
+      return json === "{}" ? t("empty") : json;
     }
     if (Array.isArray(value)) {
       return value.length > 0 ? `${value.length} ${t("items")}` : t("empty");
     }
     if ((key === "joinDate" || key === "date") && typeof value === "string") {
-      try {
-        return new Date(value).toLocaleDateString(locale === "fr" ? "fr-FR" : "pt-AO");
-      } catch {
-        return String(value);
-      }
+      const d = parseISO(value);
+      return isValid(d)
+        ? d.toLocaleDateString(locale === "fr" ? "fr-FR" : "pt-AO")
+        : String(value);
     }
     return String(value);
   };
 
-  const getFieldLabel = (key: string): string => {
-    try {
-      return t(`fields.${key}` as any);
-    } catch {
-      return key;
-    }
-  };
+  const getFieldLabel = (key: string): string => knownFields[key] ?? key;
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold border-b pb-2">{t("timeline")}</h3>
+      <h3 className="text-lg font-semibold border-b pl-4 pb-2">{t("timeline")}</h3>
 
       <div className="flex flex-col gap-4">
         {logs.length === 0 && (
@@ -72,11 +84,10 @@ export function AuditHistory({ logs }: { logs: AuditLog[] }) {
           return (
             <div key={log.id} className="p-4 bg-card border rounded-lg shadow-sm text-sm">
               <div className="flex justify-between items-center mb-2">
-                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
-                  log.action.includes("CREATE") ? "bg-green-100 text-green-700"
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${log.action.includes("CREATE") ? "bg-green-100 text-green-700"
                   : log.action.includes("DELETE") ? "bg-red-100 text-red-700"
-                  : "bg-blue-100 text-blue-700"
-                }`}>
+                    : "bg-blue-100 text-blue-700"
+                  }`}>
                   {log.action
                     .replace("_MEMBER", "").replace("_EVENT", "")
                     .replace("_DEPARTMENT", "").replace("_CATEGORY", "")
@@ -95,9 +106,9 @@ export function AuditHistory({ logs }: { logs: AuditLog[] }) {
               </p>
 
               <div className="space-y-2">
-                {log.action.includes("CREATE") && log.newData && (
+                {log.action.includes("CREATE") && log.newData && typeof log.newData === "object" && !Array.isArray(log.newData) && (
                   <div className="grid grid-cols-1 gap-1 text-xs bg-green-50/50 p-2 rounded border border-green-100">
-                    {Object.entries(log.newData as object).map(([k, v]) => {
+                    {Object.entries(log.newData as Record<string, Prisma.JsonValue>).map(([k, v]) => {
                       if (IGNORED_FIELDS.includes(k)) return null;
                       return (
                         <div key={k}>

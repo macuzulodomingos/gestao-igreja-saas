@@ -102,6 +102,8 @@
       "invalidDate": "Le format de la date d'entrée est invalide.",
       "errorCreate": "Échec de l'enregistrement du membre.",
       "errorUpdate": "Échec de la mise à jour du membre.",
+      "unauthorizedError": "Permission refusée pour voir cet historique.",
+      "loadError": "Erreur lors du chargement de l'historique.",
       "errorDelete": "Erreur lors de la suppression du membre."
     }
   },

@@ -102,6 +102,8 @@
       "invalidDate": "O formato da data de entrada é inválido.",
       "errorCreate": "Falha ao realizar o cadastro do membro.",
       "errorUpdate": "Falha ao actualizar dados do membro.",
+      "unauthorizedError": "Sem permissão para ver este histórico.",
+      "loadError": "Erro ao carregar o histórico.",
       "errorDelete": "Erro ao tentar remover o membro."
     }
   },

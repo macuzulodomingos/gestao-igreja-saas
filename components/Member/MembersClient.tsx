@@ -412,7 +412,6 @@ export default function MemberClient({
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem>{t("profile")}</DropdownMenuItem>
                           <DropdownMenuItem asChild>
                             <MemberHistorySheet
                               member={member}
