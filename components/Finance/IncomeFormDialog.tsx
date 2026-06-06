@@ -24,10 +24,10 @@ const schema = z.object({
   amount: z
     .string()
     .min(1, "validation.amountRequired")
-    .refine(
-      (val) => !isNaN(Number(val)) && Number(val) > 0,
-      "validation.amountPositive"
-    ),
+    .refine((val) => {
+      const cleaned = val.replace(/\./g, "").replace(",", ".");
+      return !isNaN(Number(cleaned)) && Number(cleaned) > 0;
+    }, "validation.amountPositive"),
   description: z.string().max(200, "validation.descriptionTooLong").optional(),
 });
 

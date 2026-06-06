@@ -9,12 +9,12 @@ export const financeSchema = z.object({
   amount: z
     .string()
     .min(1, "validation.amountRequired")
-    .refine(
-      (val) => !isNaN(Number(val)) && Number(val) > 0,
-      "validation.amountPositive"
-    ),
+    .refine((val) => {
+      const cleaned = val.replace(/\./g, "").replace(",", ".");
+      return !isNaN(Number(cleaned)) && Number(cleaned) > 0;
+    }, "validation.amountPositive"),
   type: z.enum(["INCOME", "EXPENSE"], {
-    required_error: "validation.typeRequired",
+    message: "validation.typeRequired",
   }),
   categoryId: z.string().min(1, "validation.categoryRequired"),
   date: z

@@ -20,7 +20,7 @@ export default async function FinancasPage({ params, searchParams }: FinancasPag
   const isSuperAdmin = session.user.role === "SUPER_ADMIN";
 
   if (!isSuperAdmin && session.user.churchSlug !== slug) {
-    notFound(); 
+    notFound();
   }
 
   // 👈 SUPER_ADMIN busca churchId pelo slug
@@ -38,11 +38,12 @@ export default async function FinancasPage({ params, searchParams }: FinancasPag
 
   if (!churchId) redirect("/login");
 
-  const timezone = church.timezone ?? "Africa/Luanda"; // 👈 getChurchBySlug não retorna timezone — adiciona ao select
+  const timezone = church.timezone ?? "Africa/Luanda";
   const planLimits = getPlanLimits(church.plan as PlanType);
 
   const now = new Date();
-  const month = Number(sParams.month) || now.getMonth() + 1;
+  const parsedMonth = Number(sParams.month) || now.getMonth() + 1;
+  const month = parsedMonth < 1 || parsedMonth > 12 ? now.getMonth() + 1 : parsedMonth;
   const year = Number(sParams.year) || now.getFullYear();
 
   const [incomeResult, expenseResult, stats, incomeCategories, expenseCategories] =

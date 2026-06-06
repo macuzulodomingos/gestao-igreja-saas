@@ -241,6 +241,14 @@ export const FinanceService = {
 
     const safeLimit = Math.min(limit, 100); // 👈 máximo 100
 
+    if (cursor) {
+      const cursorRecord = await prisma.financeTransaction.findFirst({
+        where: { id: cursor, churchId },
+        select: { id: true },
+      });
+      if (!cursorRecord) cursor = undefined;
+    }
+
     const dateFilter = month && year ? {
       date: {
         gte: fromZonedTime(
@@ -272,20 +280,22 @@ export const FinanceService = {
       }),
     });
 
+
     const hasMore = records.length > safeLimit;
     const data = hasMore ? records.slice(0, safeLimit) : records;
     const nextCursor = hasMore ? data[data.length - 1].id : null;
 
     return {
-    data: data.map(r => ({
-      ...r,
-      amount: centsToAmount(r.amount),
-      category: r.category.name,
-    })),
-    nextCursor,
-    hasMore,
-  };
-},
+      data: data.map(r => ({
+        ...r,
+        amount: centsToAmount(r.amount),
+        category: r.category.name,
+      })),
+      nextCursor,
+      hasMore,
+    };
+  },
+
   async getCategories(churchId: string, type?: TransactionType) {
     return prisma.financeCategory.findMany({
       where: { churchId, ...(type && { type }) },

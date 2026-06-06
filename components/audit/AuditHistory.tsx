@@ -11,7 +11,10 @@ const IGNORED_FIELDS = [
 ];
 
 function getDiff(oldData: Prisma.JsonValue, newData: Prisma.JsonValue) {
-  if (!oldData || !newData || typeof oldData !== "object" || Array.isArray(oldData)) {
+  if (
+    !oldData || !newData || typeof oldData !== "object" || Array.isArray(oldData) || 
+    typeof newData !== "object" || Array.isArray(newData)
+  ) {
     return null;
   }
   const oldObj = oldData as Record<string, Prisma.JsonValue>;
