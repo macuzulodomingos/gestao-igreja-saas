@@ -16,6 +16,7 @@ import { saveTransactionAction } from "@/app/actions/finance";
 import { FinanceTransaction } from "@/types/finance";
 import { useTranslations } from "next-intl";
 import { TranslatedFormMessage } from "@/components/ui/TranslatedFormMessage";
+import { useRouter } from "next/navigation";
 
 const schema = z.object({
   date: z.string().min(1, "validation.dateRequired"),
@@ -47,6 +48,7 @@ export function ExpenseFormDialog({ open, onOpenChange, entry, categories, churc
   const t = useTranslations("finance.expenseForm");
   const tc = useTranslations("common");
   const tf = useTranslations("finance.errors");
+  const router = useRouter();
 
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -76,19 +78,9 @@ export function ExpenseFormDialog({ open, onOpenChange, entry, categories, churc
 
   const handleSubmit = (data: FormData) => {
     startTransition(async () => {
-      let cleanAmount = data.amount.trim();
-
-      const dotIndex = cleanAmount.lastIndexOf(".");
-      const commaIndex = cleanAmount.lastIndexOf(",");
-
-      if (commaIndex > dotIndex) {
-        cleanAmount = cleanAmount.replace(/\./g, "").replace(",", ".");
-      } else if (dotIndex !== -1) {
-        const decimals = cleanAmount.substring(dotIndex + 1);
-        if (decimals.length === 3) {
-          cleanAmount = cleanAmount.replace(/\./g, "");
-        }
-      }
+      const cleanAmount = data.amount.trim()
+        .replace(/\./g, "")
+        .replace(",", ".");
 
       const formData = new FormData();
       formData.append("description", data.description || "Despesa");
@@ -102,6 +94,7 @@ export function ExpenseFormDialog({ open, onOpenChange, entry, categories, churc
       if (result.success) {
         toast.success(entry ? t("updated") : t("created"));
         onOpenChange(false);
+        router.refresh();
       } else if ("upgrade" in result && result.upgrade) {
         onOpenChange(false);
         const errorCode = (result as any).errorCode;

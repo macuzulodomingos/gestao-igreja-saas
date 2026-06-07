@@ -7,7 +7,7 @@ export function centsToAmount(value: unknown): number {
 
 export function amountToCents(amount: number | string): bigint {
   const parsed = typeof amount === "string"
-    ? parseFloat(amount.replace(/\./g, "").replace(",", "."))
+    ? parseFloat(amount)
     : amount;
   if (isNaN(parsed)) return BigInt(0);
   return BigInt(Math.round(parsed * 100));
