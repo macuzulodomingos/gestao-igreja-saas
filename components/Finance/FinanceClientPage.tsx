@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { FinanceSummary } from "./FinanceSummary";
 import { IncomeList } from "./IncomeList";
@@ -17,11 +17,16 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { DownloadPDFButton } from "./DownloadPDFButton";
 import { FinanceTransaction, FinanceStats } from "@/types/finance";
 import { UpgradeModal } from "@/components/UpgradeModal";
 import { useUpgradeModal } from "@/hooks/useUpgradeModal";
 import { useTranslations } from "next-intl";
+import dynamic from "next/dynamic";
+
+const DownloadPDFButton = dynamic(
+  () => import("./DownloadPDFButton").then(mod => mod.DownloadPDFButton),
+  { ssr: false }
+);
 
 const MONTHS_PT = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
@@ -93,6 +98,7 @@ export default function FinanceClientPage({
   const [expenseCursor, setExpenseCursor] = useState(initialExpenseCursor);
   const [hasMoreInc, setHasMoreInc] = useState(hasMoreIncome);
   const [hasMoreExp, setHasMoreExp] = useState(hasMoreExpenses);
+  const [isPendingNav, startNavTransition] = useTransition();
   const [loadingMore, setLoadingMore] = useState(false);
 
   useEffect(() => {
@@ -105,7 +111,9 @@ export default function FinanceClientPage({
   }, [initialIncome, initialExpenses, initialIncomeCursor, initialExpenseCursor, hasMoreIncome, hasMoreExpenses]);
 
   const navigateToMonth = (month: number, year: number) => {
-    router.push(`${pathname}?month=${month}&year=${year}`);
+    startNavTransition(() => {
+      router.push(`${pathname}?month=${month}&year=${year}`, { scroll: false });
+    });
   };
 
   const handlePrevMonth = () => {
@@ -129,25 +137,28 @@ export default function FinanceClientPage({
 
   const handleLoadMore = async (type: "INCOME" | "EXPENSE") => {
     const cursor = type === "INCOME" ? incomeCursor : expenseCursor;
-    if (!cursor) return;
+    if (!cursor || loadingMore) return;
 
     setLoadingMore(true);
-    const result = await loadMoreTransactionsAction(type, currentMonth, currentYear, churchId, cursor);
-    setLoadingMore(false);
-
-    if (!result.success) {
-      toast.error(tf((result as any).errorCode) ?? t("errorLoadMore"));
-      return;
-    }
-
-    if (type === "INCOME") {
-      setIncomeList(prev => [...prev, ...result.data]);
-      setIncomeCursor(result.nextCursor ?? null);
-      setHasMoreInc(result.hasMore ?? false);
-    } else {
-      setExpenseList(prev => [...prev, ...result.data]);
-      setExpenseCursor(result.nextCursor ?? null);
-      setHasMoreExp(result.hasMore ?? false);
+    try {
+      const result = await loadMoreTransactionsAction(type, currentMonth, currentYear, churchId, cursor);
+      if (!result.success) {
+        toast.error(tf((result as any).errorCode) ?? t("errorLoadMore"));
+        return;
+      }
+      if (type === "INCOME") {
+        setIncomeList(prev => [...prev, ...result.data]);
+        setIncomeCursor(result.nextCursor ?? null);
+        setHasMoreInc(result.hasMore ?? false);
+      } else {
+        setExpenseList(prev => [...prev, ...result.data]);
+        setExpenseCursor(result.nextCursor ?? null);
+        setHasMoreExp(result.hasMore ?? false);
+      }
+    } catch {
+      toast.error(t("errorLoadMore"));
+    } finally {
+      setLoadingMore(false);
     }
   };
 
@@ -170,10 +181,26 @@ export default function FinanceClientPage({
 
   const confirmDelete = async () => {
     if (!entryToDelete) return;
-    const result = await deleteTransactionAction(entryToDelete.id, churchId);
-    if (result.success) toast.success(t("deleted"));
-    else toast.error(t("errorDelete"));
-    setEntryToDelete(null);
+    const targetId = entryToDelete.id;
+    const targetType = entryToDelete.type;
+    try {
+      const result = await deleteTransactionAction(targetId, churchId);
+      if (result.success) {
+        toast.success(t("deleted"));
+        if (targetType === "INCOME") {
+          setIncomeList(prev => prev.filter(item => item.id !== targetId));
+        } else {
+          setExpenseList(prev => prev.filter(item => item.id !== targetId));
+        }
+        router.refresh();
+      } else {
+        toast.error(t("errorDelete"));
+      }
+    } catch {
+      toast.error(t("errorDelete"));
+    } finally {
+      setEntryToDelete(null);
+    }
   };
 
   const now = new Date();
@@ -198,13 +225,14 @@ export default function FinanceClientPage({
             stats={stats}
             canExportPdf={canExportPdf}
           />
-          <Button variant="outline" size="icon" onClick={handlePrevMonth}>
+          <Button variant="outline" size="icon" onClick={handlePrevMonth} disabled={isPendingNav}>
             <ChevronLeft className="h-4 w-4" />
           </Button>
 
           <Select
             value={String(currentMonth)}
             onValueChange={(val) => navigateToMonth(Number(val), currentYear)}
+            disabled={isPendingNav}
           >
             <SelectTrigger className="w-[130px]">
               <SelectValue />
@@ -221,6 +249,7 @@ export default function FinanceClientPage({
           <Select
             value={String(currentYear)}
             onValueChange={(val) => navigateToMonth(currentMonth, Number(val))}
+            disabled={isPendingNav}
           >
             <SelectTrigger className="w-[90px]">
               <SelectValue />
@@ -232,7 +261,7 @@ export default function FinanceClientPage({
             </SelectContent>
           </Select>
 
-          <Button variant="outline" size="icon" onClick={handleNextMonth} disabled={isCurrentMonth}>
+          <Button variant="outline" size="icon" onClick={handleNextMonth} disabled={isCurrentMonth || isPendingNav}>
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
