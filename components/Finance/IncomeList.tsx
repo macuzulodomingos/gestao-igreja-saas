@@ -1,3 +1,4 @@
+"use client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -5,9 +6,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { ptBR, fr } from "date-fns/locale";
-import { format } from "date-fns";
 import { FinanceTransaction } from "@/types/finance";
 import { useTranslations, useLocale } from "next-intl";
+import { format, parseISO, isValid } from "date-fns";
 
 const dateLocalesMap = {
   pt: ptBR,
@@ -44,11 +45,15 @@ export function IncomeList({ entries, onEdit, onDelete }: IncomeListProps) {
   const tc = useTranslations("common");
   const locale = useLocale();
   const dateLocale = dateLocalesMap[locale as keyof typeof dateLocalesMap] ?? ptBR;
+  const dateFormatPattern = locale === "fr" ? "dd MMM, yyyy" : "dd 'de' MMM, yyyy";
 
-  const sortedEntries = [...entries].sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-  );
-
+  const sortedEntries = [...entries].sort((a, b) => {
+    const dateA = typeof a.date === "string" ? parseISO(a.date) : a.date;
+    const dateB = typeof b.date === "string" ? parseISO(b.date) : b.date;
+    const timeA = isValid(dateA) ? dateA.getTime() : 0;
+    const timeB = isValid(dateB) ? dateB.getTime() : 0;
+    return timeB - timeA;
+  });
   return (
     <Card>
       <CardHeader>
@@ -70,44 +75,49 @@ export function IncomeList({ entries, onEdit, onDelete }: IncomeListProps) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {sortedEntries.map((entry) => (
-                  <TableRow key={entry.id}>
-                    <TableCell className="text-sm">
-                      {format(new Date(entry.date), "dd 'de' MMM, yyyy", { locale: dateLocale })}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="secondary" className={getCategoryColor(entry.category)}>
-                        {entry.category}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {entry.description || "—"}
-                    </TableCell>
-                    <TableCell className="text-right font-medium text-emerald-600">
-                      {formatCurrency(entry.amount)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => onEdit(entry)}>
-                            <Pencil className="h-4 w-4 mr-2" /> {tc("edit")}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => onDelete(entry.id)}
-                            className="text-destructive focus:text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" /> {tc("delete")}
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {sortedEntries.map((entry) => {
+                  const date = typeof entry.date === "string" ? parseISO(entry.date) : entry.date;
+                  const displayDate = isValid(date)
+                    ? format(date, dateFormatPattern, { locale: dateLocale })
+                    : "—";
+
+                  return (
+                    <TableRow key={entry.id}>
+                      <TableCell className="text-sm whitespace-nowrap">{displayDate}</TableCell>
+                      <TableCell>
+                        <Badge variant="secondary" className={getCategoryColor(entry.category)}>
+                          {entry.category}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground max-w-[250px] truncate">
+                        {entry.description || "—"}
+                      </TableCell>
+                      <TableCell className="text-right font-medium text-emerald-600 whitespace-nowrap">
+                        {formatCurrency(entry.amount)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => onEdit(entry)}>
+                              <Pencil className="h-4 w-4 mr-2" /> {tc("edit")}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => onDelete(entry.id)}
+                              className="text-destructive focus:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" /> {tc("delete")}
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </div>

@@ -285,7 +285,7 @@ export default function FinanceClientPage({
           </Button>
         </div>
 
-        <TabsContent value="income">
+        <TabsContent value="income"> 
           <IncomeList entries={incomeList} onEdit={handleEdit} onDelete={handleDelete} />
           {hasMoreInc && (
             <div className="flex justify-center mt-4">

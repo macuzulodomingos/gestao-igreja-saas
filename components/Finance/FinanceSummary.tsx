@@ -1,3 +1,4 @@
+"use client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, TrendingDown, Wallet, DollarSign } from "lucide-react";
 import { useTranslations, useLocale } from "next-intl";
@@ -20,7 +21,7 @@ const formatCurrency = (amount: number) =>
     style: "currency",
     currency: "AOA",
     minimumFractionDigits: 2,
-  }).format(amount).replace("AOA", "Kz");
+  }).format(amount).replace("AOA", "Kz").replace(/\s+/g, " ").trim();
 
 const dateLocalesMap = {
   pt: "pt-AO",
