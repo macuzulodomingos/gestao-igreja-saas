@@ -157,6 +157,7 @@
       "amountPlaceholder": "Ex: 6000 ou 6.000",
       "description": "Description (Optionnelle)",
       "descriptionPlaceholder": "Brève description de la dépense...",
+      "defaultDescription": "Dépense",
       "cancel": "Annuler",
       "save": "Enregistrer",
       "register": "Enregistrer",
@@ -179,6 +180,7 @@
       "add": "Ajouter",
       "created": "Revenu enregistré!",
       "updated": "Revenu mis à jour!",
+      "defaultDescription": "Revenu",
       "error": "Erreur lors de l'enregistrement."
     },
     "summary": {

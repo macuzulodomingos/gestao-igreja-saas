@@ -61,7 +61,9 @@ export function IncomeFormDialog({ open, onOpenChange, entry, categories, church
       if (entry) {
         const cat = categories.find(c => c.name === entry.category);
         form.reset({
-          date: new Date(entry.date).toISOString().split("T")[0],
+          date: typeof entry.date === "string"
+            ? entry.date.split("T")[0]
+            : entry.date.toISOString().split("T")[0],
           categoryId: cat?.id || "",
           amount: entry.amount.toString(),
           description: entry.description || "",
@@ -81,11 +83,11 @@ export function IncomeFormDialog({ open, onOpenChange, entry, categories, church
     startTransition(async () => {
 
       const cleanAmount = data.amount.trim()
-      .replace(/\./g, "")
-      .replace(",", ".");
+        .replace(/\./g, "")
+        .replace(",", ".");
 
       const formData = new FormData();
-      formData.append("description", data.description || "Receita");
+      formData.append("description", data.description || t("defaultDescription"));
       formData.append("amount", cleanAmount);
       formData.append("type", "INCOME");
       formData.append("categoryId", data.categoryId);
@@ -109,7 +111,10 @@ export function IncomeFormDialog({ open, onOpenChange, entry, categories, church
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(isOpen) => {
+      if (!isOpen) form.reset();
+      onOpenChange(isOpen);
+    }}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{entry ? t("editTitle") : t("addTitle")}</DialogTitle>
@@ -139,7 +144,7 @@ export function IncomeFormDialog({ open, onOpenChange, entry, categories, church
                     ))}
                   </SelectContent>
                 </Select>
-                <TranslatedFormMessage /> // 👈
+                <TranslatedFormMessage />
               </FormItem>
             )} />
 

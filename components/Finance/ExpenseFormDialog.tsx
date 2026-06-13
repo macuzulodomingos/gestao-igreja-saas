@@ -60,7 +60,9 @@ export function ExpenseFormDialog({ open, onOpenChange, entry, categories, churc
       if (entry) {
         const cat = categories.find(c => c.name === entry.category);
         form.reset({
-          date: new Date(entry.date).toISOString().split("T")[0],
+          date: typeof entry.date === "string"
+            ? entry.date.split("T")[0]
+            : entry.date.toISOString().split("T")[0],
           categoryId: cat?.id || "",
           amount: entry.amount.toString(),
           description: entry.description || "",
@@ -83,7 +85,7 @@ export function ExpenseFormDialog({ open, onOpenChange, entry, categories, churc
         .replace(",", ".");
 
       const formData = new FormData();
-      formData.append("description", data.description || "Despesa");
+      formData.append("description", data.description || t("defaultDescription"));
       formData.append("amount", cleanAmount);
       formData.append("type", "EXPENSE");
       formData.append("categoryId", data.categoryId);
@@ -98,16 +100,19 @@ export function ExpenseFormDialog({ open, onOpenChange, entry, categories, churc
       } else if ("upgrade" in result && result.upgrade) {
         onOpenChange(false);
         const errorCode = (result as any).errorCode;
-        onUpgrade?.(errorCode ? tf(errorCode) : tc("upgrade")); // 👈
+        onUpgrade?.(errorCode ? tf(errorCode) : tc("upgrade")); 
       } else {
         const errorCode = (result as any).errorCode;
-        toast.error(errorCode ? tf(errorCode) : t("error")); // 👈
+        toast.error(errorCode ? tf(errorCode) : t("error")); 
       }
     });
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(isOpen) => {
+      if (!isOpen) form.reset();
+      onOpenChange(isOpen);
+    }}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{entry ? t("editTitle") : t("addTitle")}</DialogTitle>
