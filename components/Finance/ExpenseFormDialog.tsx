@@ -97,13 +97,11 @@ export function ExpenseFormDialog({ open, onOpenChange, entry, categories, churc
         toast.success(entry ? t("updated") : t("created"));
         onOpenChange(false);
         router.refresh();
-      } else if ("upgrade" in result && result.upgrade) {
+      } else if (result.upgrade) {
         onOpenChange(false);
-        const errorCode = (result as any).errorCode;
-        onUpgrade?.(errorCode ? tf(errorCode) : tc("upgrade")); 
+        onUpgrade?.(result.errorCode ? tf(result.errorCode) : tc("upgrade"));
       } else {
-        const errorCode = (result as any).errorCode;
-        toast.error(errorCode ? tf(errorCode) : t("error")); 
+        toast.error(result.errorCode ? tf(result.errorCode) : t("error"));
       }
     });
   };

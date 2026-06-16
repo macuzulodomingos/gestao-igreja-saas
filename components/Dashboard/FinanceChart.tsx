@@ -29,7 +29,7 @@ export function FinanceChart({ data }: FinanceChartProps) {
         <p className="text-sm text-muted-foreground">{t("last6months")}</p>
       </CardHeader>
       <CardContent className="pt-4">
-        <ChartContainer config={chartConfig} className="h-[300px] w-full">
+        <ChartContainer id="finance-chart" config={chartConfig} className="h-[300px] w-full">
           <BarChart data={data} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border)" />
             <XAxis dataKey="month" axisLine={false} tickLine={false}

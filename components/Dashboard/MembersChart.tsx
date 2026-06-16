@@ -22,7 +22,7 @@ export function MembersChart({ data }: MembersChartProps) {
         <p className="text-sm text-muted-foreground">{t("last6months")}</p>
       </CardHeader>
       <CardContent className="pt-4">
-        <ChartContainer config={chartConfig} className="h-[300px] w-full">
+        <ChartContainer id="members-chart" config={chartConfig} className="h-[300px] w-full">
           <LineChart data={data} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border)" />
             <XAxis dataKey="month" axisLine={false} tickLine={false}

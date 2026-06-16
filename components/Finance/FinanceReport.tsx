@@ -3,6 +3,7 @@
 import {
   Document, Page, Text, View, StyleSheet,
 } from "@react-pdf/renderer";
+import { parseISO, isValid } from "date-fns";
 
 const styles = StyleSheet.create({
   page: {
@@ -71,18 +72,21 @@ const styles = StyleSheet.create({
   tableHeader: {
     flexDirection: "row",
     backgroundColor: "#f3f4f6",
-    padding: "6 8",
+    paddingVertical: 6,
+    paddingHorizontal: 8,
     borderRadius: 4,
     marginBottom: 2,
   },
   tableRow: {
     flexDirection: "row",
-    padding: "5 8",
+    paddingVertical: 5,
+    paddingHorizontal: 8,
     borderBottom: "1px solid #f3f4f6",
   },
   tableRowAlt: {
     flexDirection: "row",
-    padding: "5 8",
+    paddingVertical: 5,
+    paddingHorizontal: 8,
     borderBottom: "1px solid #f3f4f6",
     backgroundColor: "#fafafa",
   },
@@ -110,7 +114,8 @@ const styles = StyleSheet.create({
     fontSize: 9,
     color: "#999",
     fontStyle: "italic",
-    padding: "8 0",
+    paddingVertical: 8,
+    paddingHorizontal: 0,
   },
 });
 
@@ -122,9 +127,11 @@ const formatCurrency = (amount: number) =>
   }).format(amount).replace("AOA", "Kz");
 
 const formatDate = (date: Date | string) => {
-  const d = new Date(date);
+  const d = typeof date === "string" ? parseISO(date) : date;
+  if (!isValid(d)) return "—";
   return `${String(d.getUTCDate()).padStart(2, "0")}/${String(d.getUTCMonth() + 1).padStart(2, "0")}/${d.getUTCFullYear()}`;
 };
+
 
 type Transaction = {
   id: string;
