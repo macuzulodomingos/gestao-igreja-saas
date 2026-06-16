@@ -4,7 +4,7 @@ import { PDFDownloadLink } from "@react-pdf/renderer";
 import { FinanceReport } from "./FinanceReport";
 import { Button } from "@/components/ui/button";
 import { FileDown, Loader2, Lock } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@radix-ui/react-tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useTranslations, useLocale } from "next-intl";
 
 const MONTHS_PT = [
@@ -61,7 +61,7 @@ export function DownloadPDFButton({
   const tr = useTranslations("finance.report");
   const locale = useLocale();
   const months = monthsMap[locale as keyof typeof monthsMap] ?? MONTHS_PT;
-  const monthName = months[month - 1];
+  const monthName = months[month - 1] ?? months[0];
   const fileName = `${t("fileName")}-${monthName.toLowerCase()}-${year}.pdf`;
 
   if (!canExportPdf) {
@@ -69,10 +69,12 @@ export function DownloadPDFButton({
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="outline" className="gap-2" disabled>
-              <Lock className="h-4 w-4" />
-              {t("export")}
-            </Button>
+            <span tabIndex={0} className="inline-block">
+              <Button variant="outline" className="gap-2 pointer-events-none" disabled>
+                <Lock className="h-4 w-4" />
+                {t("export")}
+              </Button>
+            </span>
           </TooltipTrigger>
           <TooltipContent>
             <p>{t("locked")}</p>

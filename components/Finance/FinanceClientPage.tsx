@@ -25,7 +25,14 @@ import dynamic from "next/dynamic";
 
 const DownloadPDFButton = dynamic(
   () => import("./DownloadPDFButton").then(mod => mod.DownloadPDFButton),
-  { ssr: false }
+  {
+    ssr: false,
+    loading: () => (
+      <Button variant="outline" className="gap-2" disabled>
+        <Loader2 className="h-4 w-4 animate-spin" />
+      </Button>
+    ),
+  }
 );
 
 const MONTHS_PT = [
