@@ -5,7 +5,6 @@ import { MemberService } from "@/services/memberService";
 import { DepartmentService } from "@/services/departmentService";
 import EventsClient from "@/components/Events/EventsClient";
 import { EventCategoryService } from "@/services/eventCategoryService"; // 👈 NOVO
-import prisma from "@/lib/prisma";
 import { getChurchBySlug } from "@/lib/tenant";
 
 interface EventosPageProps {
@@ -22,7 +21,7 @@ export default async function EventosPage({ params }: EventosPageProps) {
   const isSuperAdmin = session.user.role === "SUPER_ADMIN";
 
   if (!isSuperAdmin && session.user.churchSlug !== slug) {
-    redirect("/login");
+    notFound();
   }
 
   // 👈 SUPER_ADMIN busca churchId pelo slug
@@ -33,7 +32,7 @@ export default async function EventosPage({ params }: EventosPageProps) {
 
   if (!churchId) redirect("/login");
 
-  const timezone = church?.timezone ?? "Africa/Luanda";
+  const timezone = church.timezone || "Africa/Luanda";
 
   const [events, membersData, departments, categories] = await Promise.all([
     EventService.getEvents(churchId, timezone),
@@ -49,8 +48,8 @@ export default async function EventosPage({ params }: EventosPageProps) {
       initialEvents={events}
       members={membersData.members}
       departments={departments}
-      categories={categories} // 👈 NOVO
-      timezone={church?.timezone ?? "Africa/Luanda"}
+      categories={categories} 
+      timezone={timezone}
       churchId={churchId}
     />
   );

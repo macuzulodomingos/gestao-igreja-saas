@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { EventsList } from "./EventsList";
 import { EventFormDialog } from "./EventFormDialog";
 import { EventAttendanceDialog } from "./EventAttendanceDialog";
@@ -16,6 +16,7 @@ import { ChurchEvent, EventCategory, EventListMember, EventListDepartment } from
 import { UpgradeModal } from "@/components/UpgradeModal";
 import { useUpgradeModal } from "@/hooks/useUpgradeModal";
 import { useTranslations } from "next-intl";
+import { useRouter } from "next/navigation";
 
 interface EventsClientProps {
   initialEvents: ChurchEvent[];
@@ -34,14 +35,20 @@ export default function EventsClient({
   timezone,
   churchId,
 }: EventsClientProps) {
+  const router = useRouter();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isAttendanceOpen, setIsAttendanceOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<ChurchEvent | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<ChurchEvent | null>(null);
   const [eventToDelete, setEventToDelete] = useState<ChurchEvent | null>(null);
+  const [events, setEvents] = useState(initialEvents);
   const upgrade = useUpgradeModal();
   const t = useTranslations("events");
   const te = useTranslations("events.errors");
+
+  useEffect(() => {
+    setEvents(initialEvents);
+  }, [initialEvents]);
 
   const handleAdd = () => {
     setEditingEvent(null);
@@ -54,7 +61,7 @@ export default function EventsClient({
   };
 
   const handleDelete = (id: string) => {
-    const event = initialEvents.find(e => e.id === id);
+    const event = events.find(e => e.id === id);
     if (event) setEventToDelete(event);
   };
 
@@ -65,12 +72,14 @@ export default function EventsClient({
 
   const confirmDelete = async () => {
     if (!eventToDelete) return;
-    const result = await deleteEventAction(eventToDelete.id, churchId);
+    const targetId = eventToDelete.id;
+    const result = await deleteEventAction(targetId, churchId);
     if (result.success) {
       toast.success(t("successDeleted"));
+      setEvents(prev => prev.filter(e => e.id !== targetId)); // 👈 remoção optimista
+      router.refresh();
     } else {
-      const errorCode = (result as any).errorCode;
-      toast.error(errorCode ? te(errorCode) : t("errorDelete")); // 👈
+      toast.error(result.errorCode ? te(result.errorCode) : t("errorDelete"));
     }
     setEventToDelete(null);
   };
@@ -89,7 +98,7 @@ export default function EventsClient({
       </div>
 
       <EventsList
-        events={initialEvents}
+        events={events}
         onEdit={handleEdit}
         onDelete={handleDelete}
         onManageAttendance={handleManageAttendance}
@@ -98,7 +107,10 @@ export default function EventsClient({
 
       <EventFormDialog
         open={isFormOpen}
-        onOpenChange={setIsFormOpen}
+        onOpenChange={(open) => {
+          setIsFormOpen(open);
+          if (!open) setEditingEvent(null);
+        }}
         event={editingEvent}
         departments={departments}
         categories={categories}
@@ -109,7 +121,10 @@ export default function EventsClient({
       {selectedEvent && (
         <EventAttendanceDialog
           open={isAttendanceOpen}
-          onOpenChange={setIsAttendanceOpen}
+          onOpenChange={(open) => {
+            setIsAttendanceOpen(open);
+            if (!open) setSelectedEvent(null);
+          }}
           event={selectedEvent}
           allMembers={members}
           timezone={timezone}

@@ -1,3 +1,4 @@
+"use client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -8,11 +9,11 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Pencil, Trash2, Users, Calendar, Clock } from "lucide-react";
-import { isPast, isToday } from "date-fns";
 import { ptBR, fr } from "date-fns/locale";
 import { formatInTimeZone } from "date-fns-tz";
 import { ChurchEvent } from "@/types/event";
 import { useTranslations, useLocale } from "next-intl";
+import { isPast, isToday, parseISO, isValid } from "date-fns";
 
 const dateLocalesMap = {
   pt: ptBR,
@@ -33,15 +34,27 @@ export function EventsList({ events, onEdit, onDelete, onManageAttendance, timez
   const locale = useLocale();
   const dateLocale = dateLocalesMap[locale as keyof typeof dateLocalesMap] ?? ptBR;
 
+  const parseDate = (date: Date | string) => {
+    const d = typeof date === "string" ? parseISO(date) : date;
+    return isValid(d) ? d : new Date(0);
+  };
+
   const sorted = [...events].sort((a, b) =>
-    new Date(a.startAt).getTime() - new Date(b.startAt).getTime()
+    parseDate(a.startAt).getTime() - parseDate(b.startAt).getTime()
   );
 
-  const upcomingEvents = sorted.filter(e => !isPast(new Date(e.startAt)) || isToday(new Date(e.startAt)));
-  const pastEvents = sorted.filter(e => isPast(new Date(e.startAt)) && !isToday(new Date(e.startAt)));
+  const upcomingEvents = sorted.filter(e => {
+    const d = parseDate(e.startAt);
+    return !isPast(d) || isToday(d);
+  });
+
+  const pastEvents = sorted.filter(e => {
+    const d = parseDate(e.startAt);
+    return isPast(d) && !isToday(d);
+  });
 
   const renderRow = (event: ChurchEvent) => {
-    const startAt = new Date(event.startAt);
+    const startAt = parseDate(event.startAt);
     const isEventToday = isToday(startAt);
     const isEventPast = isPast(startAt) && !isEventToday;
 
