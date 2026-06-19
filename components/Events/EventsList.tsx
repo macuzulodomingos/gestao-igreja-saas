@@ -10,15 +10,21 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Pencil, Trash2, Users, Calendar, Clock } from "lucide-react";
 import { ptBR, fr } from "date-fns/locale";
-import { formatInTimeZone } from "date-fns-tz";
+import { formatInTimeZone, toZonedTime } from "date-fns-tz";
 import { ChurchEvent } from "@/types/event";
 import { useTranslations, useLocale } from "next-intl";
-import { isPast, isToday, parseISO, isValid } from "date-fns";
+import { parseISO, isValid } from "date-fns";
+import { useMemo } from "react";
 
 const dateLocalesMap = {
   pt: ptBR,
   fr: fr,
 };
+
+const parseDate = (date: Date | string) => {
+    const d = typeof date === "string" ? parseISO(date) : date;
+    return isValid(d) ? d : new Date(0);
+  };
 
 interface EventsListProps {
   events: ChurchEvent[];
@@ -34,29 +40,39 @@ export function EventsList({ events, onEdit, onDelete, onManageAttendance, timez
   const locale = useLocale();
   const dateLocale = dateLocalesMap[locale as keyof typeof dateLocalesMap] ?? ptBR;
 
-  const parseDate = (date: Date | string) => {
-    const d = typeof date === "string" ? parseISO(date) : date;
-    return isValid(d) ? d : new Date(0);
-  };
+  
+  const { upcomingEvents, pastEvents } = useMemo(() => {
+    const sorted = [...events].sort((a, b) =>
+      parseDate(a.startAt).getTime() - parseDate(b.startAt).getTime()
+    );
 
-  const sorted = [...events].sort((a, b) =>
-    parseDate(a.startAt).getTime() - parseDate(b.startAt).getTime()
-  );
+    const nowInTz = toZonedTime(new Date(), timezone);
 
-  const upcomingEvents = sorted.filter(e => {
-    const d = parseDate(e.startAt);
-    return !isPast(d) || isToday(d);
-  });
+    const upcoming = sorted.filter(e => {
+      const eventInTz = toZonedTime(parseDate(e.startAt), timezone);
+      const isFuture = eventInTz.getTime() >= nowInTz.getTime();
+      const isSameDay = eventInTz.toDateString() === nowInTz.toDateString();
+      // Eventos de hoje continuam em "Próximos" mesmo após a hora ter passado,
+      // só transitam para "Passados" no dia seguinte
+      return isFuture || isSameDay;
+    });
 
-  const pastEvents = sorted.filter(e => {
-    const d = parseDate(e.startAt);
-    return isPast(d) && !isToday(d);
-  });
+    const past = sorted.filter(e => {
+      const eventInTz = toZonedTime(parseDate(e.startAt), timezone);
+      return eventInTz.getTime() < nowInTz.getTime() &&
+        eventInTz.toDateString() !== nowInTz.toDateString();
+    });
+
+    return { upcomingEvents: upcoming, pastEvents: past };
+  }, [events, timezone]);
+
 
   const renderRow = (event: ChurchEvent) => {
     const startAt = parseDate(event.startAt);
-    const isEventToday = isToday(startAt);
-    const isEventPast = isPast(startAt) && !isEventToday;
+    const startAtInTz = toZonedTime(startAt, timezone);
+    const nowInTz = toZonedTime(new Date(), timezone);
+    const isEventToday = startAtInTz.toDateString() === nowInTz.toDateString();
+    const isEventPast = startAtInTz.getTime() < nowInTz.getTime() && !isEventToday;
 
     const dateFormatted = formatInTimeZone(startAt, timezone, "dd 'de' MMM, yyyy", { locale: dateLocale });
     const timeFormatted = formatInTimeZone(startAt, timezone, "HH:mm");
