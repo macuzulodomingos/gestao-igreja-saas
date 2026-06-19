@@ -16,7 +16,7 @@ import { saveTransactionAction } from "@/app/actions/finance";
 import { FinanceTransaction } from "@/types/finance";
 import { useTranslations } from "next-intl";
 import { TranslatedFormMessage } from "@/components/ui/TranslatedFormMessage";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
 
 const schema = z.object({
   date: z.string().min(1, "validation.dateRequired"),

@@ -14,6 +14,8 @@ import { ChurchEvent, EventListMember } from "@/types/event";
 import { formatInTimeZone } from "date-fns-tz";
 import { ptBR, fr } from "date-fns/locale";
 import { useTranslations, useLocale } from "next-intl";
+import { parseISO, isValid } from "date-fns";
+import { useRouter } from "@/i18n/navigation";
 
 const dateLocalesMap = {
   pt: ptBR,
@@ -39,24 +41,41 @@ export function EventAttendanceDialog({ open, onOpenChange, event, allMembers, t
   const te = useTranslations("events.errors");
   const locale = useLocale();
   const dateLocale = dateLocalesMap[locale as keyof typeof dateLocalesMap] ?? ptBR;
+  const dateFormatPattern = locale === "fr" ? "dd MMM yyyy" : "dd 'de' MMM, yyyy";
 
+  const startAt = typeof event.startAt === "string" ? parseISO(event.startAt) : event.startAt;
+  const isStartAtValid = isValid(startAt);
+
+  const router = useRouter();
+
+  // Depois
   useEffect(() => {
     if (open) {
+      let cancelled = false;
       setSearchTerm("");
-      setLoadError(false); // 👈 reset ao abrir
+      setLoadError(false);
       setLoading(true);
-      getEventAttendeesAction(event.id, churchId).then(result => {
-        if (result.success) {
-          setSelectedIds(result.memberIds);
-        } else if (result.errorCode === "unauthorized") {
-          window.location.href = "/login"; // 👈 redireciona
-        } else {
-          setLoadError(true); // 👈 bloqueia em vez de toast
-        }
-        setLoading(false);
-      });
+      getEventAttendeesAction(event.id, churchId)
+        .then(result => {
+          if (cancelled) return;
+          if (result.success) {
+            setSelectedIds(result.memberIds);
+          } else if (result.errorCode === "unauthorized") {
+            router.push("/login");
+          } else {
+            setLoadError(true);
+          }
+          setLoading(false);
+        })
+        .catch(() => {
+          if (cancelled) return;
+          setLoadError(true);
+          setLoading(false);
+        });
+
+      return () => { cancelled = true; };
     }
-  }, [open, event.id]);
+  }, [open, event.id, churchId]);
 
   const activeMembers = allMembers.filter(m => m.status === "ATIVO");
 
@@ -108,9 +127,9 @@ export function EventAttendanceDialog({ open, onOpenChange, event, allMembers, t
           <div className="text-sm text-muted-foreground">
             <span className="font-medium">{event.name}</span>
             <span className="mx-2">•</span>
-            {formatInTimeZone(new Date(event.startAt), timezone, "dd 'de' MMM, yyyy", { locale: dateLocale })}
+            {isStartAtValid && formatInTimeZone(startAt, timezone, dateFormatPattern, { locale: dateLocale })}
             {` ${t("at")} `}
-            {formatInTimeZone(new Date(event.startAt), timezone, "HH:mm")}
+            {isStartAtValid && formatInTimeZone(startAt, timezone, "HH:mm")}
           </div>
         </DialogHeader>
 

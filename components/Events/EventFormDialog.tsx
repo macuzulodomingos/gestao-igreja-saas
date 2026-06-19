@@ -17,6 +17,8 @@ import { saveEventAction } from "@/app/actions/event-actions";
 import { ChurchEvent, EventCategory, EventListDepartment } from "@/types/event";
 import { useTranslations } from "next-intl";
 import { TranslatedFormMessage } from "@/components/ui/TranslatedFormMessage";
+import { parseISO } from "date-fns";
+import { useRouter } from "@/i18n/navigation";
 
 type FormData = z.infer<typeof eventSchema>;
 
@@ -35,6 +37,7 @@ export function EventFormDialog({ open, onOpenChange, event, departments, catego
   const t = useTranslations("events.form");
   const tc = useTranslations("common");
   const te = useTranslations("events.errors");
+  const router = useRouter();
 
   const form = useForm<FormData>({
     resolver: zodResolver(eventSchema),
@@ -51,7 +54,7 @@ export function EventFormDialog({ open, onOpenChange, event, departments, catego
   useEffect(() => {
     if (open) {
       if (event) {
-        const startAt = new Date(event.startAt);
+        const startAt = typeof event.startAt === "string" ? parseISO(event.startAt) : event.startAt;
         const date = startAt.toLocaleDateString("en-CA");
         const time = startAt.toLocaleTimeString("en-GB", {
           hour: "2-digit",
@@ -94,21 +97,23 @@ export function EventFormDialog({ open, onOpenChange, event, departments, catego
       if (result.success) {
         toast.success(event ? t("updated") : t("created"));
         onOpenChange(false);
+        router.refresh();
       } else if ("upgrade" in result && result.upgrade) {
         onOpenChange(false);
-        const errorCode = (result as any).errorCode;
-        onUpgrade?.(errorCode ? te(errorCode) : tc("upgrade")); // 👈
+        onUpgrade?.(result.errorCode ? te(result.errorCode) : tc("upgrade"));
       } else if (result.fieldErrors) {
         toast.error(t("checkErrors"));
       } else {
-        const errorCode = (result as any).errorCode;
-        toast.error(errorCode ? te(errorCode) : t("error")); // 👈
+        toast.error(result.errorCode ? te(result.errorCode) : t("error"));
       }
     });
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(isOpen) => {
+      if (!isOpen) form.reset();
+      onOpenChange(isOpen);
+    }}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{event ? t("editTitle") : t("addTitle")}</DialogTitle>

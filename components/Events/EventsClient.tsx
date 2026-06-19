@@ -16,7 +16,8 @@ import { ChurchEvent, EventCategory, EventListMember, EventListDepartment } from
 import { UpgradeModal } from "@/components/UpgradeModal";
 import { useUpgradeModal } from "@/hooks/useUpgradeModal";
 import { useTranslations } from "next-intl";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
+
 
 interface EventsClientProps {
   initialEvents: ChurchEvent[];

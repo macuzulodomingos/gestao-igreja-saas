@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useTransition, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
 import {
   Search, MoreHorizontal, Mail, Phone, Loader2,
   UserPlus, Calendar, ChevronLeft, ChevronRight,

@@ -12,7 +12,7 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { RoleBadge } from "./RoleBadge";
 import { signOut } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { Plan } from "@/app/generated/prisma/enums";
 import { useLocale } from "next-intl";
