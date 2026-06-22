@@ -18,7 +18,7 @@ export default async function DepartamentosPage({ params }: DepartamentosPagePro
   const isSuperAdmin = session.user.role === "SUPER_ADMIN";
 
   if (!isSuperAdmin && session.user.churchSlug !== slug) {
-    redirect("/login");
+    notFound();
   }
 
   let churchId = session.user.churchId;

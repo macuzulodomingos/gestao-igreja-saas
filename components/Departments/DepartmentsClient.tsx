@@ -5,7 +5,7 @@ import { DepartmentsList } from "./DepartmentsList";
 import { DepartmentFormDialog } from "./DepartmentFormDialog";
 import { DepartmentMembersDialog } from "./DepartmentMembersDialog";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { deleteDepartmentAction } from "@/app/actions/department-actions";
 import {
@@ -16,6 +16,7 @@ import { Department, DepartmentListMember } from "@/types/department";
 import { UpgradeModal } from "@/components/UpgradeModal";
 import { useUpgradeModal } from "@/hooks/useUpgradeModal";
 import { useTranslations } from "next-intl";
+import { useRouter } from "@/i18n/navigation";
 
 interface DepartmentsClientProps {
   initialDepartments: Department[];
@@ -29,10 +30,13 @@ export default function DepartmentsClient({ initialDepartments, members, churchI
   const [editingDepartment, setEditingDepartment] = useState<Department | null>(null);
   const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null);
   const [departmentToDelete, setDepartmentToDelete] = useState<Department | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [departments, setDepartments] = useState(initialDepartments);
   const upgrade = useUpgradeModal();
   const t = useTranslations("departments");
   const td = useTranslations("departments.errors");
+
+  const router = useRouter();
 
   // 👈 adiciona este useEffect no DepartmentsClient
   useEffect(() => {
@@ -60,15 +64,25 @@ export default function DepartmentsClient({ initialDepartments, members, churchI
   };
 
   const confirmDelete = async () => {
-    if (!departmentToDelete) return;
-    const result = await deleteDepartmentAction(departmentToDelete.id, churchId);
-    if (result.success) {
-      toast.success(t("successDeleted"));
-    } else {
-      const errorCode = (result as any).errorCode;
-      toast.error(errorCode ? td(errorCode) : t("errorDelete")); // 👈
+    if (!departmentToDelete || isDeleting) return;
+    setIsDeleting(true);
+    const targetId = departmentToDelete.id;
+    try {
+      const result = await deleteDepartmentAction(targetId, churchId);
+      if (result.success) {
+        toast.success(t("successDeleted"));
+        setDepartments(prev => prev.filter(d => d.id !== targetId));
+        router.refresh();
+      } else {
+        toast.error(result.errorCode ? td(result.errorCode) : t("errorDelete"));
+      }
+    } catch {
+      toast.error(t("errorDelete"));
+    } finally {
+      setIsDeleting(false);
+      setDepartmentToDelete(null);
+      
     }
-    setDepartmentToDelete(null);
   };
 
   return (
@@ -93,7 +107,10 @@ export default function DepartmentsClient({ initialDepartments, members, churchI
 
       <DepartmentFormDialog
         open={isFormOpen}
-        onOpenChange={setIsFormOpen}
+        onOpenChange={(open) => {
+          setIsFormOpen(open);
+          if (!open) setEditingDepartment(null);
+        }}
         department={editingDepartment}
         members={members}
         churchId={churchId}
@@ -103,7 +120,10 @@ export default function DepartmentsClient({ initialDepartments, members, churchI
       {selectedDepartment && (
         <DepartmentMembersDialog
           open={isMembersOpen}
-          onOpenChange={setIsMembersOpen}
+          onOpenChange={(open) => {
+            setIsMembersOpen(open);
+            if (!open) setSelectedDepartment(null);
+          }}
           department={selectedDepartment}
           allMembers={members}
           churchId={churchId}
@@ -112,7 +132,7 @@ export default function DepartmentsClient({ initialDepartments, members, churchI
 
       <AlertDialog
         open={!!departmentToDelete}
-        onOpenChange={(open) => !open && setDepartmentToDelete(null)}
+        onOpenChange={(open) => !open && !isDeleting && setDepartmentToDelete(null)}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -124,12 +144,13 @@ export default function DepartmentsClient({ initialDepartments, members, churchI
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeleting}>{t("cancel")}</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-white hover:bg-destructive/90"
               onClick={confirmDelete}
+              disabled={isDeleting}
             >
-              {t("confirm")}
+              {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : t("confirm")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

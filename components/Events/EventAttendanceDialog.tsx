@@ -100,19 +100,22 @@ export function EventAttendanceDialog({ open, onOpenChange, event, allMembers, t
       setSelectedIds(prev => [...new Set([...prev, ...filteredIds])]);
     }
   };
-
   const handleSave = () => {
     startTransition(async () => {
-      const result = await syncAttendeesAction(event.id, selectedIds, churchId);
-      if (result.success) {
-        toast.success(t("updated"));
-        onOpenChange(false);
-      } else {
-        toast.error(result.errorCode ? te(result.errorCode) : t("error"));
+      try {
+        const result = await syncAttendeesAction(event.id, selectedIds, churchId);
+        if (result.success) {
+          toast.success(t("updated"));
+          onOpenChange(false);
+        } else {
+          toast.error(result.errorCode ? te(result.errorCode) : t("error"));
+        }
+      } catch {
+        toast.error(t("error"));
       }
     });
   };
-
+  
   const allFilteredSelected = filteredMembers.length > 0 &&
     filteredMembers.every(m => selectedIds.includes(m.id));
 

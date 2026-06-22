@@ -12,6 +12,7 @@ import { Search, Users, Loader2 } from "lucide-react";
 import { syncDepartmentMembersAction } from "@/app/actions/department-actions";
 import { Department, DepartmentListMember } from "@/types/department";
 import { useTranslations } from "next-intl";
+import { useRouter } from "@/i18n/navigation";
 
 interface Props {
   open: boolean;
@@ -27,13 +28,14 @@ export function DepartmentMembersDialog({ open, onOpenChange, department, allMem
   const [searchTerm, setSearchTerm] = useState("");
   const t = useTranslations("departments.membersDialog");
   const td = useTranslations("departments.errors");
+  const router = useRouter();
 
   useEffect(() => {
     if (open) {
       setSelectedIds(department.members.map(m => m.member.id));
       setSearchTerm("");
     }
-  }, [open, department]);
+  }, [open, department.id]);
 
   const activeMembers = allMembers.filter(m => m.status === "ATIVO");
 
@@ -61,13 +63,18 @@ export function DepartmentMembersDialog({ open, onOpenChange, department, allMem
 
   const handleSave = () => {
     startTransition(async () => {
-      const result = await syncDepartmentMembersAction(department.id, selectedIds, churchId);
-      if (result.success) {
-        toast.success(t("updated"));
-        onOpenChange(false);
-      } else {
-        const errorCode = (result as any).errorCode;
-        toast.error(errorCode ? td(errorCode) : t("error"));
+      try {
+        const result = await syncDepartmentMembersAction(department.id, selectedIds, churchId);
+        if (result.success) {
+          toast.success(t("updated"));
+          onOpenChange(false);
+          router.refresh();
+        } else {
+          toast.error(result.errorCode ? td(result.errorCode) : t("error"));
+        }
+      } catch (error) {
+        console.error("[SYNC_DEPARTMENT_MEMBERS_ERROR]:", error);
+        toast.error(t("error"));
       }
     });
   };
@@ -76,7 +83,10 @@ export function DepartmentMembersDialog({ open, onOpenChange, department, allMem
     filteredMembers.every(m => selectedIds.includes(m.id));
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(isOpen) => {
+      if (isPending) return;
+      onOpenChange(isOpen);
+    }}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -140,7 +150,7 @@ export function DepartmentMembersDialog({ open, onOpenChange, department, allMem
         </div>
 
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
             {t("cancel")}
           </Button>
           <Button onClick={handleSave} disabled={isPending}>
