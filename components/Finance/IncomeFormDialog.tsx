@@ -56,28 +56,28 @@ export function IncomeFormDialog({ open, onOpenChange, entry, categories, church
     defaultValues: { date: "", categoryId: "", amount: "", description: "" },
   });
 
+  const { reset } = form;
+
   useEffect(() => {
-    if (open) {
-      if (entry) {
-        const cat = categories.find(c => c.name === entry.category);
-        form.reset({
+    if (!open) return;
+    reset(
+      entry
+        ? {
           date: typeof entry.date === "string"
             ? entry.date.split("T")[0]
             : entry.date.toISOString().split("T")[0],
-          categoryId: cat?.id || "",
+          categoryId: categories.find(c => c.name === entry.category)?.id || "",
           amount: entry.amount.toString(),
-          description: entry.description || "",
-        });
-      } else {
-        form.reset({
+          description: entry.description ?? "",
+        }
+        : {
           date: new Date().toISOString().split("T")[0],
           categoryId: categories[0]?.id || "",
           amount: "",
           description: "",
-        });
-      }
-    }
-  }, [entry, open, categories, form]);
+        }
+    );
+  }, [open, entry?.id, reset]);
 
   const handleSubmit = (data: FormData) => {
     startTransition(async () => {

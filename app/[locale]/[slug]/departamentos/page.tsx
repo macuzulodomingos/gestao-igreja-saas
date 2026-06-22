@@ -21,11 +21,9 @@ export default async function DepartamentosPage({ params }: DepartamentosPagePro
     notFound();
   }
 
-  let churchId = session.user.churchId;
-  const church = await getChurchBySlug(slug, isSuperAdmin ? undefined : churchId);
+  const church = await getChurchBySlug(slug, isSuperAdmin ? undefined : session.user.churchId);
   if (!church) notFound();
-  if (isSuperAdmin) churchId = church.id;
-
+  const churchId = isSuperAdmin ? church.id : session.user.churchId;
   if (!churchId) redirect("/login");
 
 

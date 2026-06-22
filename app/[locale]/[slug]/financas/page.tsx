@@ -24,21 +24,14 @@ export default async function FinancasPage({ params, searchParams }: FinancasPag
   }
 
   // 👈 SUPER_ADMIN busca churchId pelo slug
-  let churchId = session.user.churchId;
-  let church;
+  const church = await getChurchBySlug(slug, isSuperAdmin ? undefined : session.user.churchId);
+  if (!church) notFound();
 
-  if (isSuperAdmin) {
-    church = await getChurchBySlug(slug, undefined);
-    if (!church) notFound();
-    churchId = church.id;
-  } else {
-    church = await getChurchBySlug(slug, churchId);
-    if (!church) redirect("/login");
-  }
-
+  const churchId = isSuperAdmin ? church.id : session.user.churchId;
   if (!churchId) redirect("/login");
 
   const timezone = church.timezone ?? "Africa/Luanda";
+
   const planLimits = getPlanLimits(church.plan as PlanType);
 
   const now = new Date();

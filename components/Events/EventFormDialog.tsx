@@ -51,36 +51,38 @@ export function EventFormDialog({ open, onOpenChange, event, departments, catego
     },
   });
 
+  const { reset } = form;
+
   useEffect(() => {
-    if (open) {
-      if (event) {
-        const startAt = typeof event.startAt === "string" ? parseISO(event.startAt) : event.startAt;
-        const date = startAt.toLocaleDateString("en-CA");
-        const time = startAt.toLocaleTimeString("en-GB", {
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: false,
-        });
-        form.reset({
-          name: event.name,
-          description: event.description || "",
-          categoryId: event.categoryId,
-          date,
-          time,
-          departmentId: event.departmentId || "none",
-        });
-      } else {
-        form.reset({
-          name: "",
-          description: "",
-          categoryId: categories[0]?.id ?? "",
-          date: new Date().toLocaleDateString("en-CA"),
-          time: "09:00",
-          departmentId: "none",
-        });
-      }
+    if (!open) return;
+
+    if (event) {
+      const startAt = typeof event.startAt === "string" ? parseISO(event.startAt) : event.startAt;
+      const date = startAt.toLocaleDateString("en-CA");
+      const time = startAt.toLocaleTimeString("en-GB", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      });
+      reset({
+        name: event.name,
+        description: event.description ?? "",
+        categoryId: event.categoryId,
+        date,
+        time,
+        departmentId: event.departmentId ?? "none",
+      });
+    } else {
+      reset({
+        name: "",
+        description: "",
+        categoryId: categories[0]?.id ?? "",
+        date: new Date().toLocaleDateString("en-CA"),
+        time: "09:00",
+        departmentId: "none",
+      });
     }
-  }, [event, open, form, categories]);
+  }, [open, event?.id, reset]);
 
   const handleSubmit = (data: FormData) => {
     startTransition(async () => {

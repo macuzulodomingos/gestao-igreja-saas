@@ -24,13 +24,9 @@ export default async function MembersPage({ params, searchParams }: MembersPageP
   }
 
   // 👈 SUPER_ADMIN busca churchId pelo slug
-  let churchId = session.user.churchId;
-  if (isSuperAdmin) {
-    const church = await getChurchBySlug(slug, undefined);
-    if (!church) notFound();
-    churchId = church.id;
-  }
-
+  const church = await getChurchBySlug(slug, isSuperAdmin ? undefined : session.user.churchId);
+  if (!church) notFound();
+  const churchId = isSuperAdmin ? church.id : session.user.churchId;
   if (!churchId) redirect("/login");
 
   const currentPage = Number(sParams.page) || 1;

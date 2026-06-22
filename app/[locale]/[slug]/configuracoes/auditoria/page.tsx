@@ -26,24 +26,18 @@ export default async function AuditoriaPage({
   const isSuperAdmin = session.user.role === "SUPER_ADMIN";
 
   if (!isSuperAdmin && session.user.churchSlug !== slug) {
-    redirect("/login");
+    notFound();
   }
 
-  let churchId = session.user.churchId;
-
-  if (isSuperAdmin) {
-    const church = await getChurchBySlug(slug, undefined);
-    if (!church) notFound();
-    churchId = church.id; // 👈 TypeScript sabe que church não é null aqui
-  } else {
-    const church = await getChurchBySlug(slug, churchId);
-    if (!church) notFound();
-  }
-
+  const church = await getChurchBySlug(slug, isSuperAdmin ? undefined : session.user.churchId);
+  if (!church) notFound();
+  const churchId = isSuperAdmin ? church.id : session.user.churchId;
   if (!churchId) redirect("/login");
 
   const sParams = await searchParams;
-  const page = Number(sParams.page) || 1;
+  const rawPage = Number(sParams.page);
+  const page = !isNaN(rawPage) && rawPage > 0 ? Math.floor(rawPage) : 1;
+
 
 
   const { logs, metadata } = await AuditService.getChurchLogs(churchId, {

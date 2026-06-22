@@ -25,11 +25,9 @@ export default async function EventosPage({ params }: EventosPageProps) {
   }
 
   // 👈 SUPER_ADMIN busca churchId pelo slug
-  let churchId = session.user.churchId;
-  const church = await getChurchBySlug(slug, isSuperAdmin ? undefined : churchId);
+  const church = await getChurchBySlug(slug, isSuperAdmin ? undefined : session.user.churchId);
   if (!church) notFound();
-  if (isSuperAdmin) churchId = church.id;
-
+  const churchId = isSuperAdmin ? church.id : session.user.churchId;
   if (!churchId) redirect("/login");
 
   const timezone = church.timezone || "Africa/Luanda";
@@ -48,7 +46,7 @@ export default async function EventosPage({ params }: EventosPageProps) {
       initialEvents={events}
       members={membersData.members}
       departments={departments}
-      categories={categories} 
+      categories={categories}
       timezone={timezone}
       churchId={churchId}
     />
