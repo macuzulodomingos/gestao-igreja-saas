@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -15,10 +15,11 @@ import { Loader2 } from "lucide-react";
 import { saveDepartmentAction } from "@/app/actions/department-actions";
 import { useTranslations } from "next-intl";
 import { TranslatedFormMessage } from "@/components/ui/TranslatedFormMessage";
+import { useRouter } from "@/i18n/navigation";
 
 const schema = z.object({
-  name: z.string().min(1, "validation.nameRequired").max(100, "validation.departmentNameTooLong"),
-  description: z.string().max(500, "validation.departmentDescTooLong").optional(),
+  name: z.string().trim().min(1, "validation.nameRequired").max(100, "validation.departmentNameTooLong"),
+  description: z.string().trim().max(500, "validation.departmentDescTooLong").optional(),
   leaderId: z.string().optional(),
 });
 
@@ -51,55 +52,64 @@ export function DepartmentFormDialog({ open, onOpenChange, department, members, 
   const t = useTranslations("departments.form");
   const tc = useTranslations("common");
   const td = useTranslations("departments.errors");
+  const router = useRouter();
 
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: { name: "", description: "", leaderId: "none" },
   });
 
+  const { reset } = form;
+
   useEffect(() => {
-    if (open) {
-      if (department) {
-        form.reset({
-          name: department.name,
-          description: department.description || "",
-          leaderId: department.leaderId || "none",
-        });
-      } else {
-        form.reset({ name: "", description: "", leaderId: "none" });
-      }
-    }
-  }, [department, open, form]);
+    if (!open) return;
+    reset(
+      department
+        ? {
+            name: department.name,
+            description: department.description ?? "",
+            leaderId: department.leaderId ?? "none",
+          }
+        : { name: "", description: "", leaderId: "none" }
+    );
+  }, [open, department?.id, reset]);
 
   const handleSubmit = (data: FormData) => {
     startTransition(async () => {
-      const formData = new FormData();
-      formData.append("name", data.name);
-      formData.append("description", data.description || "");
-      formData.append("leaderId", data.leaderId || "none");
+      try {
+        const formData = new FormData();
+        formData.append("name", data.name);
+        formData.append("description", data.description || "");
+        formData.append("leaderId", data.leaderId || "none");
 
-      const result = await saveDepartmentAction(
-        formData,
-        department?.id ?? undefined,
-        churchId
-      );
+        const result = await saveDepartmentAction(
+          formData,
+          department?.id ?? undefined,
+          churchId
+        );
 
-      if (result.success) {
-        toast.success(department ? t("updated") : t("created"));
-        onOpenChange(false);
-      } else if ("upgrade" in result && result.upgrade) {
-        onOpenChange(false);
-        const errorCode = (result as any).errorCode;
-        onUpgrade?.(errorCode ? td(errorCode) : tc("upgrade")); // 👈
-      } else {
-        const errorCode = (result as any).errorCode;
-        toast.error(errorCode ? td(errorCode) : t("error")); // 👈
+        if (result.success) {
+          toast.success(department ? t("updated") : t("created"));
+          onOpenChange(false);
+          router.refresh();
+        } else if ("upgrade" in result && result.upgrade) {
+          onOpenChange(false);
+          onUpgrade?.(result.errorCode ? td(result.errorCode) : tc("upgrade"));
+        } else {
+          toast.error(result.errorCode ? td(result.errorCode) : t("error"));
+        }
+      } catch (error) {
+        console.error("[SAVE_DEPARTMENT_ERROR]:", error);
+        toast.error(t("error"));
       }
     });
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(isOpen) => {
+      if (isPending) return;
+      onOpenChange(isOpen);
+    }}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>
