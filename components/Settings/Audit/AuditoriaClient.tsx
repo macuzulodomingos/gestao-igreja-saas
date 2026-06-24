@@ -1,7 +1,7 @@
 "use client";
 
 import { useTransition, useState } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter, usePathname } from "@/i18n/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,13 @@ import { ChevronLeft, ChevronRight, Shield, Filter, ChevronDown, ChevronUp } fro
 import { useTranslations, useLocale } from "next-intl";
 import { Prisma } from "@prisma/client";
 import { ChurchLogsResult } from "@/services/auditService";
+import { parseISO, isValid } from "date-fns";
+
+interface DiffResult {
+  key: string;
+  old: Prisma.JsonValue | null;
+  new: Prisma.JsonValue | null;
+}
 
 interface AuditoriaClientProps {
   initialLogs: ChurchLogsResult["logs"];
@@ -33,6 +40,18 @@ const actionColors: Record<string, string> = {
   SYNC: "bg-amber-100 text-amber-700",
 };
 
+// Array estático das entidades auditáveis — alinhado com as chaves do JSON de tradução
+const AUDITABLE_ENTITIES = [
+  "Member", "Finance", "Department", "Event",
+  "FinanceCategory", "MemberRole", "EventCategory",
+  "User", "Subscription", "Church",
+] as const;
+
+type AuditableEntity = typeof AUDITABLE_ENTITIES[number];
+
+const isAuditableEntity = (key: string): key is AuditableEntity =>
+  AUDITABLE_ENTITIES.includes(key as AuditableEntity);
+
 const getActionColor = (action: string) => {
   const key = Object.keys(actionColors).find(k => action.startsWith(k));
   return key ? actionColors[key] : "bg-muted text-muted-foreground";
@@ -46,41 +65,53 @@ const getActionLabel = (action: string) => {
     .replace("_EXPENSE", "").replace(/_/g, " ");
 };
 
-
 const IGNORED_FIELDS = [
   "id", "churchId", "updatedAt", "createdAt",
   "roleId", "categoryId", "departmentId", "leaderId",
   "deletedAt", "userId", "ipAddress",
 ];
 
-// 👈 calcula diferenças entre oldData e newData
-const getDiff = (oldData?: Prisma.JsonValue, newData?: Prisma.JsonValue) => {
+const getDiff = (oldData?: Prisma.JsonValue, newData?: Prisma.JsonValue): DiffResult[] => {
   if (!oldData && !newData) return [];
+
+  // CREATE: oldData nulo, newData com dados novos
   if (!oldData && newData && typeof newData === "object" && !Array.isArray(newData)) {
     return Object.entries(newData)
-      .filter(([key]) => !IGNORED_FIELDS.includes(key)) // 👈
-      .map(([key, value]) => ({ key, old: null, new: value }));
+      .filter(([key]) => !IGNORED_FIELDS.includes(key))
+      .map(([key, value]) => ({ key, old: null, new: value ?? null }));
   }
-  if (oldData && !newData) return [];
+
+  // DELETE: oldData com dados, newData nulo — mostra o que foi removido
+  if (oldData && !newData && typeof oldData === "object" && !Array.isArray(oldData)) {
+    return Object.entries(oldData)
+      .filter(([key]) => !IGNORED_FIELDS.includes(key))
+      .map(([key, value]) => ({ key, old: value ?? null, new: null }));
+  }
+
+  // UPDATE: ambos preenchidos, calcula diferença real
   if (
     oldData && newData &&
     typeof oldData === "object" && typeof newData === "object" &&
     !Array.isArray(oldData) && !Array.isArray(newData)
   ) {
-    const allKeys = new Set([...Object.keys(oldData), ...Object.keys(newData)]);
+    const oldObj = oldData as Record<string, Prisma.JsonValue>;
+    const newObj = newData as Record<string, Prisma.JsonValue>;
+
+    const allKeys = new Set([...Object.keys(oldObj), ...Object.keys(newObj)]);
     return Array.from(allKeys)
-      .filter(key => !IGNORED_FIELDS.includes(key)) // 👈
-      .filter(key => JSON.stringify((oldData as any)[key]) !== JSON.stringify((newData as any)[key]))
+      .filter(key => !IGNORED_FIELDS.includes(key))
+      .filter(key => JSON.stringify(oldObj[key]) !== JSON.stringify(newObj[key]))
       .map(key => ({
         key,
-        old: (oldData as any)[key],
-        new: (newData as any)[key],
+        old: oldObj[key] ?? null,
+        new: newObj[key] ?? null,
       }));
   }
+
   return [];
 };
 
-const formatValue = (value: any): string => {
+const formatValue = (value: unknown): string => {
   if (value === null || value === undefined) return "—";
   if (typeof value === "boolean") return value ? "✓" : "✗";
   if (typeof value === "object") return JSON.stringify(value);
@@ -95,6 +126,7 @@ export default function AuditoriaClient({
   const [isPending, startTransition] = useTransition();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const t = useTranslations("audit");
+  const te = useTranslations("audit.entities"); // 👈 namespace específico para entidades
   const locale = useLocale();
 
   const updateFilters = (newFilters: Record<string, string>) => {
@@ -113,7 +145,7 @@ export default function AuditoriaClient({
   };
 
   return (
-    <div className="space-y-6">
+    <div className={`space-y-6 transition-opacity duration-200 ${isPending ? "opacity-50 pointer-events-none" : ""}`}>
       <div>
         <h1 className="text-2xl md:text-3xl font-bold text-foreground flex items-center gap-2">
           <Shield className="h-7 w-7 text-primary" />
@@ -140,9 +172,9 @@ export default function AuditoriaClient({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">{t("allModules")}</SelectItem>
-                {(Object.keys(t.raw("entities")) as string[]).map((key) => (
+                {AUDITABLE_ENTITIES.map((key) => (
                   <SelectItem key={key} value={key}>
-                    {t(`entities.${key}` as any)}
+                    {te(key)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -186,16 +218,22 @@ export default function AuditoriaClient({
           ) : (
             <div className="divide-y">
               {initialLogs.map((log) => {
+                // Type guard garante que só chamamos te() com chaves válidas
+                // Se a entidade não for conhecida, usa o nome cru da BD
                 let entityLabel = log.entityName;
-                try { entityLabel = t(`entities.${log.entityName}` as any); } catch { }
+                if (isAuditableEntity(log.entityName)) {
+                  entityLabel = te(log.entityName); // 👈 sem as any, sem try/catch
+                }
 
                 const diff = getDiff(log.oldData, log.newData);
                 const isExpanded = expandedId === log.id;
                 const hasDiff = diff.length > 0;
 
+                const createdAt = typeof log.createdAt === "string" ? parseISO(log.createdAt) : log.createdAt;
+                const isValidDate = isValid(createdAt);
+
                 return (
                   <div key={log.id} className="hover:bg-muted/30 transition-colors">
-                    {/* 👈 linha principal */}
                     <div
                       className={`flex items-start gap-4 p-4 ${hasDiff ? "cursor-pointer" : ""}`}
                       onClick={() => hasDiff && setExpandedId(isExpanded ? null : log.id)}
@@ -213,7 +251,6 @@ export default function AuditoriaClient({
                         <p className="text-sm font-medium truncate">
                           {log.userEmail || t("system")}
                         </p>
-                        {/* 👈 remove o ID — mostra campos alterados como preview */}
                         {hasDiff && !isExpanded && (
                           <p className="text-xs text-muted-foreground mt-1 truncate">
                             {t("changedFields")}: {diff.map(d => d.key).join(", ")}
@@ -222,7 +259,7 @@ export default function AuditoriaClient({
                         {!hasDiff && log.newData && typeof log.newData === "object" && !Array.isArray(log.newData) && (
                           <p className="text-xs text-muted-foreground mt-1 truncate">
                             {Object.keys(log.newData as object)
-                              .filter(k => !IGNORED_FIELDS.includes(k)) // 👈
+                              .filter(k => !IGNORED_FIELDS.includes(k))
                               .slice(0, 3)
                               .join(", ")}
                           </p>
@@ -232,38 +269,34 @@ export default function AuditoriaClient({
                       <div className="flex items-start gap-2 shrink-0">
                         <div className="text-right">
                           <p className="text-xs text-muted-foreground">
-                            {new Date(log.createdAt).toLocaleDateString(locale === "fr" ? "fr-FR" : "pt-AO")}
+                            {isValidDate ? createdAt.toLocaleDateString(locale === "fr" ? "fr-FR" : "pt-AO") : "—"}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            {new Date(log.createdAt).toLocaleTimeString(locale === "fr" ? "fr-FR" : "pt-AO", {
-                              hour: "2-digit", minute: "2-digit",
-                            })}
+                            {isValidDate ? createdAt.toLocaleTimeString(locale === "fr" ? "fr-FR" : "pt-AO", {
+                              hour: "2-digit", minute: "2-digit"
+                            }) : "—"}
                           </p>
                         </div>
                         {hasDiff && (
                           <div className="text-muted-foreground mt-0.5">
-                            {isExpanded
-                              ? <ChevronUp className="h-4 w-4" />
-                              : <ChevronDown className="h-4 w-4" />
-                            }
+                            {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                           </div>
                         )}
                       </div>
                     </div>
 
-                    {/* 👈 detalhe das alterações expandido */}
                     {isExpanded && hasDiff && (
                       <div className="px-4 pb-4 ml-[76px]">
-                        <div className="rounded-lg border bg-muted/30 overflow-hidden">
-                          <div className="grid grid-cols-3 gap-0 text-xs font-medium text-muted-foreground bg-muted px-3 py-2">
+                        <div className="rounded-lg border bg-muted/30 overflow-hidden max-h-64 overflow-y-auto">
+                          <div className="grid grid-cols-3 gap-0 text-xs font-medium text-muted-foreground bg-muted px-3 py-2 sticky top-0">
                             <span>{t("field")}</span>
                             <span>{t("oldValue")}</span>
                             <span>{t("newValue")}</span>
                           </div>
                           {diff.map(({ key, old: oldVal, new: newVal }) => (
-                            <div key={key} className="grid grid-cols-3 gap-0 text-xs px-3 py-2 border-t">
+                            <div key={key} className="grid grid-cols-1 md:grid-cols-3 gap-1 text-xs px-3 py-2 border-t">
                               <span className="font-medium text-foreground">{key}</span>
-                              <span className="text-red-600 truncate pr-2">{formatValue(oldVal)}</span>
+                              <span className="text-red-600 truncate">{formatValue(oldVal)}</span>
                               <span className="text-green-600 truncate">{formatValue(newVal)}</span>
                             </div>
                           ))}

@@ -1,31 +1,40 @@
 import { auth } from "@/lib/auth";
-import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Tags, ShieldCheck, Shield, Users, CalendarDays, Globe, Languages } from "lucide-react";
+import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { type LucideIcon, Tags, ShieldCheck, Shield, Users, CalendarDays, Globe, Languages } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { getLocale } from "next-intl/server";
+import { redirect, notFound } from "next/navigation";
 
 
 interface ConfiguracoesPageProps {
   params: Promise<{ slug: string }>;
 }
 
+interface SettingItem {
+  title: string;
+  description: string;
+  href: string;
+  icon: LucideIcon;
+  color: string;
+}
+
 export default async function ConfiguracoesPage({ params }: ConfiguracoesPageProps) {
   const session = await auth();
   const { slug } = await params;
+  const locale = await getLocale();
 
-  if (!session?.user) redirect("/login");
+  if (!session?.user) redirect(`/${locale}/login`);
 
   const isSuperAdmin = session.user.role === "SUPER_ADMIN";
   if (!isSuperAdmin && session.user.churchSlug !== slug) {
-    redirect("/login");
+    notFound();
   }
 
   const t = await getTranslations("settings");
-  const locale = await getLocale();
 
-  const items = [
+
+  const items: SettingItem[] = [
     {
       title: t("financialCategories"),
       description: t("financialCategoriesDesc"),

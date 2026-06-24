@@ -17,24 +17,17 @@ export default async function UtilizadoresPage({ params }: UtilizadoresPageProps
   const isSuperAdmin = session.user.role === "SUPER_ADMIN";
 
   if (!isSuperAdmin && session.user.churchSlug !== slug) {
-    redirect("/login");
+    notFound();
   }
 
   if (!["ADMIN", "SUPER_ADMIN"].includes(session.user.role!)) {
     redirect("/login");
   }
 
-  let churchId = session.user.churchId;
+  const church = await getChurchBySlug(slug, isSuperAdmin ? undefined : session.user.churchId);
+  if (!church) notFound();
 
-  if (isSuperAdmin) {
-    const church = await getChurchBySlug(slug, undefined);
-    if (!church) notFound();
-    churchId = church.id;
-  } else {
-    const church = await getChurchBySlug(slug, churchId);
-    if (!church) notFound();
-  }
-
+  const churchId = isSuperAdmin ? church.id : session.user.churchId;
   if (!churchId) redirect("/login");
 
   const users = await UserService.getUsers(churchId);
@@ -43,7 +36,7 @@ export default async function UtilizadoresPage({ params }: UtilizadoresPageProps
     <UsersClient
       initialUsers={users}
       currentUserId={session.user.id}
-      churchId={churchId} // 👈 passa churchId
+      churchId={churchId}
     />
   );
 }

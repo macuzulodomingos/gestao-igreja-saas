@@ -20,17 +20,9 @@ export default async function CategoriasPage({ params }: CategoriasPageProps) {
     redirect("/login");
   }
 
-  let churchId = session.user.churchId;
-
-  if (isSuperAdmin) {
-    const church = await getChurchBySlug(slug, undefined);
-    if (!church) notFound();
-    churchId = church.id;
-  } else {
-    const church = await getChurchBySlug(slug, churchId);
-    if (!church) notFound();
-  }
-
+  const church = await getChurchBySlug(slug, isSuperAdmin ? undefined : session.user.churchId);
+  if (!church) notFound();
+  const churchId = isSuperAdmin ? church.id : session.user.churchId;
   if (!churchId) redirect("/login");
 
   const categories = await FinanceCategoryService.getCategories(churchId);
