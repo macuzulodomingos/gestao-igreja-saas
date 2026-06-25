@@ -4,6 +4,7 @@ import { FinanceService } from "@/services/financeService";
 import FinanceClientPage from "@/components/Finance/FinanceClientPage";
 import { getPlanLimits, PlanType } from "@/lib/plans";
 import { getChurchBySlug } from "@/lib/tenant";
+import { getLocale } from "next-intl/server";
 
 interface FinancasPageProps {
   params: Promise<{ slug: string }>; // 👈 adiciona params
@@ -15,7 +16,10 @@ export default async function FinancasPage({ params, searchParams }: FinancasPag
   const { slug } = await params; // 👈 adiciona
   const sParams = await searchParams;
 
-  if (!session?.user) redirect("/login");
+  if (!session?.user) {
+    const locale = await getLocale();
+    redirect(`/${locale}/login`);
+  }
 
   const isSuperAdmin = session.user.role === "SUPER_ADMIN";
 
@@ -27,8 +31,7 @@ export default async function FinancasPage({ params, searchParams }: FinancasPag
   const church = await getChurchBySlug(slug, isSuperAdmin ? undefined : session.user.churchId);
   if (!church) notFound();
 
-  const churchId = isSuperAdmin ? church.id : session.user.churchId;
-  if (!churchId) redirect("/login");
+  const churchId = church.id;
 
   const timezone = church.timezone ?? "Africa/Luanda";
 

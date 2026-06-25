@@ -3,6 +3,7 @@ import { redirect, notFound } from "next/navigation";
 import { UserService } from "@/services/userService";
 import UsersClient from "@/components/Settings/Users/UsersClient";
 import { getChurchBySlug } from "@/lib/tenant";
+import { getLocale } from "next-intl/server";
 
 interface UtilizadoresPageProps {
   params: Promise<{ slug: string }>;
@@ -12,7 +13,10 @@ export default async function UtilizadoresPage({ params }: UtilizadoresPageProps
   const session = await auth();
   const { slug } = await params;
 
-  if (!session?.user) redirect("/login");
+   if (!session?.user) {
+    const locale = await getLocale();
+    redirect(`/${locale}/login`);
+  }
 
   const isSuperAdmin = session.user.role === "SUPER_ADMIN";
 
@@ -27,8 +31,7 @@ export default async function UtilizadoresPage({ params }: UtilizadoresPageProps
   const church = await getChurchBySlug(slug, isSuperAdmin ? undefined : session.user.churchId);
   if (!church) notFound();
 
-  const churchId = isSuperAdmin ? church.id : session.user.churchId;
-  if (!churchId) redirect("/login");
+  const churchId = church.id;
 
   const users = await UserService.getUsers(churchId);
 

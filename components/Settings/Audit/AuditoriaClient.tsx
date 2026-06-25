@@ -222,7 +222,7 @@ export default function AuditoriaClient({
                 // Se a entidade não for conhecida, usa o nome cru da BD
                 let entityLabel = log.entityName;
                 if (isAuditableEntity(log.entityName)) {
-                  entityLabel = te(log.entityName); // 👈 sem as any, sem try/catch
+                  entityLabel = te(log.entityName); 
                 }
 
                 const diff = getDiff(log.oldData, log.newData);

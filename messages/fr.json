@@ -830,5 +830,11 @@
     "emailTaken": "Cet e-mail est déjà enregistré.",
     "errorCreate": "Erreur lors de la création du compte. Veuillez réessayer.",
     "slugHint": "Uniquement des lettres minuscules, chiffres et tirets"
+  },
+  "error": {
+    "title": "Une erreur s'est produite",
+    "description": "Une erreur inattendue s'est produite. Veuillez réessayer.",
+    "retry": "Réessayer",
+    "trying": "En cours..."
   }
 }

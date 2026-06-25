@@ -830,5 +830,11 @@
     "emailTaken": "Este e-mail já está registado.",
     "errorCreate": "Erro ao criar conta. Tente novamente.",
     "slugHint": "Apenas letras minúsculas, números e hífens"
+  },
+  "error": {
+    "title": "Algo correu mal",
+    "description": "Ocorreu um erro inesperado. Tente novamente.",
+    "retry": "Tentar novamente",
+    "trying": "A tentar..."
   }
 }

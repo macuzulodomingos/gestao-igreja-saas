@@ -4,6 +4,7 @@ import { DepartmentService } from "@/services/departmentService";
 import { MemberService } from "@/services/memberService";
 import DepartmentsClient from "@/components/Departments/DepartmentsClient";
 import { getChurchBySlug } from "@/lib/tenant";
+import { getLocale } from "next-intl/server";
 
 interface DepartamentosPageProps {
   params: Promise<{ slug: string }>;
@@ -13,7 +14,11 @@ export default async function DepartamentosPage({ params }: DepartamentosPagePro
   const session = await auth();
   const { slug } = await params;
 
-  if (!session?.user) redirect("/login");
+  if (!session?.user) {
+    const locale = await getLocale();
+    redirect(`/${locale}/login`);
+  }
+
 
   const isSuperAdmin = session.user.role === "SUPER_ADMIN";
 
@@ -23,8 +28,7 @@ export default async function DepartamentosPage({ params }: DepartamentosPagePro
 
   const church = await getChurchBySlug(slug, isSuperAdmin ? undefined : session.user.churchId);
   if (!church) notFound();
-  const churchId = isSuperAdmin ? church.id : session.user.churchId;
-  if (!churchId) redirect("/login");
+  const churchId = church.id;
 
 
   const [departments, membersData] = await Promise.all([

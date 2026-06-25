@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { notFound, redirect } from "next/navigation";
 import ChurchSettingsClient from "@/components/Settings/Church/ChurchSettingsClient";
 import { getChurchBySlug } from "@/lib/tenant";
+import { getLocale } from "next-intl/server";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -10,7 +11,11 @@ interface PageProps {
 export default async function ChurchSettingsPage({ params }: PageProps) {
   const { slug } = await params;
   const session = await auth();
-  if (!session?.user) redirect("/login");
+  
+  if (!session?.user) {
+    const locale = await getLocale();
+    redirect(`/${locale}/login`);
+  }
 
   const isSuperAdmin = session.user.role === "SUPER_ADMIN";
 
@@ -21,8 +26,8 @@ export default async function ChurchSettingsPage({ params }: PageProps) {
   const church = await getChurchBySlug(slug, isSuperAdmin ? undefined : session.user.churchId);
   if (!church) notFound();
 
-  const churchId = isSuperAdmin ? church.id : session.user.churchId;
-  if (!churchId) redirect("/login");
+  const churchId = church.id;
+  
 
   return <ChurchSettingsClient church={church} />;
 }

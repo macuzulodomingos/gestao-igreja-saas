@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, Loader2 } from "lucide-react";
 import { deleteRoleAction } from "@/app/actions/member-role-actions";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -13,6 +13,7 @@ import { MemberRole } from "@/types/role";
 import { RolesList } from "./RolesList";
 import { RoleFormDialog } from "./RoleFormDialog";
 import { useTranslations } from "next-intl";
+import { useRouter } from "@/i18n/navigation";
 
 interface Props {
   initialRoles: MemberRole[];
@@ -20,10 +21,17 @@ interface Props {
 }
 
 export default function RolesClient({ initialRoles, churchId }: Props) {
+  const [roles, setRoles] = useState(initialRoles);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingRole, setEditingRole] = useState<MemberRole | null>(null);
   const [roleToDelete, setRoleToDelete] = useState<MemberRole | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const t = useTranslations("roles");
+  const router = useRouter();
+
+  useEffect(() => {
+    setRoles(initialRoles);
+  }, [initialRoles]);
 
   const handleAdd = () => {
     setEditingRole(null);
@@ -36,20 +44,30 @@ export default function RolesClient({ initialRoles, churchId }: Props) {
   };
 
   const handleDelete = (id: string) => {
-    const role = initialRoles.find(r => r.id === id);
+    const role = roles.find(r => r.id === id);
     if (role) setRoleToDelete(role);
   };
 
   const confirmDelete = async () => {
-    if (!roleToDelete) return;
-    const result = await deleteRoleAction(roleToDelete.id, churchId);
-    if (result.success) {
-      toast.success(t("successDeleted"));
-    } else {
-      const errorCode = (result as any).errorCode;
-      toast.error(errorCode ? t(`errors.${errorCode}`) : t("errorDelete"));
+    if (!roleToDelete || isDeleting) return;
+    setIsDeleting(true);
+    const targetId = roleToDelete.id;
+    try {
+      const result = await deleteRoleAction(targetId, churchId);
+      if (result.success) {
+        toast.success(t("successDeleted"));
+        setRoles(prev => prev.filter(r => r.id !== targetId));
+        router.refresh();
+      } else {
+        toast.error(result.errorCode ? t(`errors.${result.errorCode}`) : t("errorDelete"));
+      }
+    } catch {
+      console.error("[DELETE_ROLE_ERROR]");
+      toast.error(t("errorDelete"));
+    } finally {
+      setIsDeleting(false);
+      setRoleToDelete(null);
     }
-    setRoleToDelete(null);
   };
 
   return (
@@ -66,21 +84,24 @@ export default function RolesClient({ initialRoles, churchId }: Props) {
       </div>
 
       <RolesList
-        roles={initialRoles}
+        roles={roles}
         onEdit={handleEdit}
         onDelete={handleDelete}
       />
 
       <RoleFormDialog
         open={isFormOpen}
-        onOpenChange={setIsFormOpen}
+        onOpenChange={(open) => {
+          setIsFormOpen(open);
+          if (!open) setEditingRole(null);
+        }}
         role={editingRole}
         churchId={churchId}
       />
 
       <AlertDialog
         open={!!roleToDelete}
-        onOpenChange={(open) => !open && setRoleToDelete(null)}
+        onOpenChange={(open) => !open && !isDeleting && setRoleToDelete(null)}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -91,12 +112,13 @@ export default function RolesClient({ initialRoles, churchId }: Props) {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeleting}>{t("cancel")}</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-white hover:bg-destructive/90"
               onClick={confirmDelete}
+              disabled={isDeleting}
             >
-              {t("confirm")}
+              {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : t("confirm")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

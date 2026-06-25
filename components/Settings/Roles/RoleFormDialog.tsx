@@ -14,12 +14,13 @@ import { saveRoleAction } from "@/app/actions/member-role-actions";
 import { MemberRole } from "@/types/role";
 import { useTranslations } from "next-intl";
 import { TranslatedFormMessage } from "@/components/ui/TranslatedFormMessage";
+import { useRouter } from "@/i18n/navigation";
 
 const schema = z.object({
-  name: z.string().min(1, "validation.nameRequired").max(50, "validation.nameTooLong"),
+  name: z.string().trim().min(1, "validation.nameRequired").max(50, "validation.nameTooLong"),
 });
 
-type FormData = z.infer<typeof schema>;
+type RoleFormValues = z.infer<typeof schema>;
 
 interface Props {
   open: boolean;
@@ -32,40 +33,48 @@ export function RoleFormDialog({ open, onOpenChange, role, churchId }: Props) {
   const [isPending, startTransition] = useTransition();
   const t = useTranslations("roles.form");
   const tc = useTranslations("common");
+  const tr = useTranslations("roles");
+  const router = useRouter();
 
-  const form = useForm<FormData>({
+  const form = useForm<RoleFormValues>({
     resolver: zodResolver(schema),
     defaultValues: { name: "" },
   });
 
+  const { reset } = form;
+
   useEffect(() => {
-    if (open) {
-      form.reset({ name: role?.name ?? "" });
-    }
-  }, [open, role, form]);
+    if (!open) return;
+    reset({ name: role?.name ?? "" });
+  }, [open, role?.id, reset]);
 
-  const handleSubmit = (data: FormData) => {
+  const handleSubmit = (data: RoleFormValues) => {
     startTransition(async () => {
-      const formData = new FormData();
-      formData.append("name", data.name);
+      try {
+        const formData = new FormData();
+        formData.append("name", data.name);
 
-      const result = await saveRoleAction(formData, role?.id, churchId);
+        const result = await saveRoleAction(formData, role?.id, churchId);
 
-      if (result.success) {
-        toast.success(role ? t("updated") : t("created"));
-        onOpenChange(false);
-      } else {
-        const errorCode = (result as any).errorCode;
-        toast.error(errorCode
-          ? useTranslations("roles")(`errors.${errorCode}`)
-          : t("error")
-        );
+        if (result.success) {
+          toast.success(role ? t("updated") : t("created"));
+          onOpenChange(false);
+          router.refresh();
+        } else {
+          toast.error(result.errorCode ? tr(`errors.${result.errorCode}`) : t("error"));
+        }
+      } catch (error) {
+        console.error("[SAVE_ROLE_ERROR]:", error);
+        toast.error(t("error"));
       }
     });
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(isOpen) => {
+      if (isPending) return;
+      onOpenChange(isOpen);
+    }}>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
           <DialogTitle>{role ? t("editTitle") : t("addTitle")}</DialogTitle>
@@ -84,7 +93,12 @@ export function RoleFormDialog({ open, onOpenChange, role, churchId }: Props) {
             )} />
 
             <div className="flex justify-end gap-3 pt-2">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                disabled={isPending}
+              >
                 {tc("cancel")}
               </Button>
               <Button type="submit" disabled={isPending}>

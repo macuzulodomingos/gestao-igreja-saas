@@ -1,7 +1,8 @@
 import { auth } from "@/lib/auth";
-import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { LanguageClient } from "@/components/Settings/Language/LanguageClient";
+import { getLocale } from "next-intl/server";
+import { redirect, notFound } from "next/navigation";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -11,12 +12,15 @@ export default async function IdiomaPage({ params }: Props) {
   const session = await auth();
   const { slug } = await params;
 
-  if (!session?.user) redirect("/login");
+  if (!session?.user) {
+    const locale = await getLocale();
+    redirect(`/${locale}/login`);
+  }
 
   // 👈 valida acesso ao slug
   const isSuperAdmin = session.user.role === "SUPER_ADMIN";
   if (!isSuperAdmin && session.user.churchSlug !== slug) {
-    redirect("/login");
+    notFound();
   }
 
   const user = await prisma.user.findUnique({

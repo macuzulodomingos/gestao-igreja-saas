@@ -4,6 +4,7 @@ import { MemberRoleService } from "@/services/memberRoleService";
 import MembersClient from "@/components/Member/MembersClient";
 import { redirect, notFound } from "next/navigation";
 import { getChurchBySlug } from "@/lib/tenant";
+import { getLocale } from "next-intl/server";
 
 interface MembersPageProps {
   params: Promise<{ slug: string }>;
@@ -15,7 +16,10 @@ export default async function MembersPage({ params, searchParams }: MembersPageP
   const { slug } = await params;
   const sParams = await searchParams;
 
-  if (!session?.user) redirect("/login");
+  if (!session?.user) {
+    const locale = await getLocale();
+    redirect(`/${locale}/login`);
+  }
 
   const isSuperAdmin = session.user.role === "SUPER_ADMIN";
 
@@ -26,8 +30,7 @@ export default async function MembersPage({ params, searchParams }: MembersPageP
   // 👈 SUPER_ADMIN busca churchId pelo slug
   const church = await getChurchBySlug(slug, isSuperAdmin ? undefined : session.user.churchId);
   if (!church) notFound();
-  const churchId = isSuperAdmin ? church.id : session.user.churchId;
-  if (!churchId) redirect("/login");
+  const churchId = church.id;
 
   const currentPage = Number(sParams.page) || 1;
   const searchTerm = sParams.search || "";

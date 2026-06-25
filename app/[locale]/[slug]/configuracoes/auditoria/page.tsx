@@ -3,6 +3,7 @@ import { redirect, notFound } from "next/navigation";
 import { AuditService } from "@/services/auditService";
 import AuditoriaClient from "@/components/Settings/Audit/AuditoriaClient";
 import { getChurchBySlug } from "@/lib/tenant";
+import { getLocale } from "next-intl/server";
 
 
 interface AuditoriaPageProps {
@@ -21,7 +22,10 @@ export default async function AuditoriaPage({
   const session = await auth();
   const { slug } = await params;
 
-  if (!session?.user) redirect("/login");
+  if (!session?.user) {
+    const locale = await getLocale();
+    redirect(`/${locale}/login`);
+  }
 
   const isSuperAdmin = session.user.role === "SUPER_ADMIN";
 
@@ -31,8 +35,8 @@ export default async function AuditoriaPage({
 
   const church = await getChurchBySlug(slug, isSuperAdmin ? undefined : session.user.churchId);
   if (!church) notFound();
-  const churchId = isSuperAdmin ? church.id : session.user.churchId;
-  if (!churchId) redirect("/login");
+
+  const churchId = church.id;
 
   const sParams = await searchParams;
   const rawPage = Number(sParams.page);
