@@ -18,6 +18,7 @@ export const FinanceCategoryService = {
         name: true,
         type: true,
         churchId: true,
+        _count: { select: { transactions: true } },
       },
       orderBy: [{ type: "asc" }, { name: "asc" }],
     });

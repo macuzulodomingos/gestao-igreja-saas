@@ -15,13 +15,14 @@ import { saveCategoryAction } from "@/app/actions/finance-category-actions";
 import { FinanceCategory } from "@/types/category";
 import { useTranslations } from "next-intl";
 import { TranslatedFormMessage } from "@/components/ui/TranslatedFormMessage";
+import { useRouter } from "@/i18n/navigation";
 
 const schema = z.object({
-  name: z.string().min(1, "validation.nameRequired").max(50, "validation.categoryNameTooLong"),
+  name: z.string().trim().min(1, "validation.nameRequired").max(50, "validation.categoryNameTooLong"),
   type: z.enum(["INCOME", "EXPENSE"]),
 });
 
-type FormData = z.infer<typeof schema>;
+type CategoryFormValues = z.infer<typeof schema>;
 
 interface Props {
   open: boolean;
@@ -34,41 +35,51 @@ export function CategoryFormDialog({ open, onOpenChange, category, churchId }: P
   const [isPending, startTransition] = useTransition();
   const t = useTranslations("categories.form");
   const tc = useTranslations("common");
+  const router = useRouter();
 
-  const form = useForm<FormData>({
+  const form = useForm<CategoryFormValues>({
     resolver: zodResolver(schema),
     defaultValues: { name: "", type: "INCOME" },
   });
 
+  const { reset } = form;
+
   useEffect(() => {
-    if (open) {
-      form.reset({
-        name: category?.name ?? "",
-        type: category?.type ?? "INCOME",
-      });
-    }
-  }, [open, category, form]);
+    if (!open) return;
+    reset({
+      name: category?.name ?? "",
+      type: category?.type ?? "INCOME",
+    });
+  }, [open, category?.id, reset]);
 
-  const handleSubmit = (data: FormData) => {
+  const handleSubmit = (data: CategoryFormValues) => {
     startTransition(async () => {
-      const formData = new FormData();
-      formData.append("name", data.name);
-      formData.append("type", data.type);
+      try {
+        const formData = new FormData();
+        formData.append("name", data.name);
+        formData.append("type", data.type);
 
-      const result = await saveCategoryAction(formData, category?.id, churchId);
+        const result = await saveCategoryAction(formData, category?.id, churchId);
 
-      if (result.success) {
-        toast.success(category ? t("updated") : t("created"));
-        onOpenChange(false);
-      } else {
-        const errorCode = (result as any).errorCode;
-        toast.error(errorCode ? t(`errors.${errorCode}`) : t("error"));
+        if (result.success) {
+          toast.success(category ? t("updated") : t("created"));
+          onOpenChange(false);
+          router.refresh();
+        } else {
+          toast.error(result.errorCode ? t(`errors.${result.errorCode}`) : t("error"));
+        }
+      } catch (error) {
+        console.error("[SAVE_CATEGORY_ERROR]:", error);
+        toast.error(t("error"));
       }
     });
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(isOpen) => {
+      if (isPending) return;
+      onOpenChange(isOpen);
+    }}>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
           <DialogTitle>
@@ -107,7 +118,7 @@ export function CategoryFormDialog({ open, onOpenChange, category, churchId }: P
             )} />
 
             <div className="flex justify-end gap-3 pt-2">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
                 {tc("cancel")}
               </Button>
               <Button type="submit" disabled={isPending}>

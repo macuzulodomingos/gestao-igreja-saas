@@ -421,7 +421,8 @@
     "back": "Voltar",
     "search": "Pesquisar",
     "noResults": "Sem resultados.",
-    "upgrade": "Actualizar plano"
+    "upgrade": "Actualizar plano",
+    "actions": "Acções"
   },
   "validation": {
     "required": "Obrigatório",
@@ -574,7 +575,8 @@
       "errorSave": "Erro ao salvar categoria.",
       "categoryAlreadyDeleted": "Categoria já foi eliminada.",
       "categoryTypeChangeBlocked": "Não é possível alterar o tipo de uma categoria com transacções associadas."
-    }
+    },
+    "transactionsCount": "{count, plural, =0 {Nenhuma transação} =1 {1 transação} other {# transações}}"
   },
   "roles": {
     "title": "Cargos",

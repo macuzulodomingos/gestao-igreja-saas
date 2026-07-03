@@ -21,7 +21,7 @@ export default async function CategoriasPage({ params }: CategoriasPageProps) {
   const isSuperAdmin = session.user.role === "SUPER_ADMIN";
 
   if (!isSuperAdmin && session.user.churchSlug !== slug) {
-    redirect("/login");
+     notFound();
   }
 
   const church = await getChurchBySlug(slug, isSuperAdmin ? undefined : session.user.churchId);

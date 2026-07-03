@@ -1,3 +1,4 @@
+"use client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -23,21 +24,21 @@ export function CategoriesList({ categories, onEdit, onDelete }: Props) {
 
   const renderCard = (category: FinanceCategory) => (
     <div key={category.id} className="flex items-center justify-between p-3 rounded-lg border">
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 min-w-0 flex-1">
         {category.type === "INCOME"
-          ? <TrendingUp className="h-4 w-4 text-green-500" />
-          : <TrendingDown className="h-4 w-4 text-red-500" />
+          ? <TrendingUp className="h-4 w-4 text-green-500 shrink-0" />
+          : <TrendingDown className="h-4 w-4 text-red-500 shrink-0" />
         }
-        <span className="font-medium">{category.name}</span>
+        <span className="font-medium truncate">{category.name}</span>
         {category._count && (
-          <Badge variant="secondary" className="text-xs">
-            {category._count.transactions} {t("transactions")}
+          <Badge variant="secondary" className="text-xs shrink-0">
+            {t("transactionsCount", { count: category._count.transactions })}
           </Badge>
         )}
       </div>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-8 w-8">
+          <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" aria-label={tc("actions")}>
             <MoreHorizontal className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
@@ -71,7 +72,7 @@ export function CategoriesList({ categories, onEdit, onDelete }: Props) {
           {incomeCategories.length === 0 ? (
             <p className="text-muted-foreground text-center py-6 text-sm">{t("noIncome")}</p>
           ) : (
-            <div className="space-y-2">{incomeCategories.map(renderCard)}</div>
+            <div className="space-y-2 max-h-96 overflow-y-auto">{incomeCategories.map(renderCard)}</div>
           )}
         </CardContent>
       </Card>
@@ -87,7 +88,7 @@ export function CategoriesList({ categories, onEdit, onDelete }: Props) {
           {expenseCategories.length === 0 ? (
             <p className="text-muted-foreground text-center py-6 text-sm">{t("noExpenses")}</p>
           ) : (
-            <div className="space-y-2">{expenseCategories.map(renderCard)}</div>
+            <div className="space-y-2 max-h-96 overflow-y-auto">{expenseCategories.map(renderCard)}</div>
           )}
         </CardContent>
       </Card>

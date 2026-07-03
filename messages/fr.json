@@ -421,7 +421,9 @@
     "back": "Retour",
     "search": "Rechercher",
     "noResults": "Aucun résultat.",
-    "upgrade": "Mettre à niveau"
+    "upgrade": "Mettre à niveau",
+    "actions": "Actions"
+
   },
   "validation": {
     "required": "Obligatoire",
@@ -574,7 +576,8 @@
       "errorSave": "Erreur lors de la sauvegarde.",
       "categoryAlreadyDeleted": "La catégorie a déjà été supprimée.",
       "categoryTypeChangeBlocked": "Il n'est pas possible de modifier le type d'une catégorie avec des transactions associées."
-    }
+    },
+    "transactionsCount": "{count, plural, =0 {Aucune transaction} =1 {1 transaction} other {# transactions}}"
   },
   "roles": {
     "title": "Rôles",
