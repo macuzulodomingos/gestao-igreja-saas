@@ -5,7 +5,7 @@ import { EventsList } from "./EventsList";
 import { EventFormDialog } from "./EventFormDialog";
 import { EventAttendanceDialog } from "./EventAttendanceDialog";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { deleteEventAction } from "@/app/actions/event-actions";
 import {
@@ -17,7 +17,6 @@ import { UpgradeModal } from "@/components/UpgradeModal";
 import { useUpgradeModal } from "@/hooks/useUpgradeModal";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
-
 
 interface EventsClientProps {
   initialEvents: ChurchEvent[];
@@ -42,6 +41,7 @@ export default function EventsClient({
   const [editingEvent, setEditingEvent] = useState<ChurchEvent | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<ChurchEvent | null>(null);
   const [eventToDelete, setEventToDelete] = useState<ChurchEvent | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [events, setEvents] = useState(initialEvents);
   const upgrade = useUpgradeModal();
   const t = useTranslations("events");
@@ -72,17 +72,25 @@ export default function EventsClient({
   };
 
   const confirmDelete = async () => {
-    if (!eventToDelete) return;
+    if (!eventToDelete || isDeleting) return;
+    setIsDeleting(true);
     const targetId = eventToDelete.id;
-    const result = await deleteEventAction(targetId, churchId);
-    if (result.success) {
-      toast.success(t("successDeleted"));
-      setEvents(prev => prev.filter(e => e.id !== targetId)); // 👈 remoção optimista
-      router.refresh();
-    } else {
-      toast.error(result.errorCode ? te(result.errorCode) : t("errorDelete"));
+    try {
+      const result = await deleteEventAction(targetId, churchId);
+      if (result.success) {
+        toast.success(t("successDeleted"));
+        setEvents(prev => prev.filter(e => e.id !== targetId));
+        router.refresh();
+      } else {
+        toast.error(result.errorCode ? te(result.errorCode) : t("errorDelete"));
+      }
+    } catch {
+      console.error("[DELETE_EVENT_ERROR]");
+      toast.error(t("errorDelete"));
+    } finally {
+      setIsDeleting(false);
+      setEventToDelete(null);
     }
-    setEventToDelete(null);
   };
 
   return (
@@ -135,7 +143,7 @@ export default function EventsClient({
 
       <AlertDialog
         open={!!eventToDelete}
-        onOpenChange={(open) => !open && setEventToDelete(null)}
+        onOpenChange={(open) => !open && !isDeleting && setEventToDelete(null)}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -146,12 +154,13 @@ export default function EventsClient({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeleting}>{t("cancel")}</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-white hover:bg-destructive/90"
               onClick={confirmDelete}
+              disabled={isDeleting}
             >
-              {t("confirm")}
+              {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : t("confirm")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

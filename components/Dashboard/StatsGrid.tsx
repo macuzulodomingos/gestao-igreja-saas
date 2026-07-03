@@ -1,3 +1,4 @@
+"use client";
 import { Users, Wallet, TrendingUp, TrendingDown } from "lucide-react";
 import { StatsCard } from "./StatsCard";
 import { useTranslations } from "next-intl";

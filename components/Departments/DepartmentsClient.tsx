@@ -77,11 +77,11 @@ export default function DepartmentsClient({ initialDepartments, members, churchI
         toast.error(result.errorCode ? td(result.errorCode) : t("errorDelete"));
       }
     } catch {
+      console.error("[DELETE_DEPARTMENT_ERROR]");
       toast.error(t("errorDelete"));
     } finally {
       setIsDeleting(false);
       setDepartmentToDelete(null);
-      
     }
   };
 

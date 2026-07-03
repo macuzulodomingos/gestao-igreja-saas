@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -32,7 +32,7 @@ const schema = z.object({
   description: z.string().max(200, "validation.descriptionTooLong").optional(),
 });
 
-type FormData = z.infer<typeof schema>;
+type IncomeFormValues = z.infer<typeof schema>;
 type Category = { id: string; name: string };
 
 interface Props {
@@ -51,7 +51,7 @@ export function IncomeFormDialog({ open, onOpenChange, entry, categories, church
   const tf = useTranslations("finance.errors");
   const router = useRouter();
 
-  const form = useForm<FormData>({
+  const form = useForm<IncomeFormValues>({
     resolver: zodResolver(schema),
     defaultValues: { date: "", categoryId: "", amount: "", description: "" },
   });
@@ -79,38 +79,42 @@ export function IncomeFormDialog({ open, onOpenChange, entry, categories, church
     );
   }, [open, entry?.id, reset]);
 
-  const handleSubmit = (data: FormData) => {
+  const handleSubmit = (data: IncomeFormValues) => {
     startTransition(async () => {
+      try {
+        const cleanAmount = data.amount.trim()
+          .replace(/\./g, "")
+          .replace(",", ".");
 
-      const cleanAmount = data.amount.trim()
-        .replace(/\./g, "")
-        .replace(",", ".");
+        const formData = new FormData();
+        formData.append("description", data.description || t("defaultDescription"));
+        formData.append("amount", cleanAmount);
+        formData.append("type", "INCOME");
+        formData.append("categoryId", data.categoryId);
+        formData.append("date", data.date);
 
-      const formData = new FormData();
-      formData.append("description", data.description || t("defaultDescription"));
-      formData.append("amount", cleanAmount);
-      formData.append("type", "INCOME");
-      formData.append("categoryId", data.categoryId);
-      formData.append("date", data.date);
+        const result = await saveTransactionAction(formData, entry?.id ?? undefined, churchId);
 
-      const result = await saveTransactionAction(formData, entry?.id ?? undefined, churchId);
-
-      if (result.success) {
-        toast.success(entry ? t("updated") : t("created"));
-        onOpenChange(false);
-        router.refresh();
-      } else if (result.upgrade) {
-        onOpenChange(false);
-        onUpgrade?.(result.errorCode ? tf(result.errorCode) : tc("upgrade"));
-      } else {
-        toast.error(result.errorCode ? tf(result.errorCode) : t("error"));
+        if (result.success) {
+          toast.success(entry ? t("updated") : t("created"));
+          onOpenChange(false);
+          router.refresh();
+        } else if (result.upgrade) {
+          onOpenChange(false);
+          onUpgrade?.(result.errorCode ? tf(result.errorCode) : tc("upgrade"));
+        } else {
+          toast.error(result.errorCode ? tf(result.errorCode) : t("error"));
+        }
+      } catch (error) {
+        console.error("[SAVE_INCOME_ERROR]:", error);
+        toast.error(t("error"));
       }
     });
   };
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => {
-      if (!isOpen) form.reset();
+      if (isPending) return;
       onOpenChange(isOpen);
     }}>
       <DialogContent className="sm:max-w-md">
@@ -177,7 +181,7 @@ export function IncomeFormDialog({ open, onOpenChange, entry, categories, church
             )} />
 
             <div className="flex justify-end gap-3 pt-4">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
                 {tc("cancel")}
               </Button>
               <Button type="submit" disabled={isPending}>

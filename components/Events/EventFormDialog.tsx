@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -20,7 +20,7 @@ import { TranslatedFormMessage } from "@/components/ui/TranslatedFormMessage";
 import { parseISO } from "date-fns";
 import { useRouter } from "@/i18n/navigation";
 
-type FormData = z.infer<typeof eventSchema>;
+type EventFormValues = z.infer<typeof eventSchema>;
 
 interface Props {
   open: boolean;
@@ -39,7 +39,7 @@ export function EventFormDialog({ open, onOpenChange, event, departments, catego
   const te = useTranslations("events.errors");
   const router = useRouter();
 
-  const form = useForm<FormData>({
+  const form = useForm<EventFormValues>({
     resolver: zodResolver(eventSchema),
     defaultValues: {
       name: "",
@@ -84,36 +84,41 @@ export function EventFormDialog({ open, onOpenChange, event, departments, catego
     }
   }, [open, event?.id, reset]);
 
-  const handleSubmit = (data: FormData) => {
+  const handleSubmit = (data: EventFormValues) => {
     startTransition(async () => {
-      const formData = new FormData();
-      formData.append("name", data.name);
-      formData.append("description", data.description || "");
-      formData.append("categoryId", data.categoryId);
-      formData.append("date", data.date);
-      formData.append("time", data.time);
-      formData.append("departmentId", data.departmentId || "none");
+      try {
+        const formData = new FormData();
+        formData.append("name", data.name);
+        formData.append("description", data.description || "");
+        formData.append("categoryId", data.categoryId);
+        formData.append("date", data.date);
+        formData.append("time", data.time);
+        formData.append("departmentId", data.departmentId || "none");
 
-      const result = await saveEventAction(formData, event?.id ?? undefined, churchId);
+        const result = await saveEventAction(formData, event?.id ?? undefined, churchId);
 
-      if (result.success) {
-        toast.success(event ? t("updated") : t("created"));
-        onOpenChange(false);
-        router.refresh();
-      } else if ("upgrade" in result && result.upgrade) {
-        onOpenChange(false);
-        onUpgrade?.(result.errorCode ? te(result.errorCode) : tc("upgrade"));
-      } else if (result.fieldErrors) {
-        toast.error(t("checkErrors"));
-      } else {
-        toast.error(result.errorCode ? te(result.errorCode) : t("error"));
+        if (result.success) {
+          toast.success(event ? t("updated") : t("created"));
+          onOpenChange(false);
+          router.refresh();
+        } else if ("upgrade" in result && result.upgrade) {
+          onOpenChange(false);
+          onUpgrade?.(result.errorCode ? te(result.errorCode) : tc("upgrade"));
+        } else if (result.fieldErrors) {
+          toast.error(t("checkErrors"));
+        } else {
+          toast.error(result.errorCode ? te(result.errorCode) : t("error"));
+        }
+      } catch (error) {
+        console.error("[SAVE_EVENT_ERROR]:", error);
+        toast.error(t("error"));
       }
     });
   };
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => {
-      if (!isOpen) form.reset();
+      if (isPending) return;
       onOpenChange(isOpen);
     }}>
       <DialogContent className="sm:max-w-md">
@@ -213,7 +218,7 @@ export function EventFormDialog({ open, onOpenChange, event, departments, catego
             )} />
 
             <div className="flex justify-end gap-3 pt-4">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
                 {tc("cancel")}
               </Button>
               <Button type="submit" disabled={isPending}>

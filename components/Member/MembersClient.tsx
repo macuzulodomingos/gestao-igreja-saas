@@ -146,33 +146,35 @@ export default function MemberClient({
     const formData = new FormData(event.currentTarget);
 
     startTransition(async () => {
-      let result;
-      if (editingMember) {
-        result = await updateMemberAction(editingMember.id, formData, churchId);
-      } else {
-        result = await createMemberAction(formData, churchId);
-      }
+      try {
+        let result;
+        if (editingMember) {
+          result = await updateMemberAction(editingMember.id, formData, churchId);
+        } else {
+          result = await createMemberAction(formData, churchId);
+        }
 
-      if (result.success) {
-        setIsModalOpen(false);
-        setEditingMember(null);
-        setFieldErrors({});
-        toast.success(editingMember ? t("successUpdated") : t("successCreated"));
-        (event.target as HTMLFormElement).reset();
-      } else if (!result.success && result.upgrade) {
-        upgrade.showUpgrade(result.errorCode ? tm(result.errorCode) : tc("upgrade"));
-      } else if (!result.success && result.fieldErrors) {
-        setFieldErrors(result.fieldErrors);
-        toast.error(t("errorForm"));
-      } else if (!result.success) {
-        toast.error(result.errorCode ? tm(result.errorCode) : tc("error"));
+        if (result.success) {
+          setIsModalOpen(false);
+          setEditingMember(null);
+          setFieldErrors({});
+          toast.success(editingMember ? t("successUpdated") : t("successCreated"));
+          (event.target as HTMLFormElement).reset();
+        } else if (!result.success && result.upgrade) {
+          upgrade.showUpgrade(result.errorCode ? tm(result.errorCode) : tc("upgrade"));
+        } else if (!result.success && result.fieldErrors) {
+          setFieldErrors(result.fieldErrors);
+          toast.error(t("errorForm"));
+        } else if (!result.success) {
+          toast.error(result.errorCode ? tm(result.errorCode) : tc("error"));
+        }
+      } catch {
+        console.error("[SAVE_MEMBER_ERROR]");
+        toast.error(tc("error"));
       }
     });
   }
-
-
-
-
+  
 
   return (
     <div className="space-y-6">
@@ -408,7 +410,7 @@ export default function MemberClient({
                     <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
+                          <Button variant="ghost" className="h-8 w-8 p-0" aria-label={tc("actions")}>
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
@@ -432,8 +434,8 @@ export default function MemberClient({
                             {t("edit")}
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            className="text-destructive"
-                            onClick={() => setMemberToDelete(member)}
+                            className="text-destructive focus:text-destructive"
+                            onSelect={e => { e.preventDefault(); setMemberToDelete(member); }}
                           >
                             {t("delete")}
                           </DropdownMenuItem>
@@ -467,13 +469,19 @@ export default function MemberClient({
                     e.preventDefault();
                     if (!memberToDelete) return;
                     startTransition(async () => {
-                      const result = await deleteMemberAction(memberToDelete.id, churchId);
-                      if (result.success) {
-                        toast.success(t("successDeleted"));
-                        setMemberToDelete(null);
-                        router.refresh();
-                      } else {
-                        toast.error(result.errorCode ? tm(result.errorCode) : tc("error"));
+                      try {
+                        const result = await deleteMemberAction(memberToDelete.id, churchId);
+                        if (result.success) {
+                          toast.success(t("successDeleted"));
+                          setMemberToDelete(null);
+                          router.refresh();
+                        } else {
+                          toast.error(result.errorCode ? tm(result.errorCode) : tc("error"));
+                          setMemberToDelete(null);
+                        }
+                      } catch {
+                        console.error("[DELETE_MEMBER_ERROR]");
+                        toast.error(tc("error"));
                         setMemberToDelete(null);
                       }
                     });

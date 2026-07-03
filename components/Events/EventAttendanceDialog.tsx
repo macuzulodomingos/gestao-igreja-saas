@@ -107,6 +107,7 @@ export function EventAttendanceDialog({ open, onOpenChange, event, allMembers, t
         if (result.success) {
           toast.success(t("updated"));
           onOpenChange(false);
+          router.refresh();
         } else {
           toast.error(result.errorCode ? te(result.errorCode) : t("error"));
         }
@@ -115,12 +116,15 @@ export function EventAttendanceDialog({ open, onOpenChange, event, allMembers, t
       }
     });
   };
-  
+
   const allFilteredSelected = filteredMembers.length > 0 &&
     filteredMembers.every(m => selectedIds.includes(m.id));
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(isOpen) => {
+      if (isPending) return;
+      onOpenChange(isOpen);
+    }}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -206,7 +210,7 @@ export function EventAttendanceDialog({ open, onOpenChange, event, allMembers, t
         </div>
 
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
             {t("cancel")}
           </Button>
           <Button

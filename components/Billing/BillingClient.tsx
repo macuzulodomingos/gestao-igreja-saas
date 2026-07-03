@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { format } from "date-fns";
+import { format, parseISO, isValid } from "date-fns";
 import { ptBR, fr } from "date-fns/locale";
 import { uploadPaymentProofAction } from "@/app/actions/upload-actions";
 import { useTranslations, useLocale } from "next-intl";
@@ -80,33 +80,49 @@ export function BillingClient({ currentPlan, subscription, prices, churchName, c
     if (!proofFile) return;
     setIsUploading(true);
 
-    const uploadFormData = new FormData();
-    uploadFormData.append("file", proofFile);
-    const uploadResult = await uploadPaymentProofAction(uploadFormData);
+    try {
+      const uploadFormData = new FormData();
+      uploadFormData.append("file", proofFile);
+      const uploadResult = await uploadPaymentProofAction(uploadFormData);
 
-    if (!uploadResult.success) {
+      if (!uploadResult.success) {
+        toast.error(t("errorUpload"));
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("plan", selectedPlan);
+      formData.append("billingCycle", billingCycle);
+      formData.append("proofOfPayment", uploadResult.url!);
+
+      const result = await submitPaymentProofAction(formData, churchId);
+
+      if (result.success) {
+        toast.success(t("successSubmit"));
+        setShowForm(false);
+        setProofFile(null);
+      } else {
+        toast.error(result.errorCode ? tb(result.errorCode) : t("errorSubmit"));
+      }
+    } catch {
+      console.error("[SUBMIT_PAYMENT_PROOF_ERROR]");
+      toast.error(t("errorSubmit"));
+    } finally {
       setIsUploading(false);
-      toast.error(t("errorUpload"));
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append("plan", selectedPlan);
-    formData.append("billingCycle", billingCycle);
-    formData.append("proofOfPayment", uploadResult.url!);
-
-    const result = await submitPaymentProofAction(formData, churchId);
-    setIsUploading(false);
-
-    if (result.success) {
-      toast.success(t("successSubmit"));
-      setShowForm(false);
-      setProofFile(null);
-    } else {
-      const errorCode = (result as any).errorCode;
-      toast.error(errorCode ? tb(errorCode) : t("errorSubmit"));
     }
   };
+
+  const periodEnd = subscription?.currentPeriodEnd
+    ? typeof subscription.currentPeriodEnd === "string"
+      ? parseISO(subscription.currentPeriodEnd)
+      : subscription.currentPeriodEnd
+    : null;
+
+  const proofUploadedAt = subscription?.proofUploadedAt
+    ? typeof subscription.proofUploadedAt === "string"
+      ? parseISO(subscription.proofUploadedAt)
+      : subscription.proofUploadedAt
+    : null;
 
   return (
     <div className="space-y-6">
@@ -139,9 +155,9 @@ export function BillingClient({ currentPlan, subscription, prices, churchName, c
                 subscription?.status === "TRIALING" ? t("trial") : t("inactive")}
             </Badge>
           </div>
-          {subscription?.currentPeriodEnd && currentPlan !== "FREE" && (
+          {periodEnd && isValid(periodEnd) && currentPlan !== "FREE" && (
             <p className="text-sm text-muted-foreground">
-              {t("renewsOn")} {format(new Date(subscription.currentPeriodEnd), "dd 'de' MMMM 'de' yyyy", { locale: dateLocale })}
+              {t("renewsOn")} {format(periodEnd, "dd 'de' MMMM 'de' yyyy", { locale: dateLocale })}
             </p>
           )}
         </CardContent>
@@ -158,9 +174,9 @@ export function BillingClient({ currentPlan, subscription, prices, churchName, c
                 ({subscription?.pendingCycle === "MONTHLY" ? t("pendingCycleMonthly") : t("pendingCycleAnnual")}){" "}
                 {t("pendingVerifying")}
               </p>
-              {subscription?.proofUploadedAt && (
+              {proofUploadedAt && isValid(proofUploadedAt) && (
                 <p className="text-xs text-yellow-600 dark:text-yellow-600 mt-1">
-                  {t("submittedAt")} {format(new Date(subscription.proofUploadedAt), "dd/MM/yyyy 'às' HH:mm")}
+                  {t("submittedAt")} {format(proofUploadedAt, "dd/MM/yyyy 'às' HH:mm")}
                 </p>
               )}
             </div>

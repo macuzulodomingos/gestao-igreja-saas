@@ -13,12 +13,13 @@ import { Loader2 } from "lucide-react";
 import { saveEventCategoryAction } from "@/app/actions/event-category-actions";
 import { useTranslations } from "next-intl";
 import { TranslatedFormMessage } from "@/components/ui/TranslatedFormMessage";
+import { useRouter } from "@/i18n/navigation";
 
 const schema = z.object({
-  name: z.string().min(1, "validation.nameRequired").max(100, "validation.nameTooLong"),
+  name: z.string().trim().min(1, "validation.nameRequired").max(100, "validation.nameTooLong"),
 });
 
-type FormData = z.infer<typeof schema>;
+type EventCategoryFormValues = z.infer<typeof schema>;
 
 type EventCategory = {
   id: string;
@@ -45,51 +46,69 @@ export function EventCategoryFormDialog({
   const tc = useTranslations("common");
   const te = useTranslations("eventCategories.errors");
   const tv = useTranslations("validation");
+  const router = useRouter();
 
-  const form = useForm<FormData>({
+  const form = useForm<EventCategoryFormValues>({
     resolver: zodResolver(schema),
     defaultValues: { name: "" },
   });
 
+  const { reset } = form;
+
   useEffect(() => {
-    if (open) {
-      form.reset({ name: editingCategory?.name ?? "" });
-    }
-  }, [open, editingCategory, form]);
+    if (!open) return;
+    reset({ name: editingCategory?.name ?? "" });
+  }, [open, editingCategory?.id, reset]);
 
-  const handleSubmit = (data: FormData) => {
+  const handleSubmit = (data: EventCategoryFormValues) => {
     startTransition(async () => {
-      const formData = new FormData();
-      formData.append("name", data.name);
+      try {
+        const formData = new FormData();
+        formData.append("name", data.name);
 
-      const result = await saveEventCategoryAction(formData, editingCategory?.id, churchId);
+        const result = await saveEventCategoryAction(formData, editingCategory?.id, churchId);
 
-      if (result.success) {
-        toast.success(editingCategory ? t("updated") : t("created"));
-        onSuccess({ id: result.id!, name: data.name });
-        onOpenChange(false);
-      } else if (result.fieldErrors) {
-        Object.entries(result.fieldErrors).forEach(([field, messages]) => {
-          const msg = messages[0];
-          // 👈 traduz a mensagem antes de passar ao form
-          let translated = msg;
-          if (msg.startsWith("validation.")) {
-            try { translated = tv(msg.replace("validation.", "") as any); } catch { }
-          } else if (msg.startsWith("eventCategories.errors.")) {
-            try { translated = te(msg.replace("eventCategories.errors.", "") as any); } catch { }
-          }
-          form.setError(field as keyof FormData, { message: translated });
-        });
-        toast.error(t("errorForm"));
-      } else {
-        const errorCode = (result as any).errorCode;
-        toast.error(errorCode ? te(errorCode) : t("error"));
+        if (result.success) {
+          toast.success(editingCategory ? t("updated") : t("created"));
+          onSuccess({ id: result.id!, name: data.name });
+          onOpenChange(false);
+          router.refresh();
+        } else if (result.fieldErrors) {
+          const validationMessages: Record<string, string> = {
+            nameRequired: tv("nameRequired"),
+            nameTooLong: tv("nameTooLong"),
+          };
+          const categoryErrorMessages: Record<string, string> = {
+            duplicate: te("duplicate"),
+            errorSave: te("errorSave"),
+          };
+
+          Object.entries(result.fieldErrors).forEach(([field, messages]) => {
+            const msg = messages[0];
+            let translated = msg;
+            if (msg.startsWith("validation.")) {
+              translated = validationMessages[msg.replace("validation.", "")] ?? msg;
+            } else if (msg.startsWith("eventCategories.errors.")) {
+              translated = categoryErrorMessages[msg.replace("eventCategories.errors.", "")] ?? msg;
+            }
+            form.setError(field as keyof EventCategoryFormValues, { message: translated });
+          });
+          toast.error(t("errorForm"));
+        } else {
+          toast.error(result.errorCode ? te(result.errorCode) : t("error"));
+        }
+      } catch (error) {
+        console.error("[SAVE_EVENT_CATEGORY_ERROR]:", error);
+        toast.error(t("error"));
       }
     });
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(isOpen) => {
+      if (isPending) return;
+      onOpenChange(isOpen);
+    }}>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
           <DialogTitle>
@@ -109,7 +128,7 @@ export function EventCategoryFormDialog({
             )} />
 
             <div className="flex justify-end gap-2 pt-2">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
                 {tc("cancel")}
               </Button>
               <Button type="submit" disabled={isPending}>

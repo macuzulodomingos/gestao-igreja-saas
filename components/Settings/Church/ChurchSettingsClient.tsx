@@ -10,6 +10,8 @@ import { toast } from "sonner";
 import { updateChurchSettingsAction } from "@/app/actions/church-actions";
 import { Badge } from "@/components/ui/badge";
 import { useTranslations } from "next-intl";
+import { useRouter } from "@/i18n/navigation";
+
 
 const TIMEZONES = [
   { label: "🇦🇴 Angola (UTC+1)", value: "Africa/Luanda" },
@@ -42,30 +44,39 @@ export default function ChurchSettingsClient({ church }: ChurchSettingsClientPro
   const tv = useTranslations("validation");
 
   const hasChanges = name !== church.name || timezone !== church.timezone;
+  const router = useRouter();
 
   const handleSave = () => {
     startTransition(async () => {
-      const formData = new FormData();
-      formData.append("name", name.trim());
-      formData.append("timezone", timezone);
+      try {
+        const formData = new FormData();
+        formData.append("name", name.trim());
+        formData.append("timezone", timezone);
 
-      const result = await updateChurchSettingsAction(formData);
+        const result = await updateChurchSettingsAction(formData);
 
-      if (result.success) {
-        toast.success(t("successSaved"));
-      } else if (result.fieldErrors) {
-        // mostra o primeiro erro de campo
-        const firstError = Object.values(result.fieldErrors)[0]?.[0];
-        if (firstError) {
-          let msg = firstError;
-          if (firstError.startsWith("validation.")) {
-            try { msg = tv(firstError.replace("validation.", "") as any); } catch { }
+        if (result.success) {
+          toast.success(t("successSaved"));
+          router.refresh();
+        } else if (result.fieldErrors) {
+          const validationMessages: Record<string, string> = {
+            nameRequired: tv("nameRequired"),
+            nameTooLong: tv("nameTooLong"),
+          };
+          const firstError = Object.values(result.fieldErrors)[0]?.[0];
+          if (firstError) {
+            let msg = firstError;
+            if (firstError.startsWith("validation.")) {
+              msg = validationMessages[firstError.replace("validation.", "")] ?? firstError;
+            }
+            toast.error(msg);
           }
-          toast.error(msg);
+        } else {
+          toast.error(result.errorCode ? te(result.errorCode) : t("errorSave"));
         }
-      } else {
-        const errorCode = (result as any).errorCode;
-        toast.error(errorCode ? te(errorCode) : t("errorSave"));
+      } catch (error) {
+        console.error("[UPDATE_CHURCH_SETTINGS_ERROR]:", error);
+        toast.error(t("errorSave"));
       }
     });
   };
@@ -86,7 +97,6 @@ export default function ChurchSettingsClient({ church }: ChurchSettingsClientPro
         </CardHeader>
         <CardContent className="space-y-4">
 
-          {/* 👈 nome editável */}
           <div className="space-y-2">
             <label className="text-sm font-medium text-muted-foreground">
               {t("nameLabel")}

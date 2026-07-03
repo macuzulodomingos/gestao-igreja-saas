@@ -8,9 +8,8 @@ import { Input } from "@/components/ui/input";
 import { CheckCircle2, XCircle, ExternalLink, Clock } from "lucide-react";
 import { confirmPaymentAction, rejectPaymentAction } from "@/app/actions/billing-actions";
 import { toast } from "sonner";
-import { format } from "date-fns";
-import { pt } from "date-fns/locale";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
+import { format, parseISO, isValid } from "date-fns";
 
 type PendingPayment = {
   id: string;
@@ -23,21 +22,28 @@ type PendingPayment = {
 };
 
 export function AdminBillingClient({ pendingPayments }: { pendingPayments: PendingPayment[] }) {
-   const router = useRouter();
+  const router = useRouter();
   const [rejectionReasons, setRejectionReasons] = useState<Record<string, string>>({});
   const [processing, setProcessing] = useState<string | null>(null);
 
   const handleConfirm = async (churchId: string) => {
     setProcessing(churchId);
-    const result = await confirmPaymentAction(churchId);
-    setProcessing(null);
-    if (result.success) {
-      toast.success("Pagamento confirmado! Plano actualizado.");
-      router.refresh(); // 👈
-    } else {
+    try {
+      const result = await confirmPaymentAction(churchId);
+      if (result.success) {
+        toast.success("Pagamento confirmado! Plano actualizado.");
+        router.refresh();
+      } else {
+        toast.error("Erro ao confirmar.");
+      }
+    } catch {
+      console.error("[CONFIRM_PAYMENT_ERROR]");
       toast.error("Erro ao confirmar.");
+    } finally {
+      setProcessing(null);
     }
   };
+
 
   const handleReject = async (churchId: string) => {
     const reason = rejectionReasons[churchId];
@@ -46,16 +52,25 @@ export function AdminBillingClient({ pendingPayments }: { pendingPayments: Pendi
       return;
     }
     setProcessing(churchId);
-    const result = await rejectPaymentAction(churchId, reason);
-    setProcessing(null);
-    if (result.success) {
-      toast.success("Pagamento rejeitado.");
-      router.refresh(); // 👈
-      setRejectionReasons(prev => ({ ...prev, [churchId]: "" })); // 👈 limpa o input
-    } else {
+    try {
+      const result = await rejectPaymentAction(churchId, reason);
+      if (result.success) {
+        toast.success("Pagamento rejeitado.");
+        router.refresh();
+        setRejectionReasons(prev => ({ ...prev, [churchId]: "" }));
+      } else {
+        toast.error("Erro ao rejeitar pagamento.");
+      }
+    } catch {
+      console.error("[REJECT_PAYMENT_ERROR]");
       toast.error("Erro ao rejeitar pagamento.");
+    } finally {
+      setProcessing(null);
     }
   };
+
+
+
 
   return (
     <div className="space-y-6">
@@ -75,91 +90,99 @@ export function AdminBillingClient({ pendingPayments }: { pendingPayments: Pendi
         </Card>
       ) : (
         <div className="space-y-4">
-          {pendingPayments.map((payment) => (
-            <Card key={payment.id}>
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-base">
-                    {payment.church.name}
-                  </CardTitle>
-                  <Badge variant="secondary" className="gap-1">
-                    <Clock className="h-3 w-3" />
-                    Pendente
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                  <div>
-                    <p className="text-muted-foreground">Plano pedido</p>
-                    <p className="font-medium">{payment.pendingPlan}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Ciclo</p>
-                    <p className="font-medium">
-                      {payment.pendingCycle === "MONTHLY" ? "Mensal" : "Anual"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Submetido em</p>
-                    <p className="font-medium">
-                      {payment.proofUploadedAt
-                        ? format(new Date(payment.proofUploadedAt), "dd/MM/yyyy HH:mm")
-                        : "—"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Comprovativo</p>
-                    {payment.proofOfPayment ? (
-                      <a  // 👈 adiciona esta linha
-                        href={payment.proofOfPayment}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1 text-primary hover:underline font-medium"
-                      >
-                        Ver <ExternalLink className="h-3 w-3" />
-                      </a>
-                    ) : (
-                      <p className="text-muted-foreground">Sem comprovativo</p>
-                    )}
-                  </div>
-                </div>
+          {pendingPayments.map((payment) => {
+            const uploadedAt = payment.proofUploadedAt
+              ? typeof payment.proofUploadedAt === "string"
+                ? parseISO(payment.proofUploadedAt)
+                : payment.proofUploadedAt
+              : null;
 
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <Input
-                    placeholder="Motivo da rejeição (obrigatório para rejeitar)"
-                    value={rejectionReasons[payment.churchId] || ""}
-                    onChange={(e) =>
-                      setRejectionReasons((prev) => ({
-                        ...prev,
-                        [payment.churchId]: e.target.value,
-                      }))
-                    }
-                    className="flex-1"
-                  />
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      className="text-destructive border-destructive hover:bg-destructive/10 gap-2"
-                      disabled={processing === payment.churchId}
-                      onClick={() => handleReject(payment.churchId)}
-                    >
-                      <XCircle className="h-4 w-4" />
-                      Rejeitar
-                    </Button>
-                    <Button
-                      className="gap-2"
-                      disabled={processing === payment.churchId}
-                      onClick={() => handleConfirm(payment.churchId)}
-                    >
-                      <CheckCircle2 className="h-4 w-4" />
-                      Confirmar
-                    </Button>
+            return (
+              <Card key={payment.id}>
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-base">
+                      {payment.church.name}
+                    </CardTitle>
+                    <Badge variant="secondary" className="gap-1">
+                      <Clock className="h-3 w-3" />
+                      Pendente
+                    </Badge>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div>
+                      <p className="text-muted-foreground">Plano pedido</p>
+                      <p className="font-medium">{payment.pendingPlan}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Ciclo</p>
+                      <p className="font-medium">
+                        {payment.pendingCycle === "MONTHLY" ? "Mensal" : "Anual"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Submetido em</p>
+                      <p className="font-medium">
+                        {uploadedAt && isValid(uploadedAt)
+                          ? format(uploadedAt, "dd/MM/yyyy HH:mm")
+                          : "—"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Comprovativo</p>
+                      {payment.proofOfPayment ? (
+                        <a  // 👈 adiciona esta linha
+                          href={payment.proofOfPayment}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 text-primary hover:underline font-medium"
+                        >
+                          Ver <ExternalLink className="h-3 w-3" />
+                        </a>
+                      ) : (
+                        <p className="text-muted-foreground">Sem comprovativo</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <Input
+                      placeholder="Motivo da rejeição (obrigatório para rejeitar)"
+                      value={rejectionReasons[payment.churchId] || ""}
+                      onChange={(e) =>
+                        setRejectionReasons((prev) => ({
+                          ...prev,
+                          [payment.churchId]: e.target.value,
+                        }))
+                      }
+                      className="flex-1"
+                    />
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        className="text-destructive border-destructive hover:bg-destructive/10 gap-2"
+                        disabled={processing === payment.churchId}
+                        onClick={() => handleReject(payment.churchId)}
+                      >
+                        <XCircle className="h-4 w-4" />
+                        Rejeitar
+                      </Button>
+                      <Button
+                        className="gap-2"
+                        disabled={processing === payment.churchId}
+                        onClick={() => handleConfirm(payment.churchId)}
+                      >
+                        <CheckCircle2 className="h-4 w-4" />
+                        Confirmar
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ); 
+          })} 
         </div>
       )}
     </div>

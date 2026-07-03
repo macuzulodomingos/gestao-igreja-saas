@@ -13,7 +13,7 @@ export default async function UtilizadoresPage({ params }: UtilizadoresPageProps
   const session = await auth();
   const { slug } = await params;
 
-   if (!session?.user) {
+  if (!session?.user) {
     const locale = await getLocale();
     redirect(`/${locale}/login`);
   }
@@ -25,7 +25,8 @@ export default async function UtilizadoresPage({ params }: UtilizadoresPageProps
   }
 
   if (!["ADMIN", "SUPER_ADMIN"].includes(session.user.role!)) {
-    redirect("/login");
+    const locale = await getLocale();
+    redirect(`/${locale}/login`);
   }
 
   const church = await getChurchBySlug(slug, isSuperAdmin ? undefined : session.user.churchId);

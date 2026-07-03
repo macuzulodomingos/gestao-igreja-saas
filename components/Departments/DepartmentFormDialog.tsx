@@ -23,7 +23,7 @@ const schema = z.object({
   leaderId: z.string().optional(),
 });
 
-type FormData = z.infer<typeof schema>;
+type DepartmentFormValues = z.infer<typeof schema>;
 
 type Department = {
   id: string;
@@ -54,7 +54,7 @@ export function DepartmentFormDialog({ open, onOpenChange, department, members, 
   const td = useTranslations("departments.errors");
   const router = useRouter();
 
-  const form = useForm<FormData>({
+  const form = useForm<DepartmentFormValues>({
     resolver: zodResolver(schema),
     defaultValues: { name: "", description: "", leaderId: "none" },
   });
@@ -74,7 +74,7 @@ export function DepartmentFormDialog({ open, onOpenChange, department, members, 
     );
   }, [open, department?.id, reset]);
 
-  const handleSubmit = (data: FormData) => {
+  const handleSubmit = (data: DepartmentFormValues) => {
     startTransition(async () => {
       try {
         const formData = new FormData();
@@ -167,7 +167,7 @@ export function DepartmentFormDialog({ open, onOpenChange, department, members, 
             )} />
 
             <div className="flex justify-end gap-3 pt-4">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
                 {tc("cancel")}
               </Button>
               <Button type="submit" disabled={isPending}>

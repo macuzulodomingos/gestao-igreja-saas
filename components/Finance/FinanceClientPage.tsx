@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter, usePathname } from "@/i18n/navigation";
 import { FinanceSummary } from "./FinanceSummary";
 import { IncomeList } from "./IncomeList";
 import { ExpenseList } from "./ExpenseList";
@@ -20,7 +20,7 @@ import {
 import { FinanceTransaction, FinanceStats } from "@/types/finance";
 import { UpgradeModal } from "@/components/UpgradeModal";
 import { useUpgradeModal } from "@/hooks/useUpgradeModal";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import dynamic from "next/dynamic";
 
 const DownloadPDFButton = dynamic(
@@ -89,8 +89,8 @@ export default function FinanceClientPage({
   const t = useTranslations("finance");
   const tf = useTranslations("finance.errors");
 
-  // 👈 detecta locale pelo pathname
-  const locale = pathname.startsWith("/fr") ? "fr" : "pt";
+
+  const locale = useLocale();
   const MONTHS = locale === "fr" ? MONTHS_FR : MONTHS_PT;
 
   const [isIncomeFormOpen, setIsIncomeFormOpen] = useState(false);
@@ -107,6 +107,7 @@ export default function FinanceClientPage({
   const [hasMoreExp, setHasMoreExp] = useState(hasMoreExpenses);
   const [isPendingNav, startNavTransition] = useTransition();
   const [loadingMore, setLoadingMore] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     setIncomeList(initialIncome);
@@ -150,7 +151,7 @@ export default function FinanceClientPage({
     try {
       const result = await loadMoreTransactionsAction(type, currentMonth, currentYear, churchId, cursor);
       if (!result.success) {
-        toast.error(tf((result as any).errorCode) ?? t("errorLoadMore"));
+        toast.error(result.errorCode ? tf(result.errorCode) : t("errors.loadMoreError"));
         return;
       }
       if (type === "INCOME") {
@@ -187,7 +188,8 @@ export default function FinanceClientPage({
   };
 
   const confirmDelete = async () => {
-    if (!entryToDelete) return;
+    if (!entryToDelete || isDeleting) return;
+    setIsDeleting(true);
     const targetId = entryToDelete.id;
     const targetType = entryToDelete.type;
     try {
@@ -204,8 +206,10 @@ export default function FinanceClientPage({
         toast.error(t("errorDelete"));
       }
     } catch {
+      console.error("[DELETE_TRANSACTION_ERROR]");
       toast.error(t("errorDelete"));
     } finally {
+      setIsDeleting(false);
       setEntryToDelete(null);
     }
   };
@@ -292,7 +296,7 @@ export default function FinanceClientPage({
           </Button>
         </div>
 
-        <TabsContent value="income"> 
+        <TabsContent value="income">
           <IncomeList entries={incomeList} onEdit={handleEdit} onDelete={handleDelete} />
           {hasMoreInc && (
             <div className="flex justify-center mt-4">
@@ -323,7 +327,10 @@ export default function FinanceClientPage({
 
       <IncomeFormDialog
         open={isIncomeFormOpen}
-        onOpenChange={setIsIncomeFormOpen}
+        onOpenChange={(open) => {
+          setIsIncomeFormOpen(open);
+          if (!open) setEditingEntry(null);
+        }}
         entry={editingEntry}
         categories={incomeCategories}
         churchId={churchId}
@@ -332,7 +339,10 @@ export default function FinanceClientPage({
 
       <ExpenseFormDialog
         open={isExpenseFormOpen}
-        onOpenChange={setIsExpenseFormOpen}
+        onOpenChange={(open) => {
+          setIsExpenseFormOpen(open);
+          if (!open) setEditingEntry(null);
+        }}
         entry={editingEntry}
         categories={expenseCategories}
         churchId={churchId}
@@ -341,7 +351,7 @@ export default function FinanceClientPage({
 
       <AlertDialog
         open={!!entryToDelete}
-        onOpenChange={(open) => !open && setEntryToDelete(null)}
+        onOpenChange={(open) => !open && !isDeleting && setEntryToDelete(null)}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -356,12 +366,13 @@ export default function FinanceClientPage({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeleting}>{t("cancel")}</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-white hover:bg-destructive/90"
               onClick={confirmDelete}
+              disabled={isDeleting}
             >
-              {t("confirmAction")}
+              {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : t("confirmAction")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

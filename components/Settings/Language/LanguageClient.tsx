@@ -33,16 +33,19 @@ export function LanguageClient({ currentLocale, slug }: LanguageClientProps) {
 
   const handleSave = async () => {
     setSaving(true);
-    const result = await updateLocaleAction(selected);
-    setSaving(false);
-
-    if (result.success) {
-      // 👈 mensagem na língua seleccionada — intencional
-      toast.success(selected === "pt" ? "Idioma actualizado!" : "Langue mise à jour!");
-      window.location.href = `/${selected}/${slug}/configuracoes/idioma`;
-    } else {
-      // 👈 mensagem nas duas línguas — utilizador pode não saber qual é a sua
+    try {
+      const result = await updateLocaleAction(selected);
+      if (result.success) {
+        toast.success(selected === "pt" ? "Idioma actualizado!" : "Langue mise à jour!");
+        window.location.href = `/${selected}/${slug}/configuracoes/idioma`;
+      } else {
+        toast.error("Erro ao guardar / Erreur lors de la sauvegarde.");
+      }
+    } catch {
+      console.error("[UPDATE_LOCALE_ERROR]");
       toast.error("Erro ao guardar / Erreur lors de la sauvegarde.");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -62,9 +65,8 @@ export function LanguageClient({ currentLocale, slug }: LanguageClientProps) {
         {LANGUAGES.map((lang) => (
           <Card
             key={lang.code}
-            className={`cursor-pointer transition-all hover:border-primary/50 ${
-              selected === lang.code ? "border-2 border-primary" : "border"
-            }`}
+            className={`cursor-pointer transition-all hover:border-primary/50 ${selected === lang.code ? "border-2 border-primary" : "border"
+              }`}
             onClick={() => setSelected(lang.code)}
           >
             <CardContent className="flex items-center justify-between py-4 px-5">

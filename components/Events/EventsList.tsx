@@ -22,9 +22,9 @@ const dateLocalesMap = {
 };
 
 const parseDate = (date: Date | string) => {
-    const d = typeof date === "string" ? parseISO(date) : date;
-    return isValid(d) ? d : new Date(0);
-  };
+  const d = typeof date === "string" ? parseISO(date) : date;
+  return isValid(d) ? d : new Date(0);
+};
 
 interface EventsListProps {
   events: ChurchEvent[];
@@ -40,7 +40,7 @@ export function EventsList({ events, onEdit, onDelete, onManageAttendance, timez
   const locale = useLocale();
   const dateLocale = dateLocalesMap[locale as keyof typeof dateLocalesMap] ?? ptBR;
 
-  
+
   const { upcomingEvents, pastEvents } = useMemo(() => {
     const sorted = [...events].sort((a, b) =>
       parseDate(a.startAt).getTime() - parseDate(b.startAt).getTime()
@@ -74,7 +74,8 @@ export function EventsList({ events, onEdit, onDelete, onManageAttendance, timez
     const isEventToday = startAtInTz.toDateString() === nowInTz.toDateString();
     const isEventPast = startAtInTz.getTime() < nowInTz.getTime() && !isEventToday;
 
-    const dateFormatted = formatInTimeZone(startAt, timezone, "dd 'de' MMM, yyyy", { locale: dateLocale });
+    const dateFormatPattern = locale === "fr" ? "dd MMM yyyy" : "dd 'de' MMM, yyyy";
+    const dateFormatted = formatInTimeZone(startAt, timezone, dateFormatPattern, { locale: dateLocale });
     const timeFormatted = formatInTimeZone(startAt, timezone, "HH:mm");
 
     return (
@@ -123,7 +124,7 @@ export function EventsList({ events, onEdit, onDelete, onManageAttendance, timez
         <TableCell className="text-right">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
+              <Button variant="ghost" size="icon" className="h-8 w-8" aria-label={tc("actions")}>
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>

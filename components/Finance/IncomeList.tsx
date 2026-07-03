@@ -45,7 +45,7 @@ export function IncomeList({ entries, onEdit, onDelete }: IncomeListProps) {
   const tc = useTranslations("common");
   const locale = useLocale();
   const dateLocale = dateLocalesMap[locale as keyof typeof dateLocalesMap] ?? ptBR;
-  const dateFormatPattern = locale === "fr" ? "dd MMM, yyyy" : "dd 'de' MMM, yyyy";
+  const dateFormatPattern = locale === "fr" ? "dd MMM yyyy" : "dd 'de' MMM, yyyy";
 
   const sortedEntries = [...entries].sort((a, b) => {
     const dateA = typeof a.date === "string" ? parseISO(a.date) : a.date;
@@ -98,7 +98,7 @@ export function IncomeList({ entries, onEdit, onDelete }: IncomeListProps) {
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <Button variant="ghost" size="icon" className="h-8 w-8" aria-label={tc("actions")}>
                               <MoreHorizontal className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
@@ -107,7 +107,7 @@ export function IncomeList({ entries, onEdit, onDelete }: IncomeListProps) {
                               <Pencil className="h-4 w-4 mr-2" /> {tc("edit")}
                             </DropdownMenuItem>
                             <DropdownMenuItem
-                              onClick={() => onDelete(entry.id)}
+                              onSelect={e => { e.preventDefault(); onDelete(entry.id); }}
                               className="text-destructive focus:text-destructive"
                             >
                               <Trash2 className="h-4 w-4 mr-2" /> {tc("delete")}

@@ -344,7 +344,8 @@
       "leader": "Líder",
       "noLeader": "Sem líder definido",
       "member": "membro",
-      "members": "membros"
+      "members": "membros",
+      "membersCount": "{count, plural, =0 {Nenhum membro} =1 {1 membro} other {# membros}}"
     },
     "membersDialog": {
       "title": "Membros",

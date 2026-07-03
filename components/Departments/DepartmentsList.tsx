@@ -40,7 +40,7 @@ export function DepartmentsList({ departments, onEdit, onDelete, onManageMembers
               </div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+                  <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" aria-label={tc("actions")}>
                     <MoreHorizontal className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -84,8 +84,7 @@ export function DepartmentsList({ departments, onEdit, onDelete, onManageMembers
 
               <Badge variant="secondary" className="gap-1 w-fit">
                 <Users className="h-3 w-3" />
-                {department.members.length}{" "}
-                {department.members.length === 1 ? t("member") : t("members")}
+                {t("membersCount", { count: department.members.length })}
               </Badge>
 
               <Button

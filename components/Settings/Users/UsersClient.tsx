@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Pencil, Trash2, Users } from "lucide-react";
+import { Plus, Pencil, Trash2, Users, Loader2 } from "lucide-react";
 import { UserFormDialog } from "@/components/Settings/Users/UserFormDialog";
 import { deleteUserAction } from "@/app/actions/user-actions";
 import { toast } from "sonner";
@@ -14,6 +14,7 @@ import {
 import { UpgradeModal } from "@/components/UpgradeModal";
 import { useUpgradeModal } from "@/hooks/useUpgradeModal";
 import { useTranslations } from "next-intl";
+import { useRouter } from "@/i18n/navigation";
 
 type User = {
   id: string;
@@ -41,24 +42,38 @@ export default function UsersClient({ initialUsers, currentUserId, churchId }: U
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
-  const [isPending, startTransition] = useTransition();
+  const [isDeleting, setIsDeleting] = useState(false);
   const upgrade = useUpgradeModal();
   const t = useTranslations("users");
   const te = useTranslations("users.errors");
+  const router = useRouter();
 
-  const handleDelete = () => {
-    if (!userToDelete) return;
-    startTransition(async () => {
+  const roleLabels: Record<string, string> = {
+    ADMIN: t("roles.ADMIN"),
+    TREASURER: t("roles.TREASURER"),
+    SECRETARY: t("roles.SECRETARY"),
+    OPERATOR: t("roles.OPERATOR"),
+  };
+
+  const handleDelete = async () => {
+    if (!userToDelete || isDeleting) return;
+    setIsDeleting(true);
+    try {
       const result = await deleteUserAction(userToDelete.id, churchId);
       if (result.success) {
-        setUsers((prev) => prev.filter((u) => u.id !== userToDelete.id));
+        setUsers(prev => prev.filter(u => u.id !== userToDelete.id));
         toast.success(t("successDeleted"));
+        router.refresh();
       } else {
-        const errorCode = (result as any).errorCode;
-        toast.error(errorCode ? te(errorCode) : t("errorDelete"));
+        toast.error(result.errorCode ? te(result.errorCode) : t("errorDelete"));
       }
+    } catch {
+      console.error("[DELETE_USER_ERROR]");
+      toast.error(t("errorDelete"));
+    } finally {
+      setIsDeleting(false);
       setUserToDelete(null);
-    });
+    }
   };
 
   return (
@@ -93,7 +108,7 @@ export default function UsersClient({ initialUsers, currentUserId, churchId }: U
                 <div key={user.id} className="flex items-center justify-between p-4 hover:bg-muted/30 transition-colors">
                   <div className="flex items-center gap-4">
                     <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
-                      {user.name?.charAt(0).toUpperCase() ?? "?"}
+                      {user.name?.trim()?.charAt(0).toUpperCase() || "?"}
                     </div>
                     <div>
                       <p className="text-sm font-medium">
@@ -108,7 +123,7 @@ export default function UsersClient({ initialUsers, currentUserId, churchId }: U
 
                   <div className="flex items-center gap-3">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${roleColors[user.role] ?? "bg-muted text-muted-foreground"}`}>
-                      {t(`roles.${user.role}`) ?? user.role}
+                      {roleLabels[user.role] ?? user.role}
                     </span>
 
                     {user.role !== "ADMIN" && user.id !== currentUserId && (
@@ -138,16 +153,20 @@ export default function UsersClient({ initialUsers, currentUserId, churchId }: U
 
       <UserFormDialog
         open={isFormOpen}
-        onOpenChange={setIsFormOpen}
+        onOpenChange={(open) => {
+          setIsFormOpen(open);
+          if (!open) setEditingUser(null);
+        }}
         editingUser={editingUser}
         onUpgrade={(message) => upgrade.showUpgrade(message)}
         churchId={churchId}
         onSuccess={(updatedUser) => {
-          if (editingUser) {
-            setUsers((prev) => prev.map((u) => u.id === updatedUser.id ? updatedUser : u));
-          } else {
-            setUsers((prev) => [...prev, updatedUser]);
-          }
+          setUsers(prev => {
+            if (prev.some(u => u.id === updatedUser.id)) {
+              return prev.map(u => u.id === updatedUser.id ? updatedUser : u);
+            }
+            return [...prev, updatedUser];
+          });
           setIsFormOpen(false);
         }}
       />
@@ -158,22 +177,25 @@ export default function UsersClient({ initialUsers, currentUserId, churchId }: U
         limitMessage={upgrade.message}
       />
 
-      <AlertDialog open={!!userToDelete} onOpenChange={(open) => !open && setUserToDelete(null)}>
+      <AlertDialog
+        open={!!userToDelete}
+        onOpenChange={(open) => !open && !isDeleting && setUserToDelete(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>{t("confirmDelete")}</AlertDialogTitle>
             <AlertDialogDescription>
-              <strong>{userToDelete?.name}</strong> {t("confirmDeleteDesc")}
+              <strong>{userToDelete?.name?.trim() || userToDelete?.email}</strong> {t("confirmDeleteDesc")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeleting}>{t("cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
-              disabled={isPending}
+              disabled={isDeleting}
               className="bg-destructive hover:bg-destructive/90"
             >
-              {t("remove")}
+              {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : t("remove")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

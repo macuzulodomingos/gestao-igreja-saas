@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useEffect, useTransition } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Pencil, Trash2, CalendarDays } from "lucide-react";
+import { Plus, Pencil, Trash2, CalendarDays, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { deleteEventCategoryAction } from "@/app/actions/event-category-actions";
 import { EventCategoryFormDialog } from "./EventCategoryFormDialog";
@@ -13,6 +13,7 @@ import {
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useTranslations } from "next-intl";
+import { useRouter } from "@/i18n/navigation";
 
 type EventCategory = {
   id: string;
@@ -30,22 +31,36 @@ export default function EventCategoriesClient({ initialCategories, churchId }: E
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<EventCategory | null>(null);
   const [categoryToDelete, setCategoryToDelete] = useState<EventCategory | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [isPending, startTransition] = useTransition();
   const t = useTranslations("eventCategories");
   const te = useTranslations("eventCategories.errors");
+  const router = useRouter();
+
+  useEffect(() => {
+    setCategories(initialCategories);
+  }, [initialCategories]);
 
   const handleDelete = () => {
-    if (!categoryToDelete) return;
+    if (!categoryToDelete || isDeleting) return;
+    setIsDeleting(true);
     startTransition(async () => {
-      const result = await deleteEventCategoryAction(categoryToDelete.id, churchId);
-      if (result.success) {
-        setCategories(prev => prev.filter(c => c.id !== categoryToDelete.id));
-        toast.success(t("successDeleted"));
-      } else {
-        const errorCode = (result as any).errorCode;
-        toast.error(errorCode ? te(errorCode) : t("errorDelete"));
+      try {
+        const result = await deleteEventCategoryAction(categoryToDelete.id, churchId);
+        if (result.success) {
+          setCategories(prev => prev.filter(c => c.id !== categoryToDelete.id));
+          toast.success(t("successDeleted"));
+          router.refresh();
+        } else {
+          toast.error(result.errorCode ? te(result.errorCode) : t("errorDelete"));
+        }
+      } catch {
+        console.error("[DELETE_EVENT_CATEGORY_ERROR]");
+        toast.error(t("errorDelete"));
+      } finally {
+        setIsDeleting(false);
+        setCategoryToDelete(null);
       }
-      setCategoryToDelete(null);
     });
   };
 
@@ -78,16 +93,17 @@ export default function EventCategoriesClient({ initialCategories, churchId }: E
           ) : (
             <div className="divide-y">
               {categories.map(category => (
-                <div key={category.id} className="flex items-center justify-between p-4 hover:bg-muted/30 transition-colors">
-                  <div>
-                    <p className="text-sm font-medium">{category.name}</p>
+                <div key={category.id} className="flex items-center justify-between p-4 hover:bg-muted/30 transition-colors gap-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium truncate">{category.name}</p>
                     <p className="text-xs text-muted-foreground">
                       {category._count.events} {t("events")}
                     </p>
                   </div>
-                  <div className="flex gap-1">
+                  <div className="flex gap-1 shrink-0">
                     <Button
                       variant="ghost" size="icon" className="h-8 w-8"
+                      aria-label={t("form.editTitle")}
                       onClick={() => { setEditingCategory(category); setIsFormOpen(true); }}
                     >
                       <Pencil className="h-4 w-4" />
@@ -95,6 +111,7 @@ export default function EventCategoriesClient({ initialCategories, churchId }: E
                     <Button
                       variant="ghost" size="icon"
                       className="h-8 w-8 text-destructive hover:text-destructive"
+                      aria-label={t("confirm")}
                       onClick={() => setCategoryToDelete(category)}
                     >
                       <Trash2 className="h-4 w-4" />
@@ -109,7 +126,10 @@ export default function EventCategoriesClient({ initialCategories, churchId }: E
 
       <EventCategoryFormDialog
         open={isFormOpen}
-        onOpenChange={setIsFormOpen}
+        onOpenChange={(open) => {
+          setIsFormOpen(open);
+          if (!open) setEditingCategory(null);
+        }}
         editingCategory={editingCategory}
         churchId={churchId}
         onSuccess={(updated) => {
@@ -122,7 +142,10 @@ export default function EventCategoriesClient({ initialCategories, churchId }: E
         }}
       />
 
-      <AlertDialog open={!!categoryToDelete} onOpenChange={(open) => !open && setCategoryToDelete(null)}>
+      <AlertDialog
+        open={!!categoryToDelete}
+        onOpenChange={(open) => !open && !isDeleting && setCategoryToDelete(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>{t("confirmDelete")}</AlertDialogTitle>
@@ -131,13 +154,13 @@ export default function EventCategoriesClient({ initialCategories, churchId }: E
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeleting}>{t("cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
-              disabled={isPending}
+              disabled={isDeleting}
               className="bg-destructive hover:bg-destructive/90"
             >
-              {t("confirm")}
+              {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : t("confirm")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
