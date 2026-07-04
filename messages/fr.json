@@ -424,7 +424,6 @@
     "noResults": "Aucun résultat.",
     "upgrade": "Mettre à niveau",
     "actions": "Actions"
-
   },
   "validation": {
     "required": "Obligatoire",
@@ -630,7 +629,10 @@
     "remove": "Supprimer",
     "successDeleted": "Utilisateur supprimé.",
     "errorDelete": "Erreur lors de la suppression.",
+    "edit": "Modifier",
+    "delete": "Supprimer",
     "roles": {
+      "SUPER_ADMIN": "Super administrateur",
       "ADMIN": "Administrateur",
       "TREASURER": "Trésorier",
       "SECRETARY": "Secrétaire",
@@ -666,7 +668,8 @@
       "cannotDeleteLastSuperAdmin": "Vous ne pouvez pas supprimer le seul Super Admin du système.",
       "userNotFound": "Utilisateur introuvable.",
       "errorSave": "Erreur lors de la sauvegarde.",
-      "errorDelete": "Erreur lors de la suppression."
+      "errorDelete": "Erreur lors de la suppression.",
+      "cannotEditAdmin": "Vous ne pouvez pas modifier un administrateur."
     }
   },
   "eventCategories": {

@@ -8,9 +8,12 @@ import { checkUserLimit } from "@/lib/plan-guard";
 import prisma from "@/lib/prisma";
 import { PlanType } from "@/lib/plans";
 import { getErrorMessage, isPrismaError } from "@/lib/errors";
-import { ActionResult } from "@/types/action-result";
+import { ActionResult, ActionResultWithData } from "@/types/action-result";
+import { UserRole } from "../generated/prisma/enums";
 
-const ALLOWED_ROLES = ["TREASURER", "SECRETARY", "OPERATOR"] as const;
+
+const ALLOWED_ROLES = [UserRole.TREASURER, UserRole.SECRETARY, UserRole.OPERATOR] as const;
+
 
 const createUserSchema = z.object({
   name: z.string().min(2, "validation.nameRequired").max(100, "validation.nameTooLong"),
@@ -23,6 +26,14 @@ const updateUserSchema = z.object({
   name: z.string().min(2).max(100).optional(),
   role: z.enum(ALLOWED_ROLES).optional(),
 });
+
+export type SafeUser = {
+  id: string;
+  name: string | null;
+  email: string;
+  role: UserRole;
+  createdAt: Date;
+};
 
 async function getAuthContext(targetChurchId?: string) {
   const session = await auth();
@@ -57,7 +68,7 @@ async function getAuthContext(targetChurchId?: string) {
   };
 }
 
-export async function createUserAction(formData: FormData, targetChurchId?: string): Promise<ActionResult> {
+export async function createUserAction(formData: FormData, targetChurchId?: string): Promise<ActionResultWithData<SafeUser>> {
   try {
     const { churchId, actor, plan } = await getAuthContext(targetChurchId);
 
@@ -68,10 +79,11 @@ export async function createUserAction(formData: FormData, targetChurchId?: stri
       return { success: false, fieldErrors: result.error.flatten().fieldErrors };
     }
 
-    await UserService.createUser(churchId, actor, result.data);
+    const user = await UserService.createUser(churchId, actor, result.data);
 
-    revalidatePath(`/[slug]/configuracoes/utilizadores`, "page");
-    return { success: true };
+    revalidatePath(`/[locale]/[slug]/configuracoes/utilizadores`, "page");
+    return { success: true, data: user };
+    
   } catch (error: unknown) {
     const message = getErrorMessage(error);
     if (message === "UNAUTHORIZED" || message === "CHURCH_ID_REQUIRED")
@@ -91,7 +103,7 @@ export async function updateUserAction(
   userId: string,
   formData: FormData,
   targetChurchId?: string
-): Promise<ActionResult> {
+): Promise<ActionResultWithData<SafeUser>> {
   try {
     const { churchId, actor } = await getAuthContext(targetChurchId);
 
@@ -100,10 +112,11 @@ export async function updateUserAction(
       return { success: false, fieldErrors: result.error.flatten().fieldErrors };
     }
 
-    await UserService.updateUser(userId, churchId, actor, result.data);
+    const user = await UserService.updateUser(userId, churchId, actor, result.data);
 
-    revalidatePath(`/[slug]/configuracoes/utilizadores`, "page");
-    return { success: true };
+    revalidatePath(`/[locale]/[slug]/configuracoes/utilizadores`, "page");
+    return { success: true, data: user };
+    
   } catch (error: unknown) {
     const message = getErrorMessage(error);
     if (message === "UNAUTHORIZED" || message === "CHURCH_ID_REQUIRED")
@@ -125,7 +138,7 @@ export async function deleteUserAction(userId: string, targetChurchId?: string):
 
     await UserService.deleteUser(userId, churchId, actor);
 
-    revalidatePath(`/[slug]/configuracoes/utilizadores`, "page");
+    revalidatePath(`/[locale]/[slug]/configuracoes/utilizadores`, "page");
     return { success: true };
   } catch (error: unknown) {
     const message = getErrorMessage(error);

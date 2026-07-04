@@ -13,6 +13,7 @@ export type ActionResultWithData<T> =
       success: false;
       errorCode?: string;
       fieldErrors?: Record<string, string[]>;
+      upgrade?: boolean; 
     };
 
   

@@ -8,12 +8,13 @@ import { Loader2 } from "lucide-react";
 import { createUserAction, updateUserAction } from "@/app/actions/user-actions";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
+import { UserRole } from "@/app/generated/prisma/enums";
 
 type User = {
   id: string;
   name: string | null;
   email: string;
-  role: string;
+  role: UserRole;
   createdAt: Date;
 };
 
@@ -36,10 +37,10 @@ export function UserFormDialog({ open, onOpenChange, editingUser, onSuccess, onU
   const te = useTranslations("users.errors");
   const tv = useTranslations("validation");
 
-  const ROLE_OPTIONS = [
-    { value: "TREASURER", label: tu("roles.TREASURER") },
-    { value: "SECRETARY", label: tu("roles.SECRETARY") },
-    { value: "OPERATOR", label: tu("roles.OPERATOR") },
+  const ROLE_OPTIONS: { value: UserRole; label: string }[] = [
+    { value: UserRole.TREASURER, label: tu("roles.TREASURER") },
+    { value: UserRole.SECRETARY, label: tu("roles.SECRETARY") },
+    { value: UserRole.OPERATOR, label: tu("roles.OPERATOR") },
   ];
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -48,51 +49,50 @@ export function UserFormDialog({ open, onOpenChange, editingUser, onSuccess, onU
     const formData = new FormData(e.currentTarget);
 
     startTransition(async () => {
-      const result = isEditing
-        ? await updateUserAction(editingUser.id, formData, churchId)
-        : await createUserAction(formData, churchId);
+      try {
+        const result = isEditing
+          ? await updateUserAction(editingUser.id, formData, churchId)
+          : await createUserAction(formData, churchId);
 
-      if (result.success) {
-        toast.success(isEditing ? t("updated") : t("created"));
-        const name = formData.get("name") as string;
-        const email = formData.get("email") as string;
-        const role = formData.get("role") as string;
-        onSuccess({
-          id: editingUser?.id ?? crypto.randomUUID(),
-          name: name || editingUser?.name || null,
-          email: email || editingUser?.email || "",
-          role: role || editingUser?.role || "OPERATOR",
-          createdAt: editingUser?.createdAt ?? new Date(),
-        });
-      } else if ("upgrade" in result && result.upgrade) {
-        onOpenChange(false);
-        // 👈 usa errorCode em vez de error
-        const errorCode = (result as any).errorCode;
-        onUpgrade?.(errorCode ? te(errorCode) : tc("upgrade"));
-      } else if (result.fieldErrors) {
-        const translated: Record<string, string[]> = {};
-        for (const [key, msgs] of Object.entries(result.fieldErrors)) {
-          translated[key] = msgs.map(msg => {
-            if (msg.startsWith("validation.")) {
-              try { return tv(msg.replace("validation.", "") as any); } catch { return msg; }
-            }
-            if (msg.startsWith("users.errors.")) {
-              try { return te(msg.replace("users.errors.", "") as any); } catch { return msg; }
-            }
-            return msg;
-          });
+        if (result.success) {
+          toast.success(isEditing ? t("updated") : t("created"));
+          onSuccess(result.data);
+        } else if (result.upgrade) {
+          onOpenChange(false);
+          onUpgrade?.(result.errorCode ? te(result.errorCode as any) : tc("upgrade"));
+        } else if (result.fieldErrors) {
+          const translated: Record<string, string[]> = {};
+          for (const [key, msgs] of Object.entries(result.fieldErrors)) {
+            translated[key] = msgs.map(msg => {
+              if (msg.startsWith("validation.")) {
+                try { return tv(msg.replace("validation.", "") as any); } catch { return msg; }
+              }
+              if (msg.startsWith("users.errors.")) {
+                try { return te(msg.replace("users.errors.", "") as any); } catch { return msg; }
+              }
+              return msg;
+            });
+          }
+          setFieldErrors(translated);
+          toast.error(t("errorForm"));
+        } else {
+          toast.error(result.errorCode ? te(result.errorCode as any) : t("error"));
         }
-        setFieldErrors(translated);
-        toast.error(t("errorForm"));
-      } else {
-        const errorCode = (result as any).errorCode;
-        toast.error(errorCode ? te(errorCode) : t("error"));
+      } catch (error) {
+        console.error("[USER_FORM_SUBMIT_ERROR]:", error);
+        toast.error(t("error"));
       }
     });
-  }; // 👈 handleSubmit termina aqui
+  };
 
-  return ( // 👈 return fora do handleSubmit
-    <Dialog open={open} onOpenChange={onOpenChange}>
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(isOpen) => {
+        if (isPending) return;
+        onOpenChange(isOpen);
+      }}
+    >
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>
@@ -102,8 +102,9 @@ export function UserFormDialog({ open, onOpenChange, editingUser, onSuccess, onU
 
         <form onSubmit={handleSubmit} className="space-y-4 pt-2">
           <div className="space-y-2">
-            <label className="text-sm font-medium">{t("name")}</label>
+            <label htmlFor="user-name" className="text-sm font-medium">{t("name")}</label>
             <Input
+              id="user-name"
               name="name"
               placeholder={t("namePlaceholder")}
               defaultValue={editingUser?.name ?? ""}
@@ -117,8 +118,9 @@ export function UserFormDialog({ open, onOpenChange, editingUser, onSuccess, onU
           {!isEditing && (
             <>
               <div className="space-y-2">
-                <label className="text-sm font-medium">{t("email")}</label>
+                <label htmlFor="user-email" className="text-sm font-medium">{t("email")}</label>
                 <Input
+                  id="user-email"
                   name="email"
                   type="email"
                   placeholder={t("emailPlaceholder")}
@@ -129,8 +131,9 @@ export function UserFormDialog({ open, onOpenChange, editingUser, onSuccess, onU
                 )}
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium">{t("password")}</label>
+                <label htmlFor="user-password" className="text-sm font-medium">{t("password")}</label>
                 <Input
+                  id="user-password"
                   name="password"
                   type="password"
                   placeholder={t("passwordPlaceholder")}
@@ -144,10 +147,11 @@ export function UserFormDialog({ open, onOpenChange, editingUser, onSuccess, onU
           )}
 
           <div className="space-y-2">
-            <label className="text-sm font-medium">{t("role")}</label>
+            <label htmlFor="user-role" className="text-sm font-medium">{t("role")}</label>
             <select
+              id="user-role"
               name="role"
-              defaultValue={editingUser?.role ?? "OPERATOR"}
+              defaultValue={editingUser?.role ?? UserRole.OPERATOR}
               className={`w-full rounded-md border border-input bg-background px-3 py-2 text-sm ${fieldErrors.role ? "border-destructive" : ""}`}
             >
               {ROLE_OPTIONS.map((opt) => (
@@ -162,7 +166,7 @@ export function UserFormDialog({ open, onOpenChange, editingUser, onSuccess, onU
           </div>
 
           <div className="flex justify-end gap-2 pt-2">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
               {tc("cancel")}
             </Button>
             <Button type="submit" disabled={isPending}>

@@ -629,7 +629,10 @@
     "remove": "Remover",
     "successDeleted": "Utilizador removido.",
     "errorDelete": "Erro ao remover.",
+    "edit": "Editar",
+    "delete": "Remover",
     "roles": {
+      "SUPER_ADMIN": "Super Administrador",
       "ADMIN": "Administrador",
       "TREASURER": "Tesoureiro",
       "SECRETARY": "Secretário",
@@ -665,7 +668,8 @@
       "cannotDeleteLastSuperAdmin": "Não pode eliminar o único Super Admin do sistema.",
       "userNotFound": "Utilizador não encontrado.",
       "errorSave": "Erro ao guardar utilizador.",
-      "errorDelete": "Erro ao eliminar utilizador."
+      "errorDelete": "Erro ao eliminar utilizador.",
+      "cannotEditAdmin": "Não é possível editar um administrador."
     }
   },
   "eventCategories": {

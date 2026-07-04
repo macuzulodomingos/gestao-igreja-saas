@@ -75,8 +75,8 @@ export const UserService = {
     actor: { userId: string; email: string },
     data: UpdateUserDTO
   ) {
-    await prisma.$transaction(async (tx) => {
-      const existing = await tx.user.findUnique({ // 👈 usa tx
+    return prisma.$transaction(async (tx) => {
+      const existing = await tx.user.findUnique({
         where: { id: userId },
         select: { id: true, name: true, role: true, email: true, churchId: true, deletedAt: true },
       });
@@ -86,11 +86,24 @@ export const UserService = {
       if (existing.churchId !== churchId) throw new Error("USER_NOT_FOUND");
       if (existing.id === actor.userId) throw new Error("CANNOT_EDIT_SELF");
 
-      await tx.user.update({
+      // 🔒 Mesma proteção que já existe no delete — ADMIN/SUPER_ADMIN
+      // não podem ser editados por este fluxo
+      if (existing.role === "ADMIN" || existing.role === "SUPER_ADMIN") {
+        throw new Error("CANNOT_EDIT_ADMIN");
+      }
+
+      const updated = await tx.user.update({
         where: { id: userId },
         data: {
           ...(data.name && { name: data.name }),
           ...(data.role && { role: data.role }),
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          createdAt: true,
         },
       });
 
@@ -103,9 +116,11 @@ export const UserService = {
           entityName: "User",
           entityId: userId,
           oldData: { name: existing.name, role: existing.role },
-          newData: { name: data.name ?? existing.name, role: data.role ?? existing.role },
+          newData: { name: updated.name, role: updated.role },
         },
       });
+
+      return updated;
     });
   },
 
@@ -155,7 +170,7 @@ export const UserService = {
       });
     });
   },
-  
+
 
   // services/userService.ts
   async updateLocale(userId: string, locale: "pt" | "fr") {
