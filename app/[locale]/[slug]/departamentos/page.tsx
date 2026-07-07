@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
-import { notFound, redirect } from "next/navigation";
+import { redirect } from "@/i18n/navigation";
+import { notFound } from "next/navigation";
 import { DepartmentService } from "@/services/departmentService";
 import { MemberService } from "@/services/memberService";
 import DepartmentsClient from "@/components/Departments/DepartmentsClient";
@@ -16,7 +17,8 @@ export default async function DepartamentosPage({ params }: DepartamentosPagePro
 
   if (!session?.user) {
     const locale = await getLocale();
-    redirect(`/${locale}/login`);
+    redirect({ href: "/login", locale });
+    return;
   }
 
 

@@ -36,5 +36,6 @@ export async function getAuthContext(targetChurchId?: string) {
     plan: (church?.plan ?? "FREE") as PlanType, // 👈 NOVO
     actor: { userId: session.user.id, email: session.user.email! },
     isSuperAdmin,
+    role: session.user.role,
   };
 }

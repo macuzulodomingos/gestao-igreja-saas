@@ -1,42 +1,36 @@
 import { auth } from "@/lib/auth";
-import { notFound, redirect } from "next/navigation";
+import { redirect } from "@/i18n/navigation";
+import { notFound } from "next/navigation";
 import { BillingService, PRICES } from "@/services/billingService";
 import { BillingClient } from "@/components/Billing/BillingClient";
-import prisma from "@/lib/prisma";
 import { getChurchBySlug } from "@/lib/tenant";
 
+
 interface BillingPageProps {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ slug: string; locale: string }>;
 }
 
 export default async function BillingPage({ params }: BillingPageProps) {
   const session = await auth();
-  const { slug } = await params;
+  const { slug, locale } = await params;
 
-  if (!session?.user) redirect("/login");
+  if (!session?.user) {
+    redirect({ href: "/login", locale });
+    return;
+  }
 
   const isSuperAdmin = session.user.role === "SUPER_ADMIN";
 
   if (!isSuperAdmin && session.user.churchSlug !== slug) {
-    redirect("/login");
+    notFound();
   }
 
-  let churchId = session.user.churchId;
-
-  if (isSuperAdmin) {
-    const church = await getChurchBySlug(slug, undefined);
-    if (!church) notFound();
-    churchId = church.id;
-  } else {
-    const church = await getChurchBySlug(slug, churchId);
-    if (!church) notFound();
-  }
-
-  if (!churchId) redirect("/login");
-
-  const church = await getChurchBySlug(slug, isSuperAdmin ? undefined : churchId);
+  const church = await getChurchBySlug(slug, isSuperAdmin ? undefined : session.user.churchId ?? undefined);
   if (!church) notFound();
 
+  const churchId = church.id;
+
+ 
   const subscription = await BillingService.getSubscription(churchId);
 
   return (

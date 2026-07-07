@@ -43,6 +43,34 @@ export function UserFormDialog({ open, onOpenChange, editingUser, onSuccess, onU
     { value: UserRole.OPERATOR, label: tu("roles.OPERATOR") },
   ];
 
+  // Mapa estático — cada chave chamada literalmente (validada em compile-time
+  // pelo next-intl). O lookup dinâmico acontece só no objeto já traduzido,
+  // nunca passando uma string arbitrária para te()/tv() diretamente.
+  const errorMessages: Record<string, string> = {
+    unauthorized: te("unauthorized"),
+    forbidden: te("forbidden"),
+    planLimitUsers: te("planLimitUsers"),
+    emailTaken: te("emailTaken"),
+    cannotEditSelf: te("cannotEditSelf"),
+    cannotEditAdmin: te("cannotEditAdmin"),
+    cannotDeleteSelf: te("cannotDeleteSelf"),
+    cannotDeleteAdmin: te("cannotDeleteAdmin"),
+    cannotDeleteLastSuperAdmin: te("cannotDeleteLastSuperAdmin"),
+    userNotFound: te("userNotFound"),
+    errorSave: te("errorSave"),
+    errorDelete: te("errorDelete"),
+  };
+
+  // Idem para as chaves de validação que o schema Zod (create/updateUserSchema)
+  // pode devolver em fieldErrors.
+  const validationMessages: Record<string, string> = {
+    required: tv("required"),
+    nameRequired: tv("nameRequired"),
+    nameTooLong: tv("nameTooLong"),
+    emailInvalid: tv("emailInvalid"),
+    passwordTooShort: tv("passwordTooShort"),
+  };
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setFieldErrors({});
@@ -59,16 +87,18 @@ export function UserFormDialog({ open, onOpenChange, editingUser, onSuccess, onU
           onSuccess(result.data);
         } else if (result.upgrade) {
           onOpenChange(false);
-          onUpgrade?.(result.errorCode ? te(result.errorCode as any) : tc("upgrade"));
+          onUpgrade?.(result.errorCode ? (errorMessages[result.errorCode] ?? tc("upgrade")) : tc("upgrade"));
         } else if (result.fieldErrors) {
           const translated: Record<string, string[]> = {};
           for (const [key, msgs] of Object.entries(result.fieldErrors)) {
             translated[key] = msgs.map(msg => {
               if (msg.startsWith("validation.")) {
-                try { return tv(msg.replace("validation.", "") as any); } catch { return msg; }
+                const validationKey = msg.replace("validation.", "");
+                return validationMessages[validationKey] ?? msg;
               }
               if (msg.startsWith("users.errors.")) {
-                try { return te(msg.replace("users.errors.", "") as any); } catch { return msg; }
+                const errorKey = msg.replace("users.errors.", "");
+                return errorMessages[errorKey] ?? msg;
               }
               return msg;
             });
@@ -76,7 +106,7 @@ export function UserFormDialog({ open, onOpenChange, editingUser, onSuccess, onU
           setFieldErrors(translated);
           toast.error(t("errorForm"));
         } else {
-          toast.error(result.errorCode ? te(result.errorCode as any) : t("error"));
+          toast.error(result.errorCode ? (errorMessages[result.errorCode] ?? t("error")) : t("error"));
         }
       } catch (error) {
         console.error("[USER_FORM_SUBMIT_ERROR]:", error);

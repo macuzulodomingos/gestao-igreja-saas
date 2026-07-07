@@ -4,7 +4,8 @@ import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/ca
 import { type LucideIcon, Tags, ShieldCheck, Shield, Users, CalendarDays, Globe, Languages } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { getLocale } from "next-intl/server";
-import { redirect, notFound } from "next/navigation";
+import { redirect } from "@/i18n/navigation";
+import { notFound } from "next/navigation";
 
 
 interface ConfiguracoesPageProps {
@@ -24,7 +25,11 @@ export default async function ConfiguracoesPage({ params }: ConfiguracoesPagePro
   const { slug } = await params;
   const locale = await getLocale();
 
-  if (!session?.user) redirect(`/${locale}/login`);
+
+  if (!session?.user) {
+    redirect({ href: "/login", locale });
+    return; 
+  }
 
   const isSuperAdmin = session.user.role === "SUPER_ADMIN";
   if (!isSuperAdmin && session.user.churchSlug !== slug) {

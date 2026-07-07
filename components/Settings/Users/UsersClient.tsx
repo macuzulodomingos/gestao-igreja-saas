@@ -37,10 +37,11 @@ const roleColors: Record<UserRole, string> = {
 interface UsersClientProps {
   initialUsers: User[];
   currentUserId: string;
+  currentUserRole: UserRole;
   churchId: string;
 }
 
-export default function UsersClient({ initialUsers, currentUserId, churchId }: UsersClientProps) {
+export default function UsersClient({ initialUsers, currentUserId, currentUserRole, churchId }: UsersClientProps) {
   const [users, setUsers] = useState(initialUsers);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -54,6 +55,8 @@ export default function UsersClient({ initialUsers, currentUserId, churchId }: U
   useEffect(() => {
     setUsers(initialUsers);
   }, [initialUsers]);
+
+  const canManageUsers = currentUserRole === UserRole.ADMIN || currentUserRole === UserRole.SUPER_ADMIN;
 
   const roleLabels: Record<UserRole, string> = {
     SUPER_ADMIN: t("roles.SUPER_ADMIN"),
@@ -95,9 +98,11 @@ export default function UsersClient({ initialUsers, currentUserId, churchId }: U
           </h1>
           <p className="text-muted-foreground mt-1">{t("subtitle")}</p>
         </div>
-        <Button onClick={() => { setEditingUser(null); setIsFormOpen(true); }} className="gap-2">
-          <Plus className="h-4 w-4" /> {t("addUser")}
-        </Button>
+        {canManageUsers && (
+          <Button onClick={() => { setEditingUser(null); setIsFormOpen(true); }} className="gap-2">
+            <Plus className="h-4 w-4" /> {t("addUser")}
+          </Button>
+        )}
       </div>
 
       <Card>
@@ -135,8 +140,8 @@ export default function UsersClient({ initialUsers, currentUserId, churchId }: U
                       {roleLabels[user.role] ?? user.role}
                     </span>
 
-                    {user.role !== UserRole.ADMIN && user.role !== UserRole.SUPER_ADMIN && user.id !== currentUserId && (
-                      
+                    {canManageUsers && user.role !== UserRole.ADMIN && user.role !== UserRole.SUPER_ADMIN && user.id !== currentUserId && (
+
                       <div className="flex gap-1">
                         <Button
                           variant="ghost" size="icon" className="h-8 w-8"

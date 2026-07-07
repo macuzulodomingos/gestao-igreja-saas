@@ -1,7 +1,6 @@
 import { BillingCycle, Plan } from "@/app/generated/prisma/enums";
 import prisma from "@/lib/prisma";
 
-
 export const PRICES = {
   PRO: { MONTHLY: 5000, ANNUAL: 55000 },
   ENTERPRISE: { MONTHLY: 15000, ANNUAL: 165000 },
@@ -38,7 +37,6 @@ export const BillingService = {
       proofOfPayment: string;
     }
   ) {
-    // 👈 audit dentro da transacção
     await prisma.$transaction(async (tx) => {
       await tx.subscription.upsert({
         where: { churchId },
@@ -63,7 +61,7 @@ export const BillingService = {
         },
       });
 
-      await tx.auditLog.create({ // 👈 dentro da transacção
+      await tx.auditLog.create({
         data: {
           churchId,
           userId: actor.userId,
@@ -85,52 +83,50 @@ export const BillingService = {
     churchId: string,
     actor: { userId: string; email: string }
   ) {
-    const sub = await prisma.subscription.findUnique({
-      where: { churchId },
-      select: {
-        pendingPlan: true,
-        pendingCycle: true,
-        currentPeriodEnd: true, // 👈 adiciona
-      },
-    });
-
-    if (!sub?.pendingPlan || !sub?.pendingCycle)
-      throw new Error("NO_PENDING_PAYMENT");
-
-    const now = new Date();
-
-    // 👈 soma ao tempo restante em vez de começar do zero
-    const baseDate = (sub.currentPeriodEnd && sub.currentPeriodEnd > now)
-      ? sub.currentPeriodEnd
-      : now;
-
-    const newPeriodEnd = new Date(baseDate);
-    if (sub.pendingCycle === "ANNUAL") {
-      newPeriodEnd.setFullYear(newPeriodEnd.getFullYear() + 1);
-    } else {
-      newPeriodEnd.setMonth(newPeriodEnd.getMonth() + 1);
-    }
-
     await prisma.$transaction(async (tx) => {
-      await tx.subscription.update({
+      // Leitura DENTRO da transação — elimina a janela de corrida entre
+      // ler pendingPlan e escrever o update (duplo clique / duas abas).
+      const sub = await tx.subscription.findUnique({
         where: { churchId },
+        select: { pendingPlan: true, pendingCycle: true, currentPeriodEnd: true },
+      });
+
+      if (!sub || !sub.pendingPlan || !sub.pendingCycle) {
+        throw new Error("NO_PENDING_PAYMENT");
+      }
+
+      const now = new Date();
+      const baseDate = sub.currentPeriodEnd && sub.currentPeriodEnd > now ? sub.currentPeriodEnd : now;
+      const newPeriodEnd = new Date(baseDate);
+      if (sub.pendingCycle === "ANNUAL") {
+        newPeriodEnd.setFullYear(newPeriodEnd.getFullYear() + 1);
+      } else {
+        newPeriodEnd.setMonth(newPeriodEnd.getMonth() + 1);
+      }
+
+      // updateMany com filtro de pendingPlan garante idempotência: se uma
+      // segunda chamada concorrente chegar aqui depois desta ter zerado
+      // pendingPlan, ela afeta 0 linhas e cai no throw abaixo.
+      const updated = await tx.subscription.updateMany({
+        where: { churchId, pendingPlan: { not: null } },
         data: {
-          plan: sub.pendingPlan!,
-          billingCycle: sub.pendingCycle!,
+          plan: sub.pendingPlan,
+          billingCycle: sub.pendingCycle,
           status: "ACTIVE",
-          currentPeriodEnd: newPeriodEnd, // 👈 usa newPeriodEnd
+          currentPeriodEnd: newPeriodEnd,
           confirmedBy: actor.userId,
           confirmedAt: now,
           pendingPlan: null,
           pendingCycle: null,
-          proofOfPayment: null, // 👈 limpa após confirmação
+          proofOfPayment: null,
         },
       });
 
-      await tx.church.update({
-        where: { id: churchId },
-        data: { plan: sub.pendingPlan! },
-      });
+      if (updated.count === 0) {
+        throw new Error("NO_PENDING_PAYMENT");
+      }
+
+      await tx.church.update({ where: { id: churchId }, data: { plan: sub.pendingPlan } });
 
       await tx.auditLog.create({
         data: {
@@ -143,7 +139,7 @@ export const BillingService = {
           newData: {
             plan: sub.pendingPlan,
             billingCycle: sub.pendingCycle,
-            currentPeriodEnd: newPeriodEnd, // 👈 usa newPeriodEnd
+            currentPeriodEnd: newPeriodEnd,
           },
         },
       });
@@ -155,30 +151,37 @@ export const BillingService = {
     actor: { userId: string; email: string },
     reason: string
   ) {
-    // 👈 busca currentPeriodEnd para não encurtar tempo restante
-    const sub = await prisma.subscription.findUnique({
-      where: { churchId },
-      select: { currentPeriodEnd: true },
-    });
-
-    const now = Date.now();
-    const threeDaysFromNow = new Date(now + 3 * 24 * 60 * 60 * 1000);
-
     await prisma.$transaction(async (tx) => {
-      await tx.subscription.update({
+      // Idem — leitura e escrita na mesma transação.
+      const sub = await tx.subscription.findUnique({
         where: { churchId },
+        select: { currentPeriodEnd: true, pendingPlan: true },
+      });
+
+      if (!sub || !sub.pendingPlan) {
+        throw new Error("NO_PENDING_PAYMENT");
+      }
+
+      const now = Date.now();
+      const threeDaysFromNow = new Date(now + 3 * 24 * 60 * 60 * 1000);
+
+      const updated = await tx.subscription.updateMany({
+        where: { churchId, pendingPlan: { not: null } },
         data: {
           rejectedAt: new Date(),
           rejectionReason: reason,
           pendingPlan: null,
           pendingCycle: null,
           proofOfPayment: null,
-          // 👈 só extende se já expirou ou está a menos de 3 dias
-          currentPeriodEnd: sub?.currentPeriodEnd && sub.currentPeriodEnd > threeDaysFromNow
-            ? sub.currentPeriodEnd  // mantém o tempo restante
-            : threeDaysFromNow,     // dá 3 dias de carência
+          currentPeriodEnd: sub.currentPeriodEnd && sub.currentPeriodEnd > threeDaysFromNow
+            ? sub.currentPeriodEnd
+            : threeDaysFromNow,
         },
       });
+
+      if (updated.count === 0) {
+        throw new Error("NO_PENDING_PAYMENT");
+      }
 
       await tx.auditLog.create({
         data: {
@@ -193,7 +196,7 @@ export const BillingService = {
       });
     });
   },
-  
+
   async getPendingPayments() {
     return prisma.subscription.findMany({
       where: { pendingPlan: { not: null } },

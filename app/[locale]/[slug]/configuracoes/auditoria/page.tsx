@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
-import { redirect, notFound } from "next/navigation";
+import { redirect } from "@/i18n/navigation";
+import { notFound } from "next/navigation";
 import { AuditService } from "@/services/auditService";
 import AuditoriaClient from "@/components/Settings/Audit/AuditoriaClient";
 import { getChurchBySlug } from "@/lib/tenant";
@@ -24,7 +25,8 @@ export default async function AuditoriaPage({
 
   if (!session?.user) {
     const locale = await getLocale();
-    redirect(`/${locale}/login`);
+    redirect({ href: "/login", locale });
+    return;
   }
 
   const isSuperAdmin = session.user.role === "SUPER_ADMIN";

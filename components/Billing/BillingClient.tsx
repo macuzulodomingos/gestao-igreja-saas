@@ -14,6 +14,7 @@ import { format, parseISO, isValid } from "date-fns";
 import { ptBR, fr } from "date-fns/locale";
 import { uploadPaymentProofAction } from "@/app/actions/upload-actions";
 import { useTranslations, useLocale } from "next-intl";
+import { formatCurrency } from "@/lib/format";
 
 const dateLocalesMap = { pt: ptBR, fr: fr };
 
@@ -54,6 +55,9 @@ export function BillingClient({ currentPlan, subscription, prices, churchName, c
   const locale = useLocale();
   const dateLocale = dateLocalesMap[locale as keyof typeof dateLocalesMap] ?? ptBR;
 
+  const longDatePattern = locale === "fr" ? "dd MMMM yyyy" : "dd 'de' MMMM 'de' yyyy";
+  const dateTimePattern = locale === "fr" ? "dd/MM/yyyy 'à' HH:mm" : "dd/MM/yyyy 'às' HH:mm";
+
   const PLAN_FEATURES = {
     FREE: t.raw("planFeatures.free") as string[],
     PRO: t.raw("planFeatures.pro") as string[],
@@ -64,7 +68,7 @@ export function BillingClient({ currentPlan, subscription, prices, churchName, c
   const wasRejected = !!subscription?.rejectedAt;
 
   const getPrice = (plan: "PRO" | "ENTERPRISE", cycle: BillingCycle) =>
-    prices[plan][cycle].toLocaleString("pt-AO");
+    formatCurrency(prices[plan][cycle]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -93,7 +97,7 @@ export function BillingClient({ currentPlan, subscription, prices, churchName, c
       const formData = new FormData();
       formData.append("plan", selectedPlan);
       formData.append("billingCycle", billingCycle);
-      formData.append("proofOfPayment", uploadResult.url!);
+      formData.append("proofOfPayment", uploadResult.url);
 
       const result = await submitPaymentProofAction(formData, churchId);
 
@@ -104,8 +108,8 @@ export function BillingClient({ currentPlan, subscription, prices, churchName, c
       } else {
         toast.error(result.errorCode ? tb(result.errorCode) : t("errorSubmit"));
       }
-    } catch {
-      console.error("[SUBMIT_PAYMENT_PROOF_ERROR]");
+    } catch (error) {
+      console.error("[SUBMIT_PAYMENT_PROOF_ERROR]:", error);
       toast.error(t("errorSubmit"));
     } finally {
       setIsUploading(false);
@@ -157,7 +161,7 @@ export function BillingClient({ currentPlan, subscription, prices, churchName, c
           </div>
           {periodEnd && isValid(periodEnd) && currentPlan !== "FREE" && (
             <p className="text-sm text-muted-foreground">
-              {t("renewsOn")} {format(periodEnd, "dd 'de' MMMM 'de' yyyy", { locale: dateLocale })}
+              {t("renewsOn")} {format(periodEnd, longDatePattern, { locale: dateLocale })}
             </p>
           )}
         </CardContent>
@@ -176,7 +180,7 @@ export function BillingClient({ currentPlan, subscription, prices, churchName, c
               </p>
               {proofUploadedAt && isValid(proofUploadedAt) && (
                 <p className="text-xs text-yellow-600 dark:text-yellow-600 mt-1">
-                  {t("submittedAt")} {format(proofUploadedAt, "dd/MM/yyyy 'às' HH:mm")}
+                  {t("submittedAt")} {format(proofUploadedAt, dateTimePattern, { locale: dateLocale })}
                 </p>
               )}
             </div>
@@ -230,7 +234,7 @@ export function BillingClient({ currentPlan, subscription, prices, churchName, c
               <CardHeader>
                 <CardTitle className="text-base">FREE</CardTitle>
                 <CardDescription>
-                  <span className="text-2xl font-bold text-foreground">0 Kz</span>
+                  <span className="text-2xl font-bold text-foreground">{formatCurrency(0)}</span>
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -252,7 +256,7 @@ export function BillingClient({ currentPlan, subscription, prices, churchName, c
                   <Zap className="h-4 w-4 text-primary" /> PRO
                 </CardTitle>
                 <CardDescription>
-                  <span className="text-2xl font-bold text-foreground">{getPrice("PRO", billingCycle)} Kz</span>
+                  <span className="text-2xl font-bold text-foreground">{getPrice("PRO", billingCycle)}</span>
                   <span className="text-xs ml-1">/{billingCycle === "MONTHLY" ? t("perMonth") : t("perYear")}</span>
                 </CardDescription>
               </CardHeader>
@@ -280,7 +284,7 @@ export function BillingClient({ currentPlan, subscription, prices, churchName, c
                   <Crown className="h-4 w-4 text-amber-500" /> ENTERPRISE
                 </CardTitle>
                 <CardDescription>
-                  <span className="text-2xl font-bold text-foreground">{getPrice("ENTERPRISE", billingCycle)} Kz</span>
+                  <span className="text-2xl font-bold text-foreground">{getPrice("ENTERPRISE", billingCycle)}</span>
                   <span className="text-xs ml-1">/{billingCycle === "MONTHLY" ? t("perMonth") : t("perYear")}</span>
                 </CardDescription>
               </CardHeader>
@@ -310,7 +314,7 @@ export function BillingClient({ currentPlan, subscription, prices, churchName, c
           <CardHeader>
             <CardTitle className="text-base">{t("submitProof")}</CardTitle>
             <CardDescription>
-              {t("submitProofDesc")} <strong>{getPrice(selectedPlan, billingCycle)} Kz</strong> {t("submitProofDesc2")}
+              {t("submitProofDesc")} <strong>{getPrice(selectedPlan, billingCycle)}</strong> {t("submitProofDesc2")}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -320,7 +324,7 @@ export function BillingClient({ currentPlan, subscription, prices, churchName, c
               <p>{t("iban")}: <strong>AO06 0006 0000 0000 0000 0000 0</strong></p>
               <p>{t("holder")}: <strong>ChurchOS, Lda</strong></p>
               <p>{t("reference")}: <strong>{churchName.toUpperCase().replace(/\s/g, "-")}</strong></p>
-              <p>{t("amount")}: <strong>{getPrice(selectedPlan, billingCycle)} Kz</strong></p>
+              <p>{t("amount")}: <strong>{getPrice(selectedPlan, billingCycle)}</strong></p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -336,7 +340,7 @@ export function BillingClient({ currentPlan, subscription, prices, churchName, c
               </div>
 
               <div className="flex gap-3">
-                <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
+                <Button type="button" variant="outline" onClick={() => setShowForm(false)} disabled={isUploading}>
                   {t("cancel")}
                 </Button>
                 <Button type="submit" disabled={isUploading || !proofFile}>

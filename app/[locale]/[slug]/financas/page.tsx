@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
-import { redirect, notFound } from "next/navigation";
+import { redirect } from "@/i18n/navigation";
+import { notFound } from "next/navigation";
 import { FinanceService } from "@/services/financeService";
 import FinanceClientPage from "@/components/Finance/FinanceClientPage";
 import { getPlanLimits, PlanType } from "@/lib/plans";
@@ -18,7 +19,8 @@ export default async function FinancasPage({ params, searchParams }: FinancasPag
 
   if (!session?.user) {
     const locale = await getLocale();
-    redirect(`/${locale}/login`);
+    redirect({ href: "/login", locale });
+    return;
   }
 
   const isSuperAdmin = session.user.role === "SUPER_ADMIN";

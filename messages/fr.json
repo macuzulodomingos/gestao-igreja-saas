@@ -450,7 +450,11 @@
     "categoryNameTooLong": "Maximum 50 caractères",
     "passwordTooShort": "Minimum 6 caractères",
     "passwordUppercase": "Doit contenir au moins une lettre majuscule",
-    "passwordNumber": "Doit contenir au moins un chiffre"
+    "passwordNumber": "Doit contenir au moins un chiffre",
+    "invalidPlan": "Plan invalide",
+    "invalidUrl": "URL invalide",
+    "reasonTooShort": "Motif trop court",
+    "reasonTooLong": "Motif trop long"
   },
   "billing": {
     "title": "Facturation",
@@ -529,7 +533,8 @@
       "errorSubmit": "Erreur lors de la soumission du justificatif.",
       "noPendingPayment": "Aucun paiement en attente.",
       "errorConfirm": "Erreur lors de la confirmation du paiement.",
-      "errorReject": "Erreur lors du rejet du paiement."
+      "errorReject": "Erreur lors du rejet du paiement.",
+      "invalidData": "Données invalides."
     }
   },
   "categories": {

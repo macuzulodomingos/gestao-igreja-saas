@@ -2,7 +2,8 @@ import { auth } from "@/lib/auth";
 import { MemberService } from "@/services/memberService";
 import { MemberRoleService } from "@/services/memberRoleService";
 import MembersClient from "@/components/Member/MembersClient";
-import { redirect, notFound } from "next/navigation";
+import { redirect } from "@/i18n/navigation";
+import { notFound } from "next/navigation";
 import { getChurchBySlug } from "@/lib/tenant";
 import { getLocale } from "next-intl/server";
 
@@ -18,7 +19,8 @@ export default async function MembersPage({ params, searchParams }: MembersPageP
 
   if (!session?.user) {
     const locale = await getLocale();
-    redirect(`/${locale}/login`);
+    redirect({ href: "/login", locale });
+    return;
   }
 
   const isSuperAdmin = session.user.role === "SUPER_ADMIN";

@@ -1,6 +1,7 @@
 import { DashboardService } from "@/services/dashboardService";
 import { getChurchBySlug } from "@/lib/tenant";
-import { notFound, redirect } from "next/navigation";
+import { redirect } from "@/i18n/navigation";
+import { notFound } from "next/navigation";
 import DashboardShell from "@/components/Dashboard/DashboardShell";
 import { auth } from "@/lib/auth";
 import { getLocale } from "next-intl/server";
@@ -19,7 +20,8 @@ export default async function DashboardPage({
 
   if (!session?.user) {
     const locale = await getLocale();
-    redirect(`/${locale}/login`);
+    redirect({ href: "/login", locale });
+    return;
   }
 
   const isSuperAdmin = session.user.role === "SUPER_ADMIN";

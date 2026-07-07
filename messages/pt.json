@@ -450,7 +450,11 @@
     "categoryNameTooLong": "Máximo 50 caracteres",
     "passwordTooShort": "Mínimo 6 caracteres",
     "passwordUppercase": "Deve conter pelo menos uma letra maiúscula",
-    "passwordNumber": "Deve conter pelo menos um número"
+    "passwordNumber": "Deve conter pelo menos um número",
+    "invalidPlan": "Plano inválido",
+    "invalidUrl": "URL inválida",
+    "reasonTooShort": "Motivo muito curto",
+    "reasonTooLong": "Motivo demasiado longo"
   },
   "billing": {
     "title": "Faturamento",
@@ -529,7 +533,8 @@
       "errorSubmit": "Erro ao submeter comprovativo.",
       "noPendingPayment": "Sem pagamento pendente.",
       "errorConfirm": "Erro ao confirmar pagamento.",
-      "errorReject": "Erro ao rejeitar pagamento."
+      "errorReject": "Erro ao rejeitar pagamento.",
+      "invalidData": "Dados inválidos."
     }
   },
   "categories": {

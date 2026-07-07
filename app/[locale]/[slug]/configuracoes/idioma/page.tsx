@@ -2,7 +2,8 @@ import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { LanguageClient } from "@/components/Settings/Language/LanguageClient";
 import { getLocale } from "next-intl/server";
-import { redirect, notFound } from "next/navigation";
+import { redirect } from "@/i18n/navigation";
+import { notFound } from "next/navigation";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -14,7 +15,8 @@ export default async function IdiomaPage({ params }: Props) {
 
   if (!session?.user) {
     const locale = await getLocale();
-    redirect(`/${locale}/login`);
+    redirect({ href: "/login", locale });
+    return;
   }
 
   // 👈 valida acesso ao slug

@@ -1,9 +1,11 @@
 import { auth } from "@/lib/auth";
-import { redirect, notFound } from "next/navigation";
+import { redirect } from "@/i18n/navigation";
+import { notFound } from "next/navigation";
 import { UserService } from "@/services/userService";
 import UsersClient from "@/components/Settings/Users/UsersClient";
 import { getChurchBySlug } from "@/lib/tenant";
 import { getLocale } from "next-intl/server";
+import { UserRole } from "@/app/generated/prisma/enums";
 
 interface UtilizadoresPageProps {
   params: Promise<{ slug: string }>;
@@ -15,21 +17,23 @@ export default async function UtilizadoresPage({ params }: UtilizadoresPageProps
 
   if (!session?.user) {
     const locale = await getLocale();
-    redirect(`/${locale}/login`);
+    redirect({ href: "/login", locale });
+    return; 
   }
 
-  const isSuperAdmin = session.user.role === "SUPER_ADMIN";
+  const user = session.user; 
 
-  if (!isSuperAdmin && session.user.churchSlug !== slug) {
+  const isSuperAdmin = user.role === "SUPER_ADMIN";
+
+  if (!isSuperAdmin && user.churchSlug !== slug) {
     notFound();
   }
 
-  if (!["ADMIN", "SUPER_ADMIN"].includes(session.user.role!)) {
-    const locale = await getLocale();
-    redirect(`/${locale}/login`);
+  if (!["ADMIN", "SUPER_ADMIN"].includes(user.role!)) {
+    notFound();
   }
 
-  const church = await getChurchBySlug(slug, isSuperAdmin ? undefined : session.user.churchId);
+  const church = await getChurchBySlug(slug, isSuperAdmin ? undefined : user.churchId);
   if (!church) notFound();
 
   const churchId = church.id;
@@ -39,7 +43,8 @@ export default async function UtilizadoresPage({ params }: UtilizadoresPageProps
   return (
     <UsersClient
       initialUsers={users}
-      currentUserId={session.user.id}
+      currentUserId={user.id}
+      currentUserRole={user.role as UserRole}
       churchId={churchId}
     />
   );

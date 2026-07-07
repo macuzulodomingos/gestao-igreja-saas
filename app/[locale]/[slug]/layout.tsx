@@ -1,7 +1,8 @@
 import { AppSidebar } from "@/components/Layout/AppSidebar";
 import { DashboardHeaderClient } from "@/components/Layout/DashboardHeaderClient";
 import { getChurchBySlug } from "@/lib/tenant";
-import { notFound, redirect } from "next/navigation";
+import { redirect } from "@/i18n/navigation";
+import { notFound } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { TenantClientWrapper } from "@/components/Layout/TenantClientWrapper";
 import { setRequestLocale } from "next-intl/server";
@@ -24,7 +25,8 @@ export default async function TenantLayout({
   setRequestLocale(locale);
 
   if (!session?.user) {
-    redirect(`/${locale}/login`);
+    redirect({ href: "/login", locale });
+    return;
   }
 
   const isSuperAdmin = session.user.role === "SUPER_ADMIN";
@@ -32,10 +34,11 @@ export default async function TenantLayout({
 
   if (!isCorrectChurch && !isSuperAdmin) {
     if (session.user.churchSlug) {
-      redirect(`/${locale}/${session.user.churchSlug}/painel`);
+      redirect({ href: `/${session.user.churchSlug}/painel`, locale });
     } else {
-      redirect(`/${locale}/login`);
+      redirect({ href: "/login", locale });
     }
+    return;
   }
 
   // 👈 busca a igreja primeiro — necessário para validar impersonation
@@ -50,7 +53,8 @@ export default async function TenantLayout({
     
 
     if (!impersonation || impersonation.churchId !== church.id) {
-      redirect(`/${locale}/admin`);
+      redirect({ href: "/admin", locale });
+      return;
     }
   }
 

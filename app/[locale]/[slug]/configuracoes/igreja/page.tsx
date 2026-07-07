@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
-import { notFound, redirect } from "next/navigation";
+import { redirect } from "@/i18n/navigation";
+import { notFound } from "next/navigation";
 import ChurchSettingsClient from "@/components/Settings/Church/ChurchSettingsClient";
 import { getChurchBySlug } from "@/lib/tenant";
 import { getLocale } from "next-intl/server";
@@ -14,7 +15,8 @@ export default async function ChurchSettingsPage({ params }: PageProps) {
   
   if (!session?.user) {
     const locale = await getLocale();
-    redirect(`/${locale}/login`);
+    redirect({ href: "/login", locale });
+    return;
   }
 
   const isSuperAdmin = session.user.role === "SUPER_ADMIN";

@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
-import { redirect, notFound } from "next/navigation";
+import { redirect } from "@/i18n/navigation";
+import { notFound } from "next/navigation";
 import { MemberRoleService } from "@/services/memberRoleService";
 import RolesClient from "@/components/Settings/Roles/RolesClient";
 import { getChurchBySlug } from "@/lib/tenant";
@@ -15,7 +16,8 @@ export default async function CargosPage({ params }: CargosPageProps) {
 
   if (!session?.user) {
     const locale = await getLocale();
-    redirect(`/${locale}/login`);
+    redirect({ href: "/login", locale });
+    return;
   }
 
   const isSuperAdmin = session.user.role === "SUPER_ADMIN";

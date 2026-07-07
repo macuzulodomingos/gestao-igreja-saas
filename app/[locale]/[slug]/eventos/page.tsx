@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
-import { redirect, notFound } from "next/navigation";
+import { redirect } from "@/i18n/navigation";
+import { notFound } from "next/navigation";
 import { EventService } from "@/services/eventService";
 import { MemberService } from "@/services/memberService";
 import { DepartmentService } from "@/services/departmentService";
@@ -19,7 +20,8 @@ export default async function EventosPage({ params }: EventosPageProps) {
 
   if (!session?.user) {
     const locale = await getLocale();
-    redirect(`/${locale}/login`);
+    redirect({ href: "/login", locale });
+    return;
   }
 
   const isSuperAdmin = session.user.role === "SUPER_ADMIN";
