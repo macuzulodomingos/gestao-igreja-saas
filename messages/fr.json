@@ -163,7 +163,8 @@
       "register": "Enregistrer",
       "created": "Dépense enregistrée!",
       "updated": "Dépense mise à jour!",
-      "error": "Erreur lors de l'enregistrement."
+      "error": "Erreur lors de l'enregistrement.",
+      "noCategories": "Aucune catégorie — créez-en dans Paramètres"
     },
     "incomeForm": {
       "addTitle": "Ajouter un revenu",
@@ -181,8 +182,10 @@
       "created": "Revenu enregistré!",
       "updated": "Revenu mis à jour!",
       "defaultDescription": "Revenu",
-      "error": "Erreur lors de l'enregistrement."
+      "error": "Erreur lors de l'enregistrement.",
+      "noCategories": "Aucune catégorie — créez-en dans Paramètres"
     },
+    
     "summary": {
       "monthlyIncome": "Revenus de",
       "monthlyExpenses": "Dépenses de",

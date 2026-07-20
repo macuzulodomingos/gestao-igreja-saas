@@ -33,15 +33,15 @@ export default async function DepartamentosPage({ params }: DepartamentosPagePro
   const churchId = church.id;
 
 
-  const [departments, membersData] = await Promise.all([
+  const [departments, activeMembersCount] = await Promise.all([
     DepartmentService.getDepartments(churchId),
-    MemberService.getMembersByChurch(churchId, 1, 100), // busca até 100 membros para o select
+    MemberService.countActiveMembers(churchId),
   ]);
 
   return (
     <DepartmentsClient
       initialDepartments={departments}
-      members={membersData.members}
+      activeMembersCount={activeMembersCount}
       churchId={churchId}
     />
   );

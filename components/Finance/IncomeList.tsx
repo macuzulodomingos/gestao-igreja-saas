@@ -9,11 +9,10 @@ import { ptBR, fr } from "date-fns/locale";
 import { FinanceTransaction } from "@/types/finance";
 import { useTranslations, useLocale } from "next-intl";
 import { format, parseISO, isValid } from "date-fns";
+import { formatCurrency } from "@/lib/format";
+import { dateLocalesMap } from "@/lib/date";
 
-const dateLocalesMap = {
-  pt: ptBR,
-  fr: fr,
-};
+
 
 interface IncomeListProps {
   entries: FinanceTransaction[];
@@ -21,12 +20,6 @@ interface IncomeListProps {
   onDelete: (id: string) => void;
 }
 
-const formatCurrency = (amount: number) =>
-  new Intl.NumberFormat("pt-AO", {
-    style: "currency",
-    currency: "AOA",
-    minimumFractionDigits: 2,
-  }).format(amount).replace("AOA", "Kz");
 
 const getCategoryColor = (name: string) => {
   const colors = [
@@ -44,7 +37,7 @@ export function IncomeList({ entries, onEdit, onDelete }: IncomeListProps) {
   const t = useTranslations("finance.incomeList");
   const tc = useTranslations("common");
   const locale = useLocale();
-  const dateLocale = dateLocalesMap[locale as keyof typeof dateLocalesMap] ?? ptBR;
+  const dateLocale = dateLocalesMap[locale as keyof typeof dateLocalesMap] ?? dateLocalesMap.pt;
   const dateFormatPattern = locale === "fr" ? "dd MMM yyyy" : "dd 'de' MMM, yyyy";
 
   const sortedEntries = [...entries].sort((a, b) => {

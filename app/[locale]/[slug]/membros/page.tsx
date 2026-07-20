@@ -34,7 +34,8 @@ export default async function MembersPage({ params, searchParams }: MembersPageP
   if (!church) notFound();
   const churchId = church.id;
 
-  const currentPage = Number(sParams.page) || 1;
+  const parsedPage = Number(sParams.page) || 1;
+  const currentPage = parsedPage < 1 ? 1 : parsedPage;
   const searchTerm = sParams.search || "";
 
   const [{ members, metadata }, roles] = await Promise.all([

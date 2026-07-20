@@ -34,3 +34,7 @@ export type ActionResultWithMemberIds =
 export type ActionResultWithUrl =
   | { success: true; url: string }
   | { success: false; errorCode: string };
+
+  export type ActionResultWithAttendees =
+  | { success: true; attendees: { id: string; name: string; role: { name: string } | null }[] }
+  | { success: false; errorCode?: string };

@@ -41,7 +41,7 @@ export async function updateChurchSettingsAction(
       timezone: result.data.timezone,
     });
 
-    revalidatePath(`/[slug]`, "layout"); // 👈 limpa tudo de uma vez
+    revalidatePath(`/[locale]/[slug]`, "layout"); // 👈 limpa tudo de uma vez
     return { success: true };
 
   } catch (error: unknown) {

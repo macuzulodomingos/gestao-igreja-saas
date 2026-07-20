@@ -37,8 +37,8 @@ export function MemberHistorySheet({ member, trigger }: MemberHistorySheetProps)
       } else {
         setErrorKey(result.errorCode ?? "errorLoad");
       }
-    } catch {
-      setErrorKey("errorLoad");
+    } catch (error) {
+      console.error("[LOAD_MEMBER_HISTORY_ERROR]:", error);
     } finally {
       setLoading(false);
     }

@@ -22,8 +22,7 @@ import { UpgradeModal } from "@/components/UpgradeModal";
 import { useUpgradeModal } from "@/hooks/useUpgradeModal";
 import { useLocale, useTranslations } from "next-intl";
 import dynamic from "next/dynamic";
-import { format, setMonth } from "date-fns";
-import { ptBR, fr } from "date-fns/locale";
+import { getMonthNames } from "@/lib/date";
 
 const DownloadPDFButton = dynamic(
   () => import("./DownloadPDFButton").then(mod => mod.DownloadPDFButton),
@@ -36,8 +35,6 @@ const DownloadPDFButton = dynamic(
     ),
   }
 );
-
-const dateLocalesMap = { pt: ptBR, fr: fr };
 
 
 type Category = {
@@ -86,10 +83,7 @@ export default function FinanceClientPage({
 
 
   const locale = useLocale();
-  const dateLocale = dateLocalesMap[locale as keyof typeof dateLocalesMap] ?? ptBR;
-  const MONTHS = Array.from({ length: 12 }, (_, i) =>
-    format(setMonth(new Date(), i), "MMMM", { locale: dateLocale })
-  );
+  const MONTHS = getMonthNames(locale);
 
   const [isIncomeFormOpen, setIsIncomeFormOpen] = useState(false);
   const [isExpenseFormOpen, setIsExpenseFormOpen] = useState(false);
@@ -147,9 +141,9 @@ export default function FinanceClientPage({
 
     setLoadingMore(true);
     try {
-      const result = await loadMoreTransactionsAction(type, currentMonth, currentYear, churchId, cursor);
+      const result = await loadMoreTransactionsAction(type, currentMonth, currentYear,  cursor, churchId);
       if (!result.success) {
-        toast.error(result.errorCode ? tf(result.errorCode) : t("errors.loadMoreError"));
+        toast.error(result.errorCode ? tf(result.errorCode) : tf("loadMoreError"));
         return;
       }
       if (type === "INCOME") {
@@ -202,10 +196,10 @@ export default function FinanceClientPage({
         }
         router.refresh();
       } else {
-        toast.error(t("errorDelete"));
+        toast.error(result.errorCode ? tf(result.errorCode) : t("errorDelete"));
       }
-    } catch {
-      console.error("[DELETE_TRANSACTION_ERROR]");
+    } catch (error) {
+      console.error("[DELETE_TRANSACTION_ERROR]:", error);
       toast.error(t("errorDelete"));
     } finally {
       setIsDeleting(false);

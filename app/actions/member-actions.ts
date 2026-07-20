@@ -6,7 +6,8 @@ import { memberSchema } from "@/lib/validations/member";
 import { getAuthContext } from "@/lib/auth-context";
 import { getErrorMessage, isPrismaError } from "@/lib/errors"; // 👈 Teu padrão
 import { checkMemberLimit } from "@/lib/plan-guard";
-import { ActionResult } from "@/types/action-result";
+import { ActionResult, ActionResultWithData } from "@/types/action-result";
+import { AttendeeMember } from "@/types/event";
 
 
 
@@ -45,7 +46,7 @@ export async function createMemberAction(
       phone: sanitizedPhone,
     });
 
-    revalidatePath(`/[slug]/membros`, "page");
+    revalidatePath(`/[locale]/[slug]/membros`, "page");
     updateTag(`members-${churchId}`);
     updateTag(`church-${churchId}`);
 
@@ -111,7 +112,7 @@ export async function updateMemberAction(
       phone: sanitizedPhone,
     });
 
-    revalidatePath(`/[slug]/membros`, "page");
+    revalidatePath(`/[locale]/[slug]/membros`, "page");
     updateTag(`members-${churchId}`);
     updateTag(`church-${churchId}`);
 
@@ -156,21 +157,38 @@ export async function deleteMemberAction(
 
     await MemberService.deleteMember(memberId, churchId, actor);
 
-    revalidatePath(`/[slug]/membros`, "page");
+    revalidatePath(`/[locale]/[slug]/membros`, "page");
     updateTag(`members-${churchId}`);
     updateTag(`church-${churchId}`);
 
     return { success: true };
   } catch (error: unknown) {
     const message = getErrorMessage(error);
-   if (message === "UNAUTHORIZED" || message === "CHURCH_ID_REQUIRED")
+    if (message === "UNAUTHORIZED" || message === "CHURCH_ID_REQUIRED")
       return { success: false, errorCode: "unauthorized" };
     if (message === "MEMBER_NOT_FOUND")
       return { success: false, errorCode: "memberNotFound" };
     if (message === "MEMBER_ALREADY_DELETED")
-      return { success: false, errorCode: "memberAlreadyDeleted" }; 
+      return { success: false, errorCode: "memberAlreadyDeleted" };
 
     console.error("[DELETE_MEMBER_ERROR]:", error);
     return { success: false, errorCode: "errorDelete" };
+  }
+}
+
+export async function searchActiveMembersAction(
+  query: string,
+  targetChurchId?: string,
+): Promise<ActionResultWithData<AttendeeMember[]>> {
+  try {
+    const { churchId } = await getAuthContext(targetChurchId);
+    const members = await MemberService.searchActiveMembers(churchId, query);
+    return { success: true, data: members };
+  } catch (error: unknown) {
+    const message = getErrorMessage(error);
+    if (message === "UNAUTHORIZED" || message === "CHURCH_ID_REQUIRED")
+      return { success: false, errorCode: "unauthorized" };
+    console.error("[SEARCH_ACTIVE_MEMBERS_ERROR]:", error);
+    return { success: false, errorCode: "errorLoad" };
   }
 }

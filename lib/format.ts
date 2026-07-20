@@ -9,3 +9,9 @@ export function formatCurrency(amount: number): string {
     .replace(/\s+/g, " ")
     .trim();
 }
+
+
+export function parseCurrencyInput(value: string): number {
+  const cleaned = value.trim().replace(/\./g, "").replace(",", ".");
+  return Number(cleaned);
+}

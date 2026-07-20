@@ -28,14 +28,14 @@ export async function saveEventCategoryAction(
 
     if (categoryId) {
       await EventCategoryService.updateCategory(categoryId, churchId, actor, result.data);
-      revalidatePath(`/[slug]/configuracoes/categorias-eventos`, "page"); // 👈 adiciona
-      revalidatePath(`/[slug]/eventos`, "page");
+      revalidatePath(`/[locale]/[slug]/configuracoes/categorias-eventos`, "page"); // 👈 adiciona
+      revalidatePath(`/[locale]/[slug]/eventos`, "page");
       return { success: true, id: categoryId }; // 👈 id real do banco
     } else {
       const category = await EventCategoryService.createCategory(churchId, actor, result.data);
 
-      revalidatePath(`/[slug]/configuracoes/categorias-eventos`, "page");
-      revalidatePath(`/[slug]/eventos`, "page");
+      revalidatePath(`/[locale]/[slug]/configuracoes/categorias-eventos`, "page");
+      revalidatePath(`/[locale]/[slug]/eventos`, "page");
       return { success: true, id: category.id };
     }
 
@@ -63,7 +63,7 @@ export async function deleteEventCategoryAction(
 
     await EventCategoryService.deleteCategory(id, churchId, actor);
 
-    revalidatePath(`/[slug]/configuracoes/categorias-eventos`, "page");
+    revalidatePath(`/[locale]/[slug]/configuracoes/categorias-eventos`, "page");
     return { success: true };
 
   } catch (error: unknown) {

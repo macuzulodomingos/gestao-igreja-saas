@@ -163,7 +163,8 @@
       "register": "Registar",
       "created": "Despesa registada!",
       "updated": "Despesa actualizada!",
-      "error": "Erro ao registar despesa."
+      "error": "Erro ao registar despesa.",
+      "noCategories": "Nenhuma categoria — crie em Configurações"
     },
     "incomeForm": {
       "addTitle": "Adicionar Receita",
@@ -181,7 +182,8 @@
       "created": "Receita registada!",
       "updated": "Receita actualizada!",
       "defaultDescription": "Receita",
-      "error": "Erro ao registar receita."
+      "error": "Erro ao registar receita.",
+      "noCategories": "Nenhuma categoria — crie em Configurações"
     },
     "summary": {
       "monthlyIncome": "Receitas de",

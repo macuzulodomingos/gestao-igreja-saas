@@ -1,7 +1,10 @@
 "use client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { formatCurrency } from "@/lib/format";
 import { TrendingUp, TrendingDown, Wallet, DollarSign } from "lucide-react";
 import { useTranslations, useLocale } from "next-intl";
+import { formatMonthName } from "@/lib/date";
+
 
 interface FinanceSummaryProps {
   stats: {
@@ -16,26 +19,12 @@ interface FinanceSummaryProps {
   year: number;
 }
 
-const formatCurrency = (amount: number) =>
-  new Intl.NumberFormat("pt-AO", {
-    style: "currency",
-    currency: "AOA",
-    minimumFractionDigits: 2,
-  }).format(amount).replace("AOA", "Kz").replace(/\s+/g, " ").trim();
-
-const dateLocalesMap = {
-  pt: "pt-AO",
-  fr: "fr-FR",
-};
 
 export function FinanceSummary({ stats, month, year }: FinanceSummaryProps) {
   const t = useTranslations("finance.summary");
   const locale = useLocale();
-  const dateLocale = dateLocalesMap[locale as keyof typeof dateLocalesMap] ?? "pt-AO";
-
-  const monthName = new Date(year, month - 1, 1)
-    .toLocaleString(dateLocale, { month: "long" });
-  const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+  
+  const capitalizedMonth = formatMonthName(new Date(year, month - 1, 1), locale);
 
   return (
     <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">

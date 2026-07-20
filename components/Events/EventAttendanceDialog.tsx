@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useTransition } from "react";
+import { useState, useEffect, useTransition, useMemo } from "react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -10,78 +10,120 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Search, Users, Loader2 } from "lucide-react";
 import { getEventAttendeesAction, syncAttendeesAction } from "@/app/actions/event-actions";
-import { ChurchEvent, EventListMember } from "@/types/event";
+import { searchActiveMembersAction } from "@/app/actions/member-actions";
+import { ChurchEvent, AttendeeMember } from "@/types/event";
 import { formatInTimeZone } from "date-fns-tz";
 import { ptBR, fr } from "date-fns/locale";
 import { useTranslations, useLocale } from "next-intl";
 import { parseISO, isValid } from "date-fns";
 import { useRouter } from "@/i18n/navigation";
+import { useDebounce } from "@/hooks/use-debounce";
+import { dateLocalesMap } from "@/lib/date";
 
-const dateLocalesMap = {
-  pt: ptBR,
-  fr: fr,
-};
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   event: ChurchEvent;
-  allMembers: EventListMember[];
   timezone: string;
   churchId: string;
 }
 
-export function EventAttendanceDialog({ open, onOpenChange, event, allMembers, timezone, churchId }: Props) {
+export function EventAttendanceDialog({ open, onOpenChange, event, timezone, churchId }: Props) {
   const [isPending, startTransition] = useTransition();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [loadError, setLoadError] = useState(false); // 👈
+  // Guarda os dados (nome/role) de todo membro já "visto" — vindo dos
+  // presentes carregados no início OU de qualquer resultado de busca.
+  // Isso permite mostrar quem já está marcado mesmo que a busca atual
+  // não o traga de volta.
+  const [knownMembers, setKnownMembers] = useState<Map<string, AttendeeMember>>(new Map());
+  const [searchResults, setSearchResults] = useState<AttendeeMember[]>([]);
+  const [loadingInitial, setLoadingInitial] = useState(false);
+  const [loadingSearch, setLoadingSearch] = useState(false);
+  const [loadError, setLoadError] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearch = useDebounce(searchTerm, 300);
   const t = useTranslations("events.attendance");
   const te = useTranslations("events.errors");
   const locale = useLocale();
-  const dateLocale = dateLocalesMap[locale as keyof typeof dateLocalesMap] ?? ptBR;
+  const dateLocale = dateLocalesMap[locale as keyof typeof dateLocalesMap] ?? dateLocalesMap.pt;
   const dateFormatPattern = locale === "fr" ? "dd MMM yyyy" : "dd 'de' MMM, yyyy";
+  const router = useRouter();
 
   const startAt = typeof event.startAt === "string" ? parseISO(event.startAt) : event.startAt;
   const isStartAtValid = isValid(startAt);
 
-  const router = useRouter();
-
-  // Depois
+  // Carrega presenças já marcadas, com nomes, quando o dialog abre
   useEffect(() => {
-    if (open) {
-      let cancelled = false;
-      setSearchTerm("");
-      setLoadError(false);
-      setLoading(true);
-      getEventAttendeesAction(event.id, churchId)
-        .then(result => {
-          if (cancelled) return;
-          if (result.success) {
-            setSelectedIds(result.memberIds);
-          } else if (result.errorCode === "unauthorized") {
-            router.push("/login");
-          } else {
-            setLoadError(true);
-          }
-          setLoading(false);
-        })
-        .catch(() => {
-          if (cancelled) return;
+    if (!open) return;
+    let cancelled = false;
+    setSearchTerm("");
+    setSearchResults([]);
+    setLoadError(false);
+    setLoadingInitial(true);
+
+    getEventAttendeesAction(event.id, churchId)
+      .then(result => {
+        if (cancelled) return;
+        if (result.success) {
+          setSelectedIds(result.attendees.map(a => a.id));
+          setKnownMembers(new Map(result.attendees.map(a => [a.id, a])));
+        } else if (result.errorCode === "unauthorized") {
+          router.push("/login");
+        } else {
           setLoadError(true);
-          setLoading(false);
-        });
+        }
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        console.error("[LOAD_ATTENDEES_ERROR]:", error);
+        setLoadError(true);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingInitial(false);
+      });
 
-      return () => { cancelled = true; };
-    }
-  }, [open, event.id, churchId]);
+    return () => { cancelled = true; };
+  }, [open, event.id, churchId, router]);
 
-  const activeMembers = allMembers.filter(m => m.status === "ATIVO");
+  // Busca assíncrona conforme o utilizador digita
+  useEffect(() => {
+    if (!open || loadingInitial) return;
+    let cancelled = false;
+    setLoadingSearch(true);
 
-  const filteredMembers = activeMembers.filter(m =>
-    m.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+    searchActiveMembersAction(debouncedSearch, churchId)
+      .then(result => {
+        if (cancelled) return;
+        if (result.success) {
+          setSearchResults(result.data);
+          setKnownMembers(prev => {
+            const next = new Map(prev);
+            result.data.forEach(m => next.set(m.id, m));
+            return next;
+          });
+        }
+      })
+      .catch((error) => {
+        console.error("[SEARCH_MEMBERS_ERROR]:", error);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingSearch(false);
+      });
+
+    return () => { cancelled = true; };
+  }, [debouncedSearch, open, loadingInitial, churchId]);
+
+  // Lista exibida: resultados da busca atual + quaisquer já selecionados
+  // que não apareceram nesses resultados (para não "sumir" da tela).
+  const displayedMembers = useMemo(() => {
+    const searchIds = new Set(searchResults.map(m => m.id));
+    const selectedNotInSearch = selectedIds
+      .filter(id => !searchIds.has(id))
+      .map(id => knownMembers.get(id))
+      .filter((m): m is AttendeeMember => !!m);
+    return [...selectedNotInSearch, ...searchResults];
+  }, [searchResults, selectedIds, knownMembers]);
 
   const handleToggle = (memberId: string) => {
     setSelectedIds(prev =>
@@ -91,15 +133,16 @@ export function EventAttendanceDialog({ open, onOpenChange, event, allMembers, t
     );
   };
 
-  const handleSelectAll = () => {
-    const filteredIds = filteredMembers.map(m => m.id);
-    const allSelected = filteredIds.every(id => selectedIds.includes(id));
+  const handleSelectAllVisible = () => {
+    const visibleIds = displayedMembers.map(m => m.id);
+    const allSelected = visibleIds.every(id => selectedIds.includes(id));
     if (allSelected) {
-      setSelectedIds(prev => prev.filter(id => !filteredIds.includes(id)));
+      setSelectedIds(prev => prev.filter(id => !visibleIds.includes(id)));
     } else {
-      setSelectedIds(prev => [...new Set([...prev, ...filteredIds])]);
+      setSelectedIds(prev => [...new Set([...prev, ...visibleIds])]);
     }
   };
+
   const handleSave = () => {
     startTransition(async () => {
       try {
@@ -111,14 +154,16 @@ export function EventAttendanceDialog({ open, onOpenChange, event, allMembers, t
         } else {
           toast.error(result.errorCode ? te(result.errorCode) : t("error"));
         }
-      } catch {
+      } catch (error) {
+        console.error("[SYNC_ATTENDEES_ERROR]:", error);
         toast.error(t("error"));
       }
     });
   };
 
-  const allFilteredSelected = filteredMembers.length > 0 &&
-    filteredMembers.every(m => selectedIds.includes(m.id));
+  const isLoading = loadingInitial;
+  const allVisibleSelected = displayedMembers.length > 0 &&
+    displayedMembers.every(m => selectedIds.includes(m.id));
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => {
@@ -148,32 +193,31 @@ export function EventAttendanceDialog({ open, onOpenChange, event, allMembers, t
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
               className="pl-10"
-              disabled={loading || loadError} // 👈
+              disabled={isLoading || loadError}
             />
           </div>
 
           <div className="flex items-center justify-between">
             <Badge variant="secondary">
-              {selectedIds.length} {t("present")} {activeMembers.length} {t("presentLabel")}
+              {selectedIds.length} {t("present")}
             </Badge>
             <Button
               type="button"
               variant="ghost"
               size="sm"
-              onClick={handleSelectAll}
-              disabled={loading || loadError} // 👈
+              onClick={handleSelectAllVisible}
+              disabled={isLoading || loadError || displayedMembers.length === 0}
             >
-              {allFilteredSelected ? t("deselectAll") : t("selectAll")}
+              {allVisibleSelected ? t("deselectAll") : t("selectAll")}
             </Button>
           </div>
 
           <ScrollArea className="h-[300px] pr-4">
-            {/* 👈 loading state */}
-            {loading ? (
+            {isLoading ? (
               <div className="flex items-center justify-center h-full py-8">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>
-            ) : loadError ? ( // 👈 erro state
+            ) : loadError ? (
               <div className="flex flex-col items-center justify-center py-8 gap-2">
                 <p className="text-center text-destructive text-sm">
                   {t("errorLoadAttendees")}
@@ -181,12 +225,17 @@ export function EventAttendanceDialog({ open, onOpenChange, event, allMembers, t
               </div>
             ) : (
               <div className="space-y-2">
-                {filteredMembers.length === 0 ? (
+                {loadingSearch && (
+                  <div className="flex justify-center py-2">
+                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                  </div>
+                )}
+                {!loadingSearch && displayedMembers.length === 0 ? (
                   <p className="text-center text-muted-foreground py-8">
                     {t("noMembers")}
                   </p>
                 ) : (
-                  filteredMembers.map(member => (
+                  displayedMembers.map(member => (
                     <label
                       key={member.id}
                       className="flex items-center gap-3 p-3 rounded-lg border cursor-pointer hover:bg-muted/50 transition-colors"
@@ -215,7 +264,7 @@ export function EventAttendanceDialog({ open, onOpenChange, event, allMembers, t
           </Button>
           <Button
             onClick={handleSave}
-            disabled={isPending || loading || loadError} // 👈 bloqueia save
+            disabled={isPending || isLoading || loadError}
           >
             {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : t("save")}
           </Button>

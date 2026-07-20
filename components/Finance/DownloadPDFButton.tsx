@@ -6,21 +6,9 @@ import { Button } from "@/components/ui/button";
 import { FileDown, Loader2, Lock } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useTranslations, useLocale } from "next-intl";
+import { getMonthNames } from "@/lib/date";
 
-const MONTHS_PT = [
-  "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
-  "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
-];
 
-const MONTHS_FR = [
-  "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
-  "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre",
-];
-
-const monthsMap = {
-  pt: MONTHS_PT,
-  fr: MONTHS_FR,
-};
 
 type Transaction = {
   id: string;
@@ -60,7 +48,7 @@ export function DownloadPDFButton({
   const t = useTranslations("finance.pdf");
   const tr = useTranslations("finance.report");
   const locale = useLocale();
-  const months = monthsMap[locale as keyof typeof monthsMap] ?? MONTHS_PT;
+  const months = getMonthNames(locale);
   const monthName = months[month - 1] ?? months[0];
   const fileName = `${t("fileName")}-${monthName.toLowerCase()}-${year}.pdf`;
 

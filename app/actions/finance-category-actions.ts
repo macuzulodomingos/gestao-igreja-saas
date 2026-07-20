@@ -32,8 +32,8 @@ export async function saveCategoryAction(
       await FinanceCategoryService.createCategory(churchId, actor, result.data);
     }
 
-    revalidatePath(`/[slug]/configuracoes/categorias`, "page");
-    revalidatePath(`/[slug]/financas`, "page");
+    revalidatePath(`/[locale]/[slug]/configuracoes/categorias`, "page");
+    revalidatePath(`/[locale]/[slug]/financas`, "page");
     return { success: true };
 
   } catch (error: unknown) {
@@ -64,8 +64,8 @@ export async function deleteCategoryAction(
 
     await FinanceCategoryService.deleteCategory(id, churchId, actor);
 
-    revalidatePath(`/[slug]/configuracoes/categorias`, "page");
-    revalidatePath(`/[slug]/financas`, "page");
+    revalidatePath(`/[locale]/[slug]/configuracoes/categorias`, "page");
+    revalidatePath(`/[locale]/[slug]/financas`, "page");
     return { success: true };
 
   } catch (error: unknown) {

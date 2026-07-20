@@ -2,15 +2,8 @@
 import { Users, Wallet, TrendingUp, TrendingDown } from "lucide-react";
 import { StatsCard } from "./StatsCard";
 import { useTranslations } from "next-intl";
+import { formatCurrency } from "@/lib/format";
 
-const formatCurrency = (amount: number) => {
-  const formatted = new Intl.NumberFormat("pt-AO", {
-    style: "currency",
-    currency: "AOA",
-    minimumFractionDigits: 0,
-  }).format(amount);
-  return formatted.replace(/AOA/g, "Kz").trim();
-};
 
 type Stats = {
   totalMembers: number;

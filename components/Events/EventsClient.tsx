@@ -20,7 +20,6 @@ import { useRouter } from "@/i18n/navigation";
 
 interface EventsClientProps {
   initialEvents: ChurchEvent[];
-  members: EventListMember[];
   departments: EventListDepartment[];
   categories: EventCategory[];
   timezone: string;
@@ -29,7 +28,6 @@ interface EventsClientProps {
 
 export default function EventsClient({
   initialEvents,
-  members,
   departments,
   categories,
   timezone,
@@ -84,8 +82,8 @@ export default function EventsClient({
       } else {
         toast.error(result.errorCode ? te(result.errorCode) : t("errorDelete"));
       }
-    } catch {
-      console.error("[DELETE_EVENT_ERROR]");
+    } catch (error) {
+      console.error("[DELETE_EVENT_ERROR]:", error);
       toast.error(t("errorDelete"));
     } finally {
       setIsDeleting(false);
@@ -135,7 +133,6 @@ export default function EventsClient({
             if (!open) setSelectedEvent(null);
           }}
           event={selectedEvent}
-          allMembers={members}
           timezone={timezone}
           churchId={churchId}
         />

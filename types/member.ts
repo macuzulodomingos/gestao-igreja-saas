@@ -31,3 +31,10 @@ export interface ActionResponse {
   error?: string;
   fieldErrors?: Record<string, string[]>;
 }
+
+
+export interface MemberSearchResult {
+  id: string;
+  name: string;
+  role: { name: string } | null;
+}

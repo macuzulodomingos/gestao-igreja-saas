@@ -44,7 +44,7 @@ export async function saveDepartmentAction(
       await DepartmentService.createDepartment(churchId, actor, data);
     }
 
-    revalidatePath(`/[slug]/departamentos`, "page");
+    revalidatePath(`/[locale]/[slug]/departamentos`, "page");
     return { success: true };
 
   } catch (error: unknown) {
@@ -69,7 +69,7 @@ export async function deleteDepartmentAction(
 
     await DepartmentService.deleteDepartment(id, churchId, actor);
 
-    revalidatePath(`/[slug]/departamentos`, "page");
+    revalidatePath(`/[locale]/[slug]/departamentos`, "page");
     return { success: true };
 
   } catch (error: unknown) {
@@ -98,7 +98,7 @@ export async function syncDepartmentMembersAction(
       actor
     );
 
-    revalidatePath(`/[slug]/departamentos`, "page");
+    revalidatePath(`/[locale]/[slug]/departamentos`, "page");
     return { success: true };
 
   } catch (error: unknown) {

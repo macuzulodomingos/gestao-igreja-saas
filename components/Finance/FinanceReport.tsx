@@ -1,5 +1,6 @@
 "use client";
 
+import { formatCurrency } from "@/lib/format";
 import {
   Document, Page, Text, View, StyleSheet,
 } from "@react-pdf/renderer";
@@ -119,12 +120,6 @@ const styles = StyleSheet.create({
   },
 });
 
-const formatCurrency = (amount: number) =>
-  new Intl.NumberFormat("pt-AO", {
-    style: "currency",
-    currency: "AOA",
-    minimumFractionDigits: 2,
-  }).format(amount).replace("AOA", "Kz");
 
 const formatDate = (date: Date | string) => {
   const d = typeof date === "string" ? parseISO(date) : date;

@@ -6,14 +6,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { format, parseISO, isValid } from "date-fns";
-import { ptBR, fr } from "date-fns/locale";
 import { FinanceTransaction } from "@/types/finance";
 import { useTranslations, useLocale } from "next-intl";
+import { formatCurrency } from "@/lib/format";
+import { dateLocalesMap } from "@/lib/date";
 
-const dateLocalesMap = {
-  pt: ptBR,
-  fr: fr,
-};
 
 interface ExpenseListProps {
   entries: FinanceTransaction[];
@@ -21,12 +18,6 @@ interface ExpenseListProps {
   onDelete: (id: string) => void;
 }
 
-const formatCurrency = (amount: number) =>
-  new Intl.NumberFormat("pt-AO", {
-    style: "currency",
-    currency: "AOA",
-    minimumFractionDigits: 2,
-  }).format(amount).replace("AOA", "Kz");
 
 const getCategoryColor = (name: string) => {
   const colors = [
@@ -44,7 +35,7 @@ export function ExpenseList({ entries, onEdit, onDelete }: ExpenseListProps) {
   const t = useTranslations("finance.expenseList");
   const tc = useTranslations("common");
   const locale = useLocale();
-  const dateLocale = dateLocalesMap[locale as keyof typeof dateLocalesMap] ?? ptBR;
+  const dateLocale = dateLocalesMap[locale as keyof typeof dateLocalesMap] ?? dateLocalesMap.pt;
   const dateFormatPattern = locale === "fr" ? "dd MMM yyyy" : "dd 'de' MMM, yyyy";
 
   const sortedEntries = [...entries].sort((a, b) => {

@@ -204,7 +204,9 @@ export const EventService = {
   async getEventAttendees(eventId: string, churchId: string) {
     return prisma.eventAttendee.findMany({
       where: { eventId, event: { churchId } },
-      select: { memberId: true },
+      select: {
+        member: { select: { id: true, name: true, role: { select: { name: true } } } },
+      },
     });
   },
 

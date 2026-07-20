@@ -17,6 +17,7 @@ import { FinanceTransaction } from "@/types/finance";
 import { useTranslations } from "next-intl";
 import { TranslatedFormMessage } from "@/components/ui/TranslatedFormMessage";
 import { useRouter } from "@/i18n/navigation";
+import { parseCurrencyInput } from "@/lib/format";
 
 const schema = z.object({
   date: z.string().min(1, "validation.dateRequired"),
@@ -25,8 +26,8 @@ const schema = z.object({
     .string()
     .min(1, "validation.amountRequired")
     .refine((val) => {
-      const cleaned = val.replace(/\./g, "").replace(",", ".");
-      return !isNaN(Number(cleaned)) && Number(cleaned) > 0;
+      const parsed = parseCurrencyInput(val);
+      return !isNaN(Number(parsed)) && Number(parsed) > 0;
     }, "validation.amountPositive"),
   description: z.string().max(200, "validation.descriptionTooLong").optional(),
 });
@@ -65,7 +66,7 @@ export function ExpenseFormDialog({ open, onOpenChange, entry, categories, churc
           date: typeof entry.date === "string"
             ? entry.date.split("T")[0]
             : entry.date.toISOString().split("T")[0],
-          categoryId: categories.find(c => c.name === entry.category)?.id || "",
+          categoryId: entry.categoryId,
           amount: entry.amount.toString(),
           description: entry.description ?? "",
         }
@@ -81,9 +82,7 @@ export function ExpenseFormDialog({ open, onOpenChange, entry, categories, churc
   const handleSubmit = (data: ExpenseFormValues) => {
     startTransition(async () => {
       try {
-        const cleanAmount = data.amount.trim()
-          .replace(/\./g, "")
-          .replace(",", ".");
+        const cleanAmount = parseCurrencyInput(data.amount).toString();
 
         const formData = new FormData();
         formData.append("description", data.description || t("defaultDescription"));
@@ -133,18 +132,24 @@ export function ExpenseFormDialog({ open, onOpenChange, entry, categories, churc
             <FormField control={form.control} name="categoryId" render={({ field }) => (
               <FormItem>
                 <FormLabel>{t("category")}</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder={t("categoryPlaceholder")} />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {categories.map(cat => (
-                      <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {categories.length === 0 ? (
+                  <p className="text-sm text-muted-foreground border rounded-md px-3 py-2">
+                    {t("noCategories")}
+                  </p>
+                ) : (
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder={t("categoryPlaceholder")} />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {categories.map(cat => (
+                        <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
                 <TranslatedFormMessage />
               </FormItem>
             )} />
@@ -183,7 +188,7 @@ export function ExpenseFormDialog({ open, onOpenChange, entry, categories, churc
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
                 {tc("cancel")}
               </Button>
-              <Button type="submit" disabled={isPending}>
+              <Button type="submit" disabled={isPending || categories.length === 0}>
                 {isPending
                   ? <Loader2 className="h-4 w-4 animate-spin" />
                   : entry ? t("save") : t("register")

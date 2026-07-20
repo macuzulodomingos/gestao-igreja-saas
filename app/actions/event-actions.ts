@@ -8,7 +8,7 @@ import { getAuthContext } from "@/lib/auth-context";
 import { fromZonedTime } from "date-fns-tz";
 import { getTimezone } from "@/lib/get-timezone";
 import { checkEventMonthlyLimit } from "@/lib/plan-guard";
-import { ActionResult, ActionResultWithMemberIds } from "@/types/action-result";
+import { ActionResult, ActionResultWithAttendees, ActionResultWithMemberIds } from "@/types/action-result";
 
 
 
@@ -51,7 +51,7 @@ export async function saveEventAction(
       await EventService.createEvent(churchId, actor, data);
     }
 
-    revalidatePath(`/[slug]/eventos`, "page");
+    revalidatePath(`/[locale]/[slug]/eventos`, "page");
     return { success: true };
 
   } catch (error: unknown) {
@@ -80,7 +80,7 @@ export async function deleteEventAction(
 
     await EventService.deleteEvent(id, churchId, actor);
 
-    revalidatePath(`/[slug]/eventos`, "page");
+    revalidatePath(`/[locale]/[slug]/eventos`, "page");
     return { success: true };
 
   } catch (error: unknown) {
@@ -110,7 +110,7 @@ export async function syncAttendeesAction(
 
     await EventService.syncAttendees(eventId, churchId, memberIds, actor);
 
-    revalidatePath(`/[slug]/eventos`, "page");
+    revalidatePath(`/[locale]/[slug]/eventos`, "page");
     return { success: true };
 
   } catch (error: unknown) {
@@ -127,12 +127,12 @@ export async function syncAttendeesAction(
 }
 
 
-export async function getEventAttendeesAction(eventId: string, targetChurchId?: string): Promise<ActionResultWithMemberIds> {
+export async function getEventAttendeesAction(eventId: string, targetChurchId?: string): Promise<ActionResultWithAttendees> {
   try {
     const { churchId } = await getAuthContext(targetChurchId);
     const attendees = await EventService.getEventAttendees(eventId, churchId);
 
-    return { success: true, memberIds: attendees.map(a => a.memberId) };
+    return { success: true, attendees: attendees.map(a => a.member) };
   } catch (error: unknown) {
     const message = getErrorMessage(error);
     if (message === "UNAUTHORIZED" || message === "CHURCH_ID_REQUIRED")

@@ -31,6 +31,12 @@ export interface EventListMember {
   status: string;
 }
 
+export type AttendeeMember = {
+  id: string;
+  name: string;
+  role: { name: string } | null;
+};
+
 export interface EventListDepartment {
   id: string;
   name: string;

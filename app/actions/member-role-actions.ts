@@ -30,7 +30,7 @@ export async function saveRoleAction(
       await MemberRoleService.createRole(churchId, actor, result.data);
     }
 
-    revalidatePath(`/[slug]/configuracoes/cargos`, "page");
+    revalidatePath(`/[locale]/[slug]/configuracoes/cargos`, "page");
     return { success: true };
 
   } catch (error: unknown) {
@@ -57,7 +57,7 @@ export async function deleteRoleAction(
 
     await MemberRoleService.deleteRole(id, churchId, actor);
 
-    revalidatePath(`/[slug]/configuracoes/cargos`, "page");
+    revalidatePath(`/[locale]/[slug]/configuracoes/cargos`, "page");
     return { success: true };
 
   } catch (error: unknown) {

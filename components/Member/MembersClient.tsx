@@ -41,11 +41,18 @@ import { UpgradeModal } from "@/components/UpgradeModal";
 import { useUpgradeModal } from "@/hooks/useUpgradeModal";
 import { parseISO, isValid } from "date-fns";
 
-const roleColors: Record<string, string> = {
-  Pastor: "bg-primary/10 text-primary",
-  Ancião: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-  Diácono: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
-  default: "bg-muted text-muted-foreground",
+const roleColorPalette = [
+  "bg-primary/10 text-primary",
+  "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+  "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+  "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
+  "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400",
+];
+
+const getRoleColor = (name: string) => {
+  if (!name) return "bg-muted text-muted-foreground";
+  const index = name.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0) % roleColorPalette.length;
+  return roleColorPalette[index];
 };
 
 const statusColors: Record<string, string> = {
@@ -168,13 +175,13 @@ export default function MemberClient({
         } else if (!result.success) {
           toast.error(result.errorCode ? tm(result.errorCode) : tc("error"));
         }
-      } catch {
-        console.error("[SAVE_MEMBER_ERROR]");
+      } catch (error) {
+        console.error("[SAVE_MEMBER_ERROR]:", error);
         toast.error(tc("error"));
       }
     });
   }
-  
+
 
   return (
     <div className="space-y-6">
@@ -386,10 +393,7 @@ export default function MemberClient({
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge
-                        className={roleColors[member.role?.name || ""] || roleColors.default}
-                        variant="secondary"
-                      >
+                      <Badge className={getRoleColor(member.role?.name || "")} variant="secondary">
                         {member.role?.name || t("noRole")}
                       </Badge>
                     </TableCell>

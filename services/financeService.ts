@@ -73,7 +73,16 @@ export const FinanceService = {
         },
       });
 
-      return transaction as unknown as FinanceTransaction;
+
+      return {
+        id: transaction.id,
+        description: transaction.description,
+        amount: centsToAmount(transaction.amount),
+        type: transaction.type,
+        categoryId: transaction.category.id,
+        category: transaction.category.name,
+        date: transaction.date,
+      };
     });
   },
 
@@ -153,7 +162,15 @@ export const FinanceService = {
         },
       });
 
-      return updated;
+      return {
+        id: updated.id,
+        description: updated.description,
+        amount: centsToAmount(updated.amount),
+        type: updated.type,
+        categoryId: updated.category.id,
+        category: updated.category.name,
+        date: updated.date,
+      };
     });
   },
 
@@ -287,9 +304,13 @@ export const FinanceService = {
 
     return {
       data: data.map(r => ({
-        ...r,
+        id: r.id,
+        description: r.description,
         amount: centsToAmount(r.amount),
+        type: r.type,
+        categoryId: r.category.id,
         category: r.category.name,
+        date: r.date,
       })),
       nextCursor,
       hasMore,

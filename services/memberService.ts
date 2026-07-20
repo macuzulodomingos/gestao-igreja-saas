@@ -311,4 +311,27 @@ export const MemberService = {
       take: 15,
     });
   },
+
+  async searchActiveMembers(churchId: string, query: string, limit = 30) {
+    return prisma.member.findMany({
+      where: {
+        churchId,
+        status: "ATIVO",
+        ...(query && { name: { contains: query, mode: "insensitive" } }),
+      },
+      select: {
+        id: true,
+        name: true,
+        role: { select: { name: true } },
+      },
+      orderBy: { name: "asc" },
+      take: limit,
+    });
+  },
+
+  async countActiveMembers(churchId: string) {
+    return prisma.member.count({
+      where: { churchId, deletedAt: null, status: "ATIVO" },
+    });
+  },
 };

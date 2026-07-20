@@ -50,7 +50,7 @@ export async function saveTransactionAction(
       });
     }
 
-    revalidatePath(`/[slug]/financas`, "page");
+    revalidatePath(`/[locale]/[slug]/financas`, "page");
     updateTag(`finances-${churchId}`);
     updateTag(`church-${churchId}`);
     return { success: true };
@@ -85,7 +85,7 @@ export async function deleteTransactionAction(
 
     await FinanceService.deleteTransaction(id, churchId, actor);
 
-    revalidatePath(`/[slug]/financas`, "page");
+    revalidatePath(`/[locale]/[slug]/financas`, "page");
     updateTag(`finances-${churchId}`);
     updateTag(`church-${churchId}`);
     return { success: true };

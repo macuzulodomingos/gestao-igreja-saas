@@ -10,12 +10,12 @@ import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
 import { saveDepartmentAction } from "@/app/actions/department-actions";
 import { useTranslations } from "next-intl";
 import { TranslatedFormMessage } from "@/components/ui/TranslatedFormMessage";
 import { useRouter } from "@/i18n/navigation";
+import { MemberCombobox } from "@/components/shared/MemberCombobox";
 
 const schema = z.object({
   name: z.string().trim().min(1, "validation.nameRequired").max(100, "validation.departmentNameTooLong"),
@@ -30,24 +30,18 @@ type Department = {
   name: string;
   description: string | null;
   leaderId: string | null;
-};
-
-type Member = {
-  id: string;
-  name: string;
-  role: { name: string } | null;
+  leader: { id: string; name: string; role: { name: string } | null } | null;
 };
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   department: Department | null;
-  members: Member[];
   onUpgrade?: (message: string) => void;
   churchId: string;
 }
 
-export function DepartmentFormDialog({ open, onOpenChange, department, members, onUpgrade, churchId }: Props) {
+export function DepartmentFormDialog({ open, onOpenChange, department, onUpgrade, churchId }: Props) {
   const [isPending, startTransition] = useTransition();
   const t = useTranslations("departments.form");
   const tc = useTranslations("common");
@@ -132,21 +126,15 @@ export function DepartmentFormDialog({ open, onOpenChange, department, members, 
             <FormField control={form.control} name="leaderId" render={({ field }) => (
               <FormItem>
                 <FormLabel>{t("leader")}</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder={t("leaderPlaceholder")} />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="none">{t("noLeader")}</SelectItem>
-                    {members.map(member => (
-                      <SelectItem key={member.id} value={member.id}>
-                        {member.name} {member.role ? `(${member.role.name})` : ""}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <FormControl>
+                  <MemberCombobox
+                    value={field.value === "none" ? null : field.value ?? null}
+                    onChange={(id) => field.onChange(id ?? "none")}
+                    churchId={churchId}
+                    initialLabel={department?.leader ? `${department.leader.name}${department.leader.role ? ` (${department.leader.role.name})` : ""}` : t("noLeader")}
+                    placeholder={t("leaderPlaceholder")}
+                  />
+                </FormControl>
                 <TranslatedFormMessage />
               </FormItem>
             )} />

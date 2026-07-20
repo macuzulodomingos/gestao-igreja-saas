@@ -12,7 +12,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Department, DepartmentListMember } from "@/types/department";
+import { Department } from "@/types/department";
 import { UpgradeModal } from "@/components/UpgradeModal";
 import { useUpgradeModal } from "@/hooks/useUpgradeModal";
 import { useTranslations } from "next-intl";
@@ -20,11 +20,11 @@ import { useRouter } from "@/i18n/navigation";
 
 interface DepartmentsClientProps {
   initialDepartments: Department[];
-  members: DepartmentListMember[];
+  activeMembersCount: number;
   churchId: string;
 }
 
-export default function DepartmentsClient({ initialDepartments, members, churchId }: DepartmentsClientProps) {
+export default function DepartmentsClient({ initialDepartments, activeMembersCount, churchId }: DepartmentsClientProps) {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isMembersOpen, setIsMembersOpen] = useState(false);
   const [editingDepartment, setEditingDepartment] = useState<Department | null>(null);
@@ -38,7 +38,6 @@ export default function DepartmentsClient({ initialDepartments, members, churchI
 
   const router = useRouter();
 
-  // 👈 adiciona este useEffect no DepartmentsClient
   useEffect(() => {
     setDepartments(initialDepartments);
   }, [initialDepartments]);
@@ -76,8 +75,8 @@ export default function DepartmentsClient({ initialDepartments, members, churchI
       } else {
         toast.error(result.errorCode ? td(result.errorCode) : t("errorDelete"));
       }
-    } catch {
-      console.error("[DELETE_DEPARTMENT_ERROR]");
+    } catch (error) {
+      console.error("[DELETE_DEPARTMENT_ERROR]:", error);
       toast.error(t("errorDelete"));
     } finally {
       setIsDeleting(false);
@@ -112,7 +111,6 @@ export default function DepartmentsClient({ initialDepartments, members, churchI
           if (!open) setEditingDepartment(null);
         }}
         department={editingDepartment}
-        members={members}
         churchId={churchId}
         onUpgrade={(message) => upgrade.showUpgrade(message)}
       />
@@ -125,7 +123,7 @@ export default function DepartmentsClient({ initialDepartments, members, churchI
             if (!open) setSelectedDepartment(null);
           }}
           department={selectedDepartment}
-          allMembers={members}
+          totalActiveMembers={activeMembersCount}
           churchId={churchId}
         />
       )}

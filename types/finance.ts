@@ -6,6 +6,7 @@ export interface FinanceTransaction {
   description: string;
   amount: number;       
   type: TransactionType; // INCOME ou EXPENSE
+  categoryId: string;    // 👈 novo
   category: string;      // Dízimo, Oferta, Aluguel, etc.
   date: Date | string;   // Date no back, string (ISO) no front
 }
