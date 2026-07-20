@@ -40,9 +40,12 @@ export default async function FinancasPage({ params, searchParams }: FinancasPag
   const planLimits = getPlanLimits(church.plan as PlanType);
 
   const now = new Date();
+  const currentYear = now.getFullYear();
+
   const parsedMonth = Number(sParams.month) || now.getMonth() + 1;
   const month = parsedMonth < 1 || parsedMonth > 12 ? now.getMonth() + 1 : parsedMonth;
-  const year = Number(sParams.year) || now.getFullYear();
+  const parsedYear = Number(sParams.year) || currentYear;
+  const year = parsedYear < 2000 || parsedYear > currentYear + 1 ? currentYear : parsedYear;
 
   const [incomeResult, expenseResult, stats, incomeCategories, expenseCategories] =
     await Promise.all([

@@ -22,6 +22,8 @@ import { UpgradeModal } from "@/components/UpgradeModal";
 import { useUpgradeModal } from "@/hooks/useUpgradeModal";
 import { useLocale, useTranslations } from "next-intl";
 import dynamic from "next/dynamic";
+import { format, setMonth } from "date-fns";
+import { ptBR, fr } from "date-fns/locale";
 
 const DownloadPDFButton = dynamic(
   () => import("./DownloadPDFButton").then(mod => mod.DownloadPDFButton),
@@ -35,15 +37,8 @@ const DownloadPDFButton = dynamic(
   }
 );
 
-const MONTHS_PT = [
-  "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
-  "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
-];
+const dateLocalesMap = { pt: ptBR, fr: fr };
 
-const MONTHS_FR = [
-  "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
-  "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre",
-];
 
 type Category = {
   id: string;
@@ -91,7 +86,10 @@ export default function FinanceClientPage({
 
 
   const locale = useLocale();
-  const MONTHS = locale === "fr" ? MONTHS_FR : MONTHS_PT;
+  const dateLocale = dateLocalesMap[locale as keyof typeof dateLocalesMap] ?? ptBR;
+  const MONTHS = Array.from({ length: 12 }, (_, i) =>
+    format(setMonth(new Date(), i), "MMMM", { locale: dateLocale })
+  );
 
   const [isIncomeFormOpen, setIsIncomeFormOpen] = useState(false);
   const [isExpenseFormOpen, setIsExpenseFormOpen] = useState(false);
@@ -163,8 +161,9 @@ export default function FinanceClientPage({
         setExpenseCursor(result.nextCursor ?? null);
         setHasMoreExp(result.hasMore ?? false);
       }
-    } catch {
-      toast.error(t("errorLoadMore"));
+    } catch (error) {
+      console.error("[LOAD_MORE_TRANSACTIONS_ERROR]:", error);
+      toast.error(tf("loadMoreError"));
     } finally {
       setLoadingMore(false);
     }
