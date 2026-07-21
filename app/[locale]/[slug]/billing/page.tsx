@@ -25,7 +25,7 @@ export default async function BillingPage({ params }: BillingPageProps) {
     notFound();
   }
 
-  const church = await getChurchBySlug(slug, isSuperAdmin ? undefined : session.user.churchId ?? undefined);
+  const church = await getChurchBySlug(slug, isSuperAdmin ? undefined : session.user.churchId);
   if (!church) notFound();
 
   const churchId = church.id;

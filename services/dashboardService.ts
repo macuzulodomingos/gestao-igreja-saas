@@ -33,9 +33,9 @@ export const DashboardService = {
 
           const [totalMembers, newMembersThisMonth, newMembersLastMonth, financeTotals] =
             await Promise.all([
-              prisma.member.count({ where: { churchId, status: "ATIVO" } }),
-              prisma.member.count({ where: { churchId, joinDate: { gte: startOfMonth } } }),
-              prisma.member.count({ where: { churchId, joinDate: { gte: startOfLastMonth, lte: endOfLastMonth } } }),
+              prisma.member.count({ where: { churchId, deletedAt: null, status: "ATIVO" } }),
+              prisma.member.count({ where: { churchId, deletedAt: null, joinDate: { gte: startOfMonth } } }),
+              prisma.member.count({ where: { churchId, deletedAt: null, joinDate: { gte: startOfLastMonth, lte: endOfLastMonth } } }),
               prisma.financeTransaction.groupBy({
                 by: ["type"],
                 where: { churchId, date: { gte: startOfMonth } },
@@ -73,7 +73,7 @@ export const DashboardService = {
       async () => {
         try {
           const members = await prisma.member.findMany({
-            where: { churchId },
+            where: { churchId, deletedAt: null },
             select: {
               id: true,
               name: true,
@@ -154,6 +154,7 @@ export const DashboardService = {
             by: ["joinDate"],
             where: {
               churchId,
+              deletedAt: null,
               status: "ATIVO",
               joinDate: { gte: sixMonthsAgo },
             },

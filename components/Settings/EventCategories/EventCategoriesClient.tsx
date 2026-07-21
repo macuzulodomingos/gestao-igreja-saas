@@ -31,10 +31,10 @@ export default function EventCategoriesClient({ initialCategories, churchId }: E
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<EventCategory | null>(null);
   const [categoryToDelete, setCategoryToDelete] = useState<EventCategory | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
   const [isPending, startTransition] = useTransition();
   const t = useTranslations("eventCategories");
   const te = useTranslations("eventCategories.errors");
+  const tc = useTranslations("common");
   const router = useRouter();
 
   useEffect(() => {
@@ -42,8 +42,7 @@ export default function EventCategoriesClient({ initialCategories, churchId }: E
   }, [initialCategories]);
 
   const handleDelete = () => {
-    if (!categoryToDelete || isDeleting) return;
-    setIsDeleting(true);
+    if (!categoryToDelete || isPending) return;
     startTransition(async () => {
       try {
         const result = await deleteEventCategoryAction(categoryToDelete.id, churchId);
@@ -54,11 +53,10 @@ export default function EventCategoriesClient({ initialCategories, churchId }: E
         } else {
           toast.error(result.errorCode ? te(result.errorCode) : t("errorDelete"));
         }
-      } catch {
-        console.error("[DELETE_EVENT_CATEGORY_ERROR]");
+      } catch (error) {
+        console.error("[DELETE_EVENT_CATEGORY_ERROR]:", error);
         toast.error(t("errorDelete"));
       } finally {
-        setIsDeleting(false);
         setCategoryToDelete(null);
       }
     });
@@ -144,7 +142,7 @@ export default function EventCategoriesClient({ initialCategories, churchId }: E
 
       <AlertDialog
         open={!!categoryToDelete}
-        onOpenChange={(open) => !open && !isDeleting && setCategoryToDelete(null)}
+        onOpenChange={(open) => !open && !isPending && setCategoryToDelete(null)}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -154,13 +152,13 @@ export default function EventCategoriesClient({ initialCategories, churchId }: E
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>{t("cancel")}</AlertDialogCancel>
+            <AlertDialogCancel disabled={isPending}>{t("cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
-              disabled={isDeleting}
+              disabled={isPending}
               className="bg-destructive hover:bg-destructive/90"
             >
-              {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : t("confirm")}
+              {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : t("confirm")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

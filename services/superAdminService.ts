@@ -11,7 +11,7 @@ export const SuperAdminService = {
       const [totalChurches, totalMembers, totalUsers, totalTransactions, churchesByPlan] =
         await Promise.all([
           prisma.church.count(),
-          prisma.member.count(),
+          prisma.member.count({ where: { deletedAt: null } }),
           prisma.user.count({ where: { deletedAt: null } }),
           prisma.financeTransaction.count(),
           prisma.church.groupBy({
@@ -70,7 +70,7 @@ export const SuperAdminService = {
           },
           _count: {
             select: {
-              members: true,
+              members: { where: { deletedAt: null } },
               users: true,
               finances: true,
             },

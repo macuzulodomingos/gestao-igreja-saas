@@ -41,8 +41,8 @@ export function LanguageClient({ currentLocale, slug }: LanguageClientProps) {
       } else {
         toast.error("Erro ao guardar / Erreur lors de la sauvegarde.");
       }
-    } catch {
-      console.error("[UPDATE_LOCALE_ERROR]");
+    } catch (error) {
+      console.error("[UPDATE_LOCALE_ERROR]:", error);
       toast.error("Erro ao guardar / Erreur lors de la sauvegarde.");
     } finally {
       setSaving(false);

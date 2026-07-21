@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { useRouter, Link } from "@/i18n/navigation";
 import { Church, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,7 +25,9 @@ export default function RegistarPage() {
   const [isPending, startTransition] = useTransition();
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
   const [slugPreview, setSlugPreview] = useState("");
+  const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
   const [timezone, setTimezone] = useState("Africa/Luanda");
+  const [locale, setLocale] = useState<"pt" | "fr">("pt");
   const t = useTranslations("register");
   const tv = useTranslations("validation");
 
@@ -36,8 +37,8 @@ export default function RegistarPage() {
       nameTooLong: tv("nameTooLong"),
       emailInvalid: tv("emailInvalid"),
       passwordTooShort: tv("passwordTooShort"),
-      passwordUppercase: tv("passwordUppercase"), 
-      passwordNumber: tv("passwordNumber"),      
+      passwordUppercase: tv("passwordUppercase"),
+      passwordNumber: tv("passwordNumber"),
       required: tv("required"),
     };
     const registerKeys: Record<string, string> = {
@@ -68,10 +69,14 @@ export default function RegistarPage() {
       .replace(/\s+/g, "-");
 
   const handleChurchNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const slug = generateSlug(e.target.value);
-    setSlugPreview(slug);
-    const slugInput = document.getElementById("churchSlug") as HTMLInputElement;
-    if (slugInput) slugInput.value = slug;
+    if (!slugManuallyEdited) {
+      setSlugPreview(generateSlug(e.target.value));
+    }
+  };
+
+  const handleSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSlugManuallyEdited(true);
+    setSlugPreview(e.target.value);
   };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -79,20 +84,25 @@ export default function RegistarPage() {
     setFieldErrors({});
     const formData = new FormData(e.currentTarget);
     formData.set("timezone", timezone);
+    formData.set("locale", locale);
 
     startTransition(async () => {
-      const result = await registerChurchAction(formData);
+      try {
+        const result = await registerChurchAction(formData);
 
-      if (result.success) {
-        toast.success(t("successCreated"));
-        router.push(`/login?registered=true`);
-      } else if (result.fieldErrors) {
-        setFieldErrors(result.fieldErrors);
-        toast.error(t("errorForm"));
-      } else if (result.errorCode) {
-        // 👈 trata errorCode específico
-        toast.error(translateError(`register.${result.errorCode}`));
-      } else {
+        if (result.success) {
+          toast.success(t("successCreated"));
+          router.push(`/login?registered=true`);
+        } else if (result.fieldErrors) {
+          setFieldErrors(result.fieldErrors);
+          toast.error(t("errorForm"));
+        } else if (result.errorCode) {
+          toast.error(translateError(`register.${result.errorCode}`));
+        } else {
+          toast.error(t("errorCreate"));
+        }
+      } catch (error) {
+        console.error("[REGISTER_CHURCH_ERROR]:", error);
         toast.error(t("errorCreate"));
       }
     });
@@ -148,7 +158,7 @@ export default function RegistarPage() {
                   name="churchSlug"
                   placeholder={t("churchSlugPlaceholder")}
                   value={slugPreview}
-                  onChange={(e) => setSlugPreview(e.target.value)}
+                  onChange={handleSlugChange}
                   className={fieldErrors.churchSlug ? "border-destructive" : ""}
                 />
               </div>
@@ -182,6 +192,20 @@ export default function RegistarPage() {
               ) : (
                 <p className="text-xs text-muted-foreground">{t("timezoneHint")}</p>
               )}
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">{t("interfaceLanguage")}</label>
+              <Select value={locale} onValueChange={(v) => setLocale(v as "pt" | "fr")}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pt">🇦🇴 Português</SelectItem>
+                  <SelectItem value="fr">🇨🇩 Français</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">{t("interfaceLanguageHint")}</p>
             </div>
           </div>
 

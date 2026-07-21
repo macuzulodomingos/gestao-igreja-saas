@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter, usePathname, Link } from "@/i18n/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,9 +17,9 @@ import {
 import { updateChurchPlanAction } from "@/app/actions/super-admin-actions";
 import { startImpersonationAction } from "@/app/actions/impersonation-actions";
 import { toast } from "sonner";
-import Link from "next/link";
 
-type Church = {
+
+type ChurchSummary = {
   id: string;
   name: string;
   slug: string;
@@ -36,7 +36,7 @@ interface AdminClientProps {
     totalTransactions: number;
     planCounts: { FREE: number; PRO: number; ENTERPRISE: number };
   };
-  initialChurches: Church[];
+  initialChurches: ChurchSummary[];
   metadata: { total: number; totalPages: number; currentPage: number };
   filters: { search: string };
 }
@@ -83,14 +83,20 @@ export default function AdminClient({
 
   const handlePlanChange = async (churchId: string, plan: "FREE" | "PRO" | "ENTERPRISE") => {
     setUpdatingId(churchId);
-    const result = await updateChurchPlanAction(churchId, plan);
-    if (result.success) {
-      toast.success("Plano actualizado.");
-      router.refresh();
-    } else {
+    try {
+      const result = await updateChurchPlanAction(churchId, plan);
+      if (result.success) {
+        toast.success("Plano actualizado.");
+        router.refresh();
+      } else {
+        toast.error("Erro ao actualizar plano.");
+      }
+    } catch (error) {
+      console.error("[UPDATE_CHURCH_PLAN_ERROR]:", error);
       toast.error("Erro ao actualizar plano.");
+    } finally {
+      setUpdatingId(null);
     }
-    setUpdatingId(null);
   };
 
   const handleStartImpersonation = async () => {
@@ -99,18 +105,25 @@ export default function AdminClient({
       return;
     }
     setIsStarting(true);
-    const formData = new FormData();
-    formData.append("reason", reason);
+    try {
+      const formData = new FormData();
+      formData.append("reason", reason);
 
-    const result = await startImpersonationAction(
-      impersonationModal.churchId,
-      impersonationModal.churchSlug,
-      formData
-    );
+      const result = await startImpersonationAction(
+        impersonationModal.churchId,
+        impersonationModal.churchSlug,
+        formData
+      );
 
-    // se chegou aqui é porque houve erro — redirect corta a execução
-    if (result && !result.success) {
+      // se chegou aqui é porque houve erro — em caso de sucesso a action
+      // redireciona no servidor e nunca retorna pra este código
+      if (result && !result.success) {
+        toast.error("Erro ao iniciar sessão de suporte.");
+      }
+    } catch (error) {
+      console.error("[START_IMPERSONATION_ERROR]:", error);
       toast.error("Erro ao iniciar sessão de suporte.");
+    } finally {
       setIsStarting(false);
     }
   };

@@ -185,7 +185,6 @@
       "error": "Erreur lors de l'enregistrement.",
       "noCategories": "Aucune catégorie — créez-en dans Paramètres"
     },
-    
     "summary": {
       "monthlyIncome": "Revenus de",
       "monthlyExpenses": "Dépenses de",
@@ -411,7 +410,31 @@
     "error": "Erreur inconnue.",
     "invalidCredentials": "E-mail ou mot de passe incorrects.",
     "authError": "Une erreur s'est produite lors de l'authentification.",
-    "registeredSuccess": "Compte créé avec succès! Connectez-vous pour continuer."
+    "registeredSuccess": "Compte créé avec succès! Connectez-vous pour continuer.",
+    "forgotPasswordLink": "Mot de passe oublié?",
+    "forgotPassword": {
+      "title": "Récupérer l'accès",
+      "subtitle": "Entrez votre e-mail pour recevoir un lien de réinitialisation.",
+      "email": "E-mail",
+      "submit": "Envoyer le lien",
+      "sending": "Envoi en cours...",
+      "checkEmail": "Si cet e-mail existe dans notre base de données, nous avons envoyé un lien de réinitialisation. Vérifiez aussi votre dossier spam.",
+      "backToLogin": "Retour à la connexion",
+      "error": "Erreur lors du traitement de la demande. Veuillez réessayer."
+    },
+    "resetPassword": {
+      "title": "Nouveau mot de passe",
+      "subtitle": "Choisissez un nouveau mot de passe pour votre compte.",
+      "newPassword": "Nouveau mot de passe",
+      "submit": "Réinitialiser le mot de passe",
+      "saving": "Enregistrement...",
+      "successReset": "Mot de passe réinitialisé avec succès!",
+      "missingToken": "Lien invalide ou incomplet.",
+      "invalidToken": "Ce lien a expiré ou a déjà été utilisé. Demandez-en un nouveau.",
+      "backToLogin": "Retour à la connexion",
+      "error": "Erreur lors de la réinitialisation du mot de passe."
+    }
+    
   },
   "common": {
     "save": "Enregistrer",
@@ -844,7 +867,9 @@
     "slugTaken": "Cette adresse est déjà utilisée.",
     "emailTaken": "Cet e-mail est déjà enregistré.",
     "errorCreate": "Erreur lors de la création du compte. Veuillez réessayer.",
-    "slugHint": "Uniquement des lettres minuscules, chiffres et tirets"
+    "slugHint": "Uniquement des lettres minuscules, chiffres et tirets",
+    "interfaceLanguage": "Langue de l'interface",
+    "interfaceLanguageHint": "Langue utilisée dans le panneau après connexion. Modifiable plus tard dans les Paramètres."
   },
   "error": {
     "title": "Une erreur s'est produite",

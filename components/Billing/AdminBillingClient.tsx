@@ -36,8 +36,8 @@ export function AdminBillingClient({ pendingPayments }: { pendingPayments: Pendi
       } else {
         toast.error("Erro ao confirmar.");
       }
-    } catch {
-      console.error("[CONFIRM_PAYMENT_ERROR]");
+    } catch (error) {
+      console.error("[CONFIRM_PAYMENT_ERROR]:", error);
       toast.error("Erro ao confirmar.");
     } finally {
       setProcessing(null);
@@ -61,8 +61,8 @@ export function AdminBillingClient({ pendingPayments }: { pendingPayments: Pendi
       } else {
         toast.error("Erro ao rejeitar pagamento.");
       }
-    } catch {
-      console.error("[REJECT_PAYMENT_ERROR]");
+    } catch (error) {
+      console.error("[REJECT_PAYMENT_ERROR]:", error);
       toast.error("Erro ao rejeitar pagamento.");
     } finally {
       setProcessing(null);
@@ -133,7 +133,7 @@ export function AdminBillingClient({ pendingPayments }: { pendingPayments: Pendi
                     <div>
                       <p className="text-muted-foreground">Comprovativo</p>
                       {payment.proofOfPayment ? (
-                        <a  // 👈 adiciona esta linha
+                        <a  
                           href={payment.proofOfPayment}
                           target="_blank"
                           rel="noopener noreferrer"

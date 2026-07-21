@@ -11,7 +11,6 @@ import { ptBR } from "date-fns/locale";
 import { Shield, Loader2, Search, ChevronDown, ChevronUp, Download, ExternalLink } from "lucide-react";
 import { loadMoreAuditLogsAction, filterAuditLogsAction, exportAuditLogsAction } from "@/app/actions/audit-admi-actions";
 import { toast } from "sonner";
-import { Prisma } from "@prisma/client";
 
 type AuditLog = {
   id: string;
@@ -54,33 +53,30 @@ const ENTITY_NAMES = [
   "EventCategory", "MemberRole",
 ];
 
+const isRecord = (v: unknown): v is Record<string, unknown> =>
+  typeof v === "object" && v !== null && !Array.isArray(v);
+
 const getDiff = (oldData: unknown, newData: unknown) => {
   if (!oldData && !newData) return [];
-  if (!oldData && newData && typeof newData === "object" && !Array.isArray(newData)) {
-    return Object.entries(newData as Record<string, unknown>)
+
+  if (!oldData && isRecord(newData)) {
+    return Object.entries(newData)
       .filter(([key]) => !IGNORED_FIELDS.includes(key))
       .map(([key, value]) => ({ key, old: null, new: value }));
   }
-  if (
-    oldData && newData &&
-    typeof oldData === "object" && typeof newData === "object" &&
-    !Array.isArray(oldData) && !Array.isArray(newData)
-  ) {
-    const allKeys = new Set([
-      ...Object.keys(oldData as Record<string, unknown>),
-      ...Object.keys(newData as Record<string, unknown>),
-    ]);
+
+  if (isRecord(oldData) && isRecord(newData)) {
+    const allKeys = new Set([...Object.keys(oldData), ...Object.keys(newData)]);
     return Array.from(allKeys)
       .filter(key => !IGNORED_FIELDS.includes(key))
-      .filter(key =>
-        JSON.stringify((oldData as any)[key]) !== JSON.stringify((newData as any)[key])
-      )
+      .filter(key => JSON.stringify(oldData[key]) !== JSON.stringify(newData[key]))
       .map(key => ({
         key,
-        old: (oldData as any)[key],
-        new: (newData as any)[key],
+        old: oldData[key],
+        new: newData[key],
       }));
   }
+
   return [];
 };
 
@@ -110,77 +106,108 @@ export function AuditoriaClient({ initialLogs }: { initialLogs: AuditLog[] }) {
 
   const handleFilter = async () => {
     setFiltering(true);
-    const result = await filterAuditLogsAction({
-      churchName: filters.churchName || undefined,
-      action: filters.action || undefined,
-      entityName: filters.entityName || undefined,
-      dateFrom: filters.dateFrom || undefined,
-      dateTo: filters.dateTo || undefined,
-    });
-    setFiltering(false);
-    if (!result.success || !result.data) { toast.error("Erro ao filtrar."); return; }
-    setLogs(result.data as AuditLog[]);
-    setCursor(result.data[result.data.length - 1]?.id ?? null);
-    setHasMore(result.hasMore ?? false);
+    try {
+      const result = await filterAuditLogsAction({
+        churchName: filters.churchName || undefined,
+        action: filters.action || undefined,
+        entityName: filters.entityName || undefined,
+        dateFrom: filters.dateFrom || undefined,
+        dateTo: filters.dateTo || undefined,
+      });
+      if (!result.success || !result.data) { toast.error("Erro ao filtrar."); return; }
+      setLogs(result.data as AuditLog[]);
+      setCursor(result.data[result.data.length - 1]?.id ?? null);
+      setHasMore(result.hasMore ?? false);
+    } catch (error) {
+      console.error("[FILTER_AUDIT_LOGS_ERROR]:", error);
+      toast.error("Erro ao filtrar.");
+    } finally {
+      setFiltering(false);
+    }
   };
 
   const handleLoadMore = async () => {
     if (!cursor) return;
     setLoadingMore(true);
-    const result = await loadMoreAuditLogsAction(cursor, {
-      churchName: filters.churchName || undefined,
-      action: filters.action || undefined,
-      entityName: filters.entityName || undefined,
-      dateFrom: filters.dateFrom || undefined,
-      dateTo: filters.dateTo || undefined,
-    });
-    setLoadingMore(false);
-    if (!result.success || !result.data) { toast.error("Erro ao carregar mais."); return; }
-    setLogs(prev => [...prev, ...result.data as AuditLog[]]);
-    setCursor(result.nextCursor ?? null);
-    setHasMore(result.hasMore ?? false);
+    try {
+      const result = await loadMoreAuditLogsAction(cursor, {
+        churchName: filters.churchName || undefined,
+        action: filters.action || undefined,
+        entityName: filters.entityName || undefined,
+        dateFrom: filters.dateFrom || undefined,
+        dateTo: filters.dateTo || undefined,
+      });
+      if (!result.success) {
+        toast.error("Erro ao carregar mais.");
+        return;
+      }
+      setLogs(prev => [...prev, ...result.data as AuditLog[]]);
+      setCursor(result.nextCursor ?? null);
+      setHasMore(result.hasMore ?? false);
+    } catch (error) {
+      console.error("[LOAD_MORE_AUDIT_LOGS_ERROR]:", error);
+      toast.error("Erro ao carregar mais.");
+    } finally {
+      setLoadingMore(false);
+    }
   };
 
   const handleReset = async () => {
     setFilters({ churchName: "", action: "", entityName: "", dateFrom: "", dateTo: "" });
     setFiltering(true);
-    const result = await filterAuditLogsAction({});
-    setFiltering(false);
-    if (!result.success || !result.data) return;
-    setLogs(result.data as AuditLog[]);
-    setCursor(result.data[result.data.length - 1]?.id ?? null);
-    setHasMore(result.hasMore ?? false);
+    try {
+      const result = await filterAuditLogsAction({});
+      if (!result.success) return;
+      setLogs(result.data as AuditLog[]);
+      setCursor(result.data[result.data.length - 1]?.id ?? null);
+      setHasMore(result.hasMore ?? false);
+    } catch (error) {
+      console.error("[RESET_AUDIT_LOGS_ERROR]:", error);
+      toast.error("Erro ao limpar filtros.");
+    } finally {
+      setFiltering(false);
+    }
   };
+
 
   const handleExport = async () => {
     setExporting(true);
-    const result = await exportAuditLogsAction({
-      churchName: filters.churchName || undefined,
-      action: filters.action || undefined,
-      entityName: filters.entityName || undefined,
-      dateFrom: filters.dateFrom || undefined,
-      dateTo: filters.dateTo || undefined,
-    });
-    setExporting(false);
-    if (!result.success || !result.csv) { toast.error("Erro ao exportar."); return; }
+    try {
+      const result = await exportAuditLogsAction({
+        churchName: filters.churchName || undefined,
+        action: filters.action || undefined,
+        entityName: filters.entityName || undefined,
+        dateFrom: filters.dateFrom || undefined,
+        dateTo: filters.dateTo || undefined,
+      });
+      if (!result.success) {
+        toast.error("Erro ao exportar.");
+        return;
+      }
 
-    // 👈 aviso se muitos registos
-    if (result.total > 1000) {
-      toast.warning(`Exportados ${result.total} registos. O ficheiro pode ser grande.`);
-    }
+      if (result.total > 1000) {
+        toast.warning(`Exportados ${result.total} registos. O ficheiro pode ser grande.`);
+      }
 
-    // 👈 download automático
-    const blob = new Blob([result.csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `audit-${format(new Date(), "yyyy-MM-dd")}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-    if (result.total <= 1000) {
-      toast.success("CSV exportado com sucesso!");
+      const blob = new Blob([result.csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `audit-${format(new Date(), "yyyy-MM-dd")}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+
+      if (result.total <= 1000) {
+        toast.success("CSV exportado com sucesso!");
+      }
+    } catch (error) {
+      console.error("[EXPORT_AUDIT_LOGS_ERROR]:", error);
+      toast.error("Erro ao exportar.");
+    } finally {
+      setExporting(false);
     }
   };
+
 
   return (
     <div className="space-y-6">

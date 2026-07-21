@@ -27,8 +27,6 @@ export default async function ChurchSettingsPage({ params }: PageProps) {
 
   const church = await getChurchBySlug(slug, isSuperAdmin ? undefined : session.user.churchId);
   if (!church) notFound();
-
-  const churchId = church.id;
   
 
   return <ChurchSettingsClient church={church} />;

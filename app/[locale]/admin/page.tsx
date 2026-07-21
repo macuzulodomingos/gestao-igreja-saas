@@ -1,7 +1,9 @@
 import { auth } from "@/lib/auth";
-import { redirect } from "next/navigation";
+import { redirect } from "@/i18n/navigation";
+import { notFound } from "next/navigation";
 import { SuperAdminService } from "@/services/superAdminService";
 import AdminClient from "@/components/Admin/AdminClient";
+import { getLocale } from "next-intl/server";
 
 export default async function AdminPage({
   searchParams,
@@ -10,12 +12,19 @@ export default async function AdminPage({
 }) {
   const session = await auth();
 
-  if (!session?.user || session.user.role !== "SUPER_ADMIN") {
-    redirect("/login");
+  if (!session?.user) {
+    const locale = await getLocale();
+    redirect({ href: "/login", locale });
+    return;
+  }
+
+  if (session.user.role !== "SUPER_ADMIN") {
+    notFound();
   }
 
   const sParams = await searchParams;
-  const page = Number(sParams.page) || 1;
+  const parsedPage = Number(sParams.page) || 1;
+  const page = parsedPage < 1 ? 1 : parsedPage;
 
   const [stats, { churches, metadata }] = await Promise.all([
     SuperAdminService.getGlobalStats(),

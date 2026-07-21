@@ -35,4 +35,7 @@ export const registerSchema = z.object({
   timezone: z.enum(VALID_TIMEZONES, {
     message: "validation.required",
   }),
+  locale: z.enum(["pt", "fr"], {
+    message: "validation.required",
+  }),
 });

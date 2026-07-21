@@ -410,7 +410,30 @@
     "error": "Erro desconhecido.",
     "invalidCredentials": "E-mail ou palavra-passe incorrectos.",
     "authError": "Algo correu mal na autenticação.",
-    "registeredSuccess": "Conta criada com sucesso! Faça login para continuar."
+    "registeredSuccess": "Conta criada com sucesso! Faça login para continuar.",
+    "forgotPasswordLink": "Esqueceu a palavra-passe?",
+    "forgotPassword": {
+      "title": "Recuperar acesso",
+      "subtitle": "Introduza o seu e-mail para receber um link de redefinição.",
+      "email": "E-mail",
+      "submit": "Enviar link",
+      "sending": "A enviar...",
+      "checkEmail": "Se esse e-mail existir na nossa base de dados, enviámos um link de redefinição. Verifique também a pasta de spam.",
+      "backToLogin": "Voltar ao início de sessão",
+      "error": "Erro ao processar o pedido. Tente novamente."
+    },
+    "resetPassword": {
+      "title": "Nova palavra-passe",
+      "subtitle": "Escolha uma nova palavra-passe para a sua conta.",
+      "newPassword": "Nova palavra-passe",
+      "submit": "Redefinir palavra-passe",
+      "saving": "A guardar...",
+      "successReset": "Palavra-passe redefinida com sucesso!",
+      "missingToken": "Link inválido ou incompleto.",
+      "invalidToken": "Este link expirou ou já foi utilizado. Solicite um novo.",
+      "backToLogin": "Voltar ao início de sessão",
+      "error": "Erro ao redefinir a palavra-passe."
+    }
   },
   "common": {
     "save": "Guardar",
@@ -843,7 +866,9 @@
     "slugTaken": "Este endereço já está em uso.",
     "emailTaken": "Este e-mail já está registado.",
     "errorCreate": "Erro ao criar conta. Tente novamente.",
-    "slugHint": "Apenas letras minúsculas, números e hífens"
+    "slugHint": "Apenas letras minúsculas, números e hífens",
+    "interfaceLanguage": "Idioma da interface",
+    "interfaceLanguageHint": "Idioma usado no painel após entrar. Pode ser alterado depois em Configurações."
   },
   "error": {
     "title": "Algo correu mal",

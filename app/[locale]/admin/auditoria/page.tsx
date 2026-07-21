@@ -1,11 +1,23 @@
 import { auth } from "@/lib/auth";
-import { redirect } from "next/navigation";
+import { redirect } from "@/i18n/navigation";
+import { notFound } from "next/navigation";
 import { AuditoriaClient } from "@/components/Admin/AuditoriaClient";
 import prisma from "@/lib/prisma";
+import { getLocale } from "next-intl/server";
+
 
 export default async function AdminAuditoriaPage() {
   const session = await auth();
-  if (!session?.user || session.user.role !== "SUPER_ADMIN") redirect("/login");
+  
+  if (!session?.user) {
+    const locale = await getLocale();
+    redirect({ href: "/login", locale });
+    return;
+  }
+
+  if (session.user.role !== "SUPER_ADMIN") {
+    notFound();
+  }
 
   const logs = await prisma.auditLog.findMany({
     orderBy: { createdAt: "desc" },

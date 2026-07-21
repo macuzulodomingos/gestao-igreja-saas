@@ -8,6 +8,7 @@ interface RegisterChurchDTO {
   adminEmail: string;
   adminPassword: string;
   timezone: string;
+  locale: string;
 }
 
 export const RegisterChurchService = {
@@ -39,6 +40,7 @@ export const RegisterChurchService = {
             password: hashedPassword,
             role: "ADMIN",
             churchId: church.id,
+            locale: data.locale,
           },
           select: { id: true },
         });

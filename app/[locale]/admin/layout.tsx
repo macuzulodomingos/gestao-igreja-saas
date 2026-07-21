@@ -1,21 +1,32 @@
 import { auth } from "@/lib/auth";
-import { redirect } from "next/navigation";
-import Link from "next/link";
-import { Church, LayoutDashboard, LogOut, ShieldCheck, Wallet } from "lucide-react";
+import { redirect } from "@/i18n/navigation";
+import { notFound } from "next/navigation";
+import { Link } from "@/i18n/navigation";
+import { Church, LayoutDashboard, ShieldCheck, Wallet } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AdminLogoutButton } from "@/components/Admin/AdminLogoutButton";
 import { BillingService } from "@/services/billingService";
+import { getLocale } from "next-intl/server";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
 
-  if (!session?.user || session.user.role !== "SUPER_ADMIN") {
-    redirect("/login");
+  if (!session?.user) {
+    const locale = await getLocale();
+    redirect({ href: "/login", locale });
+    return;
+  }
+
+  if (session.user.role !== "SUPER_ADMIN") {
+    notFound();
   }
 
   const pendingCount = await BillingService.getPendingPayments()
     .then(p => p.length)
-    .catch(() => 0);
+    .catch((error) => {
+      console.error("[ADMIN_LAYOUT] getPendingPayments error:", error);
+      return 0;
+    });
 
   return (
     <div className="min-h-screen flex bg-background">
@@ -65,7 +76,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <p className="text-[10px] text-muted-foreground">{session.user.email}</p>
           </div>
           <ThemeToggle />
-          <AdminLogoutButton /> // 👈
+          <AdminLogoutButton /> 
         </div>
       </aside>
 

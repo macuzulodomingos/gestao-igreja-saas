@@ -66,6 +66,7 @@ model User {
   deletedAt     DateTime? // 👈 NOVO — Soft Delete
 
   impersonations ImpersonationSession[] @relation("SuperAdminImpersonations")
+  passwordResetTokens PasswordResetToken[]
 
   @@index([churchId])
   @@index([deletedAt]) // 👈 índice para filtrar activos rapidamente
@@ -378,4 +379,19 @@ model AuditLog {
   @@index([entityName, entityId])
   @@index([churchId, entityName, action])  // 👈 NOVO — filtros combinados
   @@index([userId])                         // 👈 NOVO — rastrear por utilizador
+}
+
+
+// 10. RECUPERAÇÃO DE PALAVRA-PASSE
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique // nunca guardamos o token em texto plano
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
 }

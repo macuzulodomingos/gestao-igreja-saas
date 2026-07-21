@@ -2,16 +2,16 @@
 
 import { authenticate } from "@/app/actions/auth";
 import { Church, Loader2 } from "lucide-react";
-import { Link } from "@/i18n/navigation";
+import { Link, useRouter as useLocaleRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter as useNextRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect, Suspense } from "react";
 
 
 // 2. 👈 cria este subcomponente ANTES do LoginPage
 function RegistrationAlert() {
   const t = useTranslations("auth");
-  const router = useRouter();
+  const router = useLocaleRouter();
   const searchParams = useSearchParams();
   const justRegistered = searchParams.get("registered") === "true";
 
@@ -41,7 +41,7 @@ export default function LoginPage() {
   const [pending, setPending] = useState(false);
   const t = useTranslations("auth");
 
-  const router = useRouter();
+  const router = useNextRouter();
 
   const translateError = (code: string) => {
     const validCodes: Record<string, string> = {
@@ -68,7 +68,8 @@ export default function LoginPage() {
       // 👈 TypeScript sabe que errorCode existe aqui
       setError(translateError(result.errorCode ?? "authError"));
 
-    } catch {
+    } catch (error) {
+      console.error("[LOGIN_ERROR]:", error);
       setError(t("error"));
     } finally {
       setPending(false);
@@ -124,6 +125,12 @@ export default function LoginPage() {
               required
               className="w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:ring-primary outline-none transition-all"
             />
+          </div>
+
+          <div className="flex justify-end">
+            <Link href="/esqueci-senha" className="text-xs text-primary hover:underline">
+              {t("forgotPasswordLink")}
+            </Link>
           </div>
 
           <button
