@@ -2,7 +2,7 @@
 
 import { useState, useTransition, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { Church, Loader2 } from "lucide-react";
+import { Church, Loader2, Eye, EyeOff } from "lucide-react";
 import { useRouter, Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { resetPasswordAction } from "@/app/actions/password-reset";
@@ -11,6 +11,8 @@ import { toast } from "sonner";
 function ResetPasswordForm() {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const t = useTranslations("auth.resetPassword");
   const tv = useTranslations("validation");
   const router = useRouter();
@@ -22,6 +24,7 @@ function ResetPasswordForm() {
       passwordTooShort: tv("passwordTooShort"),
       passwordUppercase: tv("passwordUppercase"),
       passwordNumber: tv("passwordNumber"),
+      passwordMismatch: tv("passwordMismatch"),
       invalidToken: t("invalidToken"),
     };
     return keys[code] ?? t("error");
@@ -68,14 +71,48 @@ function ResetPasswordForm() {
         <label className="text-sm font-medium" htmlFor="password">
           {t("newPassword")}
         </label>
-        <input
-          id="password"
-          name="password"
-          type="password"
-          autoComplete="new-password"
-          required
-          className="w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:ring-primary outline-none transition-all"
-        />
+        <div className="relative">
+          <input
+            id="password"
+            name="password"
+            type={showPassword ? "text" : "password"}
+            autoComplete="new-password"
+            required
+            className="w-full rounded-md border px-3 py-2 pr-10 text-sm focus:ring-2 focus:ring-primary outline-none transition-all"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword((prev) => !prev)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            aria-label={showPassword ? t("hidePassword") : t("showPassword")}
+          >
+            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-sm font-medium" htmlFor="confirmPassword">
+          {t("confirmPassword")}
+        </label>
+        <div className="relative">
+          <input
+            id="confirmPassword"
+            name="confirmPassword"
+            type={showConfirmPassword ? "text" : "password"}
+            autoComplete="new-password"
+            required
+            className="w-full rounded-md border px-3 py-2 pr-10 text-sm focus:ring-2 focus:ring-primary outline-none transition-all"
+          />
+          <button
+            type="button"
+            onClick={() => setShowConfirmPassword((prev) => !prev)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            aria-label={showConfirmPassword ? t("hidePassword") : t("showPassword")}
+          >
+            {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
+        </div>
       </div>
 
       <button

@@ -432,7 +432,10 @@
       "missingToken": "Link inválido ou incompleto.",
       "invalidToken": "Este link expirou ou já foi utilizado. Solicite um novo.",
       "backToLogin": "Voltar ao início de sessão",
-      "error": "Erro ao redefinir a palavra-passe."
+      "error": "Erro ao redefinir a palavra-passe.",
+      "confirmPassword": "Confirmar palavra-passe",
+      "showPassword": "Mostrar palavra-passe",
+      "hidePassword": "Ocultar palavra-passe"
     }
   },
   "common": {
@@ -479,7 +482,8 @@
     "invalidPlan": "Plano inválido",
     "invalidUrl": "URL inválida",
     "reasonTooShort": "Motivo muito curto",
-    "reasonTooLong": "Motivo demasiado longo"
+    "reasonTooLong": "Motivo demasiado longo",
+    "passwordMismatch": "As palavras-passe não coincidem"
   },
   "billing": {
     "title": "Faturamento",

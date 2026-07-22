@@ -432,9 +432,11 @@
       "missingToken": "Lien invalide ou incomplet.",
       "invalidToken": "Ce lien a expiré ou a déjà été utilisé. Demandez-en un nouveau.",
       "backToLogin": "Retour à la connexion",
-      "error": "Erreur lors de la réinitialisation du mot de passe."
+      "error": "Erreur lors de la réinitialisation du mot de passe.",
+      "confirmPassword": "Confirmer le mot de passe",
+      "showPassword": "Afficher le mot de passe",
+      "hidePassword": "Masquer le mot de passe"
     }
-    
   },
   "common": {
     "save": "Enregistrer",
@@ -480,7 +482,8 @@
     "invalidPlan": "Plan invalide",
     "invalidUrl": "URL invalide",
     "reasonTooShort": "Motif trop court",
-    "reasonTooLong": "Motif trop long"
+    "reasonTooLong": "Motif trop long",
+    "passwordMismatch": "Les mots de passe ne correspondent pas"
   },
   "billing": {
     "title": "Facturation",

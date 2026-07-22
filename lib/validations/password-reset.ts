@@ -11,4 +11,9 @@ export const resetPasswordSchema = z.object({
     .max(100)
     .refine((val) => /[A-Z]/.test(val), { message: "validation.passwordUppercase" })
     .refine((val) => /[0-9]/.test(val), { message: "validation.passwordNumber" }),
+  confirmPassword: z.string()
+    .min(1, "validation.required"),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "validation.passwordMismatch",
+  path: ["confirmPassword"], // 👈 associa o erro ao campo de confirmação especificamente
 });
