@@ -6,6 +6,7 @@ import { Link } from "@/i18n/navigation";
 import { useTranslations, useLocale } from "next-intl";
 import { requestPasswordResetAction } from "@/app/actions/password-reset";
 import { toast } from "sonner";
+import Image from "next/image";
 
 export default function ForgotPasswordPage() {
   const [isPending, startTransition] = useTransition();
@@ -37,8 +38,15 @@ export default function ForgotPasswordPage() {
       <div className="w-full max-w-sm space-y-6">
 
         <div className="flex flex-col items-center space-y-2 text-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-            <Church className="h-6 w-6" />
+          <div className="flex h-10 w-42 items-center bg-primary/4 justify-center rounded-xl shrink-0">
+            <Image
+              src="/logo-icon.png"
+              alt="Ngunga"
+              width={48}
+              height={40}
+              className="object-contain"
+              priority
+            />
           </div>
           <h1 className="text-2xl font-bold">{t("title")}</h1>
           <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
