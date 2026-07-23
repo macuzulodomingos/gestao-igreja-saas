@@ -8,6 +8,8 @@ import { TenantClientWrapper } from "@/components/Layout/TenantClientWrapper";
 import { setRequestLocale } from "next-intl/server";
 import { ImpersonationService } from "@/services/impersonationService";
 import { endImpersonationAction } from "@/app/actions/impersonation-actions";
+import * as Sentry from "@sentry/nextjs";
+
 export const dynamic = "force-dynamic";
 
 interface TenantLayoutProps {
@@ -45,6 +47,10 @@ export default async function TenantLayout({
   const church = await getChurchBySlug(slug, isSuperAdmin ? undefined : session.user.churchId ?? undefined);
 
   if (!church) notFound();
+
+  Sentry.setUser({ id: session.user.id });
+  Sentry.setTag("churchSlug", church.slug);
+  Sentry.setTag("churchPlan", church.plan);
 
   // 👈 verifica impersonation APÓS ter a igreja
   let impersonation = null;

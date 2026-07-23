@@ -7,6 +7,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { AdminLogoutButton } from "@/components/Admin/AdminLogoutButton";
 import { BillingService } from "@/services/billingService";
 import { getLocale } from "next-intl/server";
+import * as Sentry from "@sentry/nextjs";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
@@ -20,6 +21,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   if (session.user.role !== "SUPER_ADMIN") {
     notFound();
   }
+
+  Sentry.setUser({ id: session.user.id });
+  Sentry.setTag("area", "admin");
 
   const pendingCount = await BillingService.getPendingPayments()
     .then(p => p.length)
