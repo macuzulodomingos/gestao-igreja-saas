@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ChevronLeft, ChevronRight, Shield, Filter, ChevronDown, ChevronUp } from "lucide-react";
 import { useTranslations, useLocale } from "next-intl";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@/app/generated/prisma/client";
 import { ChurchLogsResult } from "@/services/auditService";
 import { parseISO, isValid } from "date-fns";
 

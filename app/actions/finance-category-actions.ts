@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getAuthContext } from "@/lib/auth-context";
 import { getErrorMessage, isPrismaError } from "@/lib/errors";
-import { TransactionType } from "@prisma/client";
+import { TransactionType } from '@/app/generated/prisma/enums';
 import { ActionResult } from "@/types/action-result";
 
 const categorySchema = z.object({

@@ -1,6 +1,6 @@
 "use client";
 
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@/app/generated/prisma/client";
 import { AuditLog } from "@/types/audit";
 import { useTranslations, useLocale } from "next-intl";
 import { parseISO, isValid } from "date-fns";

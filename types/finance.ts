@@ -1,5 +1,5 @@
 // types/finance.ts
-import { TransactionType } from "@prisma/client";
+import { TransactionType } from '@/app/generated/prisma/enums';
 
 export interface FinanceTransaction {
   id: string;

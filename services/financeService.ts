@@ -1,5 +1,5 @@
 import prisma from "@/lib/prisma";
-import { TransactionType } from "@prisma/client";
+import { TransactionType } from '@/app/generated/prisma/enums';
 import { FinanceTransaction } from "@/types/finance";
 import { centsToAmount, amountToCents, getMonthRangeInTimezone } from "@/lib/money";
 import { fromZonedTime } from "date-fns-tz";

@@ -1,5 +1,5 @@
 import prisma from "@/lib/prisma";
-import { TransactionType } from "@prisma/client";
+import { TransactionType } from '@/app/generated/prisma/enums';
 
 
 export interface CreateCategoryDTO {
