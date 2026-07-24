@@ -1,11 +1,12 @@
 import prisma from "../lib/prisma";
+import { TransactionType } from "@/app/generated/prisma/enums";
 
 
 async function main() {
   const church = await prisma.church.findFirst();
   if (!church) return console.log("❌ Nenhuma igreja encontrada");
 
-  const categories = [
+    const categories: { name: string; type: TransactionType }[] = [
     // Receitas
     { name: "Dízimo",  type: "INCOME"  },
     { name: "Oferta",  type: "INCOME"  },
@@ -24,13 +25,13 @@ async function main() {
         churchId_name_type: {
           churchId: church.id,
           name: cat.name,
-          type: cat.type as any,
+          type: cat.type,
         },
       },
       update: {},
       create: {
         name: cat.name,
-        type: cat.type as any,
+        type: cat.type,
         churchId: church.id,
       },
     });

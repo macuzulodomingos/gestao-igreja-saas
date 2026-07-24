@@ -1,7 +1,7 @@
 import { DefaultSession } from "next-auth";
+import { UserRole } from "@/app/generated/prisma/enums";
 
-// 1. Atualizamos os tipos para incluir a nova Role
-export type UserRole = "SUPER_ADMIN" | "ADMIN" | "TREASURER" | "SECRETARY" | "OPERATOR";
+
 
 declare module "next-auth" {
   interface Session {
@@ -9,25 +9,25 @@ declare module "next-auth" {
       id: string;
       role: UserRole;
       // 2. Tornamos opcionais porque o Super Admin pode ser global
-      churchId?: string;
-      churchSlug?: string;
-      locale: string; // 👈 NOVO
+      churchId?: string | null;
+      churchSlug?: string | null;
+      locale: string
     } & DefaultSession["user"];
   }
 
   interface User {
     role: UserRole;
-    churchId?: string;
-    churchSlug?: string;
-    locale?: string; // 👈 NOVO
+    churchId?: string | null;
+    churchSlug?: string | null;
+    locale?: string; 
   }
 }
 
 declare module "next-auth/jwt" {
   interface JWT {
     role: UserRole;
-    churchId?: string;
-    churchSlug?: string;
+    churchId?: string | null;
+    churchSlug?: string | null;
     locale?: string; // 👈 NOVO
     refreshedAt?: number;
   }

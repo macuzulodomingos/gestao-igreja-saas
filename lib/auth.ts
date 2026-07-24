@@ -2,19 +2,20 @@
 import NextAuth from "next-auth";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import prisma from "@/lib/prisma";
+
 import { authConfig } from "./auth.config";
 import bcrypt from "bcryptjs";
 import Credentials from "next-auth/providers/credentials";
 
+import { UserRole } from "@/app/generated/prisma/enums";
 
-// Definimos o tipo local para os Roles (conforme o seu Schema Prisma)
-type UserRole = "SUPER_ADMIN" | "ADMIN" | "TREASURER" | "SECRETARY" | "OPERATOR";
+
 
 const REFRESH_INTERVAL = 60 * 60 * 1000;
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig, // Puxa as páginas e o callback authorized do config leve
-  adapter: PrismaAdapter(prisma),
+  adapter: PrismaAdapter(prisma as unknown as Parameters<typeof PrismaAdapter>[0]),
   session: { strategy: "jwt", maxAge: 60 * 60 * 8 }, // 8 horas
   providers: [
     Credentials({
@@ -24,8 +25,24 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (!email || !password) return null;
 
         const user = await prisma.user.findUnique({
-          where: { email: email as string },
-          include: { church: { select: { slug: true } } }
+          where: {
+            email: String(email),
+          },
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            password: true,
+            role: true,
+            deletedAt: true,
+            churchId: true,
+            locale: true,
+            church: {
+              select: {
+                slug: true,
+              },
+            },
+          },
         });
 
         // 🛡️ hash falso — mantém tempo de resposta consistente
@@ -50,8 +67,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           email: user.email,
           name: user.name,
           role: user.role,
-          churchId: user.churchId,
-          churchSlug: user.church?.slug || null,
+          churchId: user.churchId ?? null,
+          churchSlug: user.church?.slug ?? null,
+          locale: user.locale ?? "pt",
         };
       },
     }),
@@ -65,28 +83,36 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.churchId = user.churchId ?? null;
         token.churchSlug = user.churchSlug ?? null;
         token.refreshedAt = Date.now();
+        token.locale = user.locale ?? "pt";
 
-        // 👈 busca o locale do utilizador na DB no momento do login
-        const dbUser = await prisma.user.findUnique({
-          where: { id: user.id as string },
-          select: { locale: true },
-        });
-        token.locale = dbUser?.locale ?? "pt";
         return token;
       }
 
       // Verifica se precisa re-validar
       const lastRefresh = typeof token.refreshedAt === "number" ? token.refreshedAt : 0;
-      const needsRefresh = Date.now() > lastRefresh + REFRESH_INTERVAL;
 
-      if (!needsRefresh) return token;
+      if (Date.now() <= lastRefresh + REFRESH_INTERVAL) {
+        return token;
+      }
 
       // Re-validação na DB — resolve session drift
       if (!token.sub) return null; // 👈 seguro, sem bang operator
 
       const dbUser = await prisma.user.findUnique({
-        where: { id: token.sub },
-        include: { church: { select: { slug: true } } },
+        where: {
+          id: token.sub,
+        },
+        select: {
+          role: true,
+          churchId: true,
+          locale: true,
+          deletedAt: true,
+          church: {
+            select: {
+              slug: true,
+            },
+          },
+        },
       });
 
       // Utilizador apagado ou desactivado — invalida token
@@ -106,9 +132,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (token && session.user) {
         session.user.id = token.sub ?? "";
         session.user.role = token.role as UserRole;
-        session.user.churchId = token.churchId as string;
-        session.user.churchSlug = token.churchSlug as string;
-        session.user.locale = token.locale as string; // 👈 NOVO
+        session.user.churchId =
+          typeof token.churchId === "string"
+            ? token.churchId
+            : null;
+
+        session.user.churchSlug =
+          typeof token.churchSlug === "string"
+            ? token.churchSlug
+            : null;
+        session.user.locale =
+          typeof token.locale === "string"
+            ? token.locale
+            : "pt";
       }
       return session;
     },
