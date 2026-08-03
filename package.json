@@ -84,7 +84,6 @@
     "@types/node": "^20.19.30",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@types/react-pdf": "^6.2.0",
     "dotenv": "^17.2.3",
     "eslint": "^9",
     "eslint-config-next": "16.1.2",
