@@ -30,14 +30,14 @@ export default auth((req: any) => {
 
   const localeFromUrl = nextUrl.pathname.startsWith("/fr") ? "fr"
     : nextUrl.pathname.startsWith("/pt") ? "pt"
-    : null;
+      : null;
 
   const localeFromCookie = req.cookies.get("NEXT_LOCALE")?.value as "pt" | "fr" | undefined;
   const locale = userLocale ?? localeFromUrl ?? localeFromCookie ?? "pt";
 
   if (!localeFromUrl) {
-    const newUrl = new URL(`/${locale}${nextUrl.pathname}`, nextUrl);
-    newUrl.search = nextUrl.search;
+    const newUrl = nextUrl.clone();
+    newUrl.pathname = `/${locale}${nextUrl.pathname}`;
     return NextResponse.redirect(newUrl);
   }
 
