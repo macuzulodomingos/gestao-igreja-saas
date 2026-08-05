@@ -453,7 +453,9 @@
     "search": "Rechercher",
     "noResults": "Aucun résultat.",
     "upgrade": "Mettre à niveau",
-    "actions": "Actions"
+    "actions": "Actions",
+    "chooseFile": "Choisir un fichier",
+    "noFileChosen": "Aucun fichier sélectionné"
   },
   "validation": {
     "required": "Obligatoire",

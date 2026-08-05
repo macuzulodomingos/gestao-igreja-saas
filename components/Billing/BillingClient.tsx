@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, Zap, Crown, Clock, AlertCircle } from "lucide-react";
+import { Check, Zap, Crown, Clock, AlertCircle, Upload } from "lucide-react";
 import { submitPaymentProofAction } from "@/app/actions/billing-actions";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,8 @@ import { ptBR, fr } from "date-fns/locale";
 import { uploadPaymentProofAction } from "@/app/actions/upload-actions";
 import { useTranslations, useLocale } from "next-intl";
 import { formatCurrency } from "@/lib/format";
+
+
 
 const dateLocalesMap = { pt: ptBR, fr: fr };
 
@@ -50,10 +52,20 @@ export function BillingClient({ currentPlan, subscription, prices, churchName, c
   const [isUploading, setIsUploading] = useState(false);
   const [showForm, setShowForm] = useState(false);
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const tc = useTranslations("common");
+  const formRef = useRef<HTMLDivElement>(null);
+
   const t = useTranslations("billing");
   const tb = useTranslations("billing.errors");
   const locale = useLocale();
   const dateLocale = dateLocalesMap[locale as keyof typeof dateLocalesMap] ?? ptBR;
+
+  useEffect(() => {
+    if (showForm && formRef.current) {
+      formRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [showForm]);
 
   const longDatePattern = locale === "fr" ? "dd MMMM yyyy" : "dd 'de' MMMM 'de' yyyy";
   const dateTimePattern = locale === "fr" ? "dd/MM/yyyy 'à' HH:mm" : "dd/MM/yyyy 'às' HH:mm";
@@ -171,9 +183,9 @@ export function BillingClient({ currentPlan, subscription, prices, churchName, c
         <Card className="border-yellow-200 bg-yellow-50 dark:bg-yellow-900/10">
           <CardContent className="flex items-start gap-3 pt-6">
             <Clock className="h-5 w-5 text-yellow-600 shrink-0 mt-0.5" />
-            <div>
+            <div className="min-w-0 flex-1">
               <p className="font-medium text-yellow-800 dark:text-yellow-400">{t("pendingTitle")}</p>
-              <p className="text-sm text-yellow-700 dark:text-yellow-500 mt-1">
+              <p className="text-sm text-yellow-700 dark:text-yellow-500 mt-1 wrap-break-word">
                 {t("pendingDesc")} <strong>{subscription?.pendingPlan}</strong>{" "}
                 ({subscription?.pendingCycle === "MONTHLY" ? t("pendingCycleMonthly") : t("pendingCycleAnnual")}){" "}
                 {t("pendingVerifying")}
@@ -192,10 +204,10 @@ export function BillingClient({ currentPlan, subscription, prices, churchName, c
         <Card className="border-destructive bg-destructive/5">
           <CardContent className="flex items-start gap-3 pt-6">
             <AlertCircle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
-            <div>
+            <div className="min-w-0 flex-1">
               <p className="font-medium text-destructive">{t("rejectedTitle")}</p>
               {subscription?.rejectionReason && (
-                <p className="text-sm text-destructive/80 mt-1">
+                <p className="text-sm text-destructive/80 mt-1 wrap-break-word">
                   {t("rejectedReason")}: {subscription.rejectionReason}
                 </p>
               )}
@@ -310,7 +322,7 @@ export function BillingClient({ currentPlan, subscription, prices, churchName, c
       )}
 
       {showForm && !hasPendingPayment && (
-        <Card>
+        <Card ref={formRef}>
           <CardHeader>
             <CardTitle className="text-base">{t("submitProof")}</CardTitle>
             <CardDescription>
@@ -320,9 +332,9 @@ export function BillingClient({ currentPlan, subscription, prices, churchName, c
           <CardContent className="space-y-4">
             <div className="rounded-lg bg-muted p-4 space-y-2 text-sm">
               <p className="font-medium">{t("bankDetails")}:</p>
-              <p>{t("bank")}: <strong>BFA</strong></p>
-              <p>{t("iban")}: <strong>AO06 0006 0000 0000 0000 0000 0</strong></p>
-              <p>{t("holder")}: <strong>ChurchOS, Lda</strong></p>
+              <p>{t("bank")}: <strong>BAI</strong></p>
+              <p>{t("iban")}: <strong>AO06 0040 0000 4008 9842 1015 8</strong></p>
+              <p>{t("holder")}: <strong>Macuzulo Maria Domingos</strong></p>
               <p>{t("reference")}: <strong>{churchName.toUpperCase().replace(/\s/g, "-")}</strong></p>
               <p>{t("amount")}: <strong>{getPrice(selectedPlan, billingCycle)}</strong></p>
             </div>
@@ -330,7 +342,28 @@ export function BillingClient({ currentPlan, subscription, prices, churchName, c
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="proofFile">{t("proofLabel")}</Label>
-                <Input id="proofFile" type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={handleFileChange} className="cursor-pointer" />
+                <div className="flex items-center gap-3">
+                  <input
+                    ref={fileInputRef}
+                    id="proofFile"
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="gap-2"
+                  >
+                    <Upload className="h-4 w-4" />
+                    {tc("chooseFile")}
+                  </Button>
+                  <span className="text-sm text-muted-foreground truncate">
+                    {proofFile ? proofFile.name : tc("noFileChosen")}
+                  </span>
+                </div>
                 {proofFile && (
                   <p className="text-xs text-muted-foreground">
                     {t("fileSelected")}: <strong>{proofFile.name}</strong> ({(proofFile.size / 1024).toFixed(0)} KB)

@@ -453,7 +453,9 @@
     "search": "Pesquisar",
     "noResults": "Sem resultados.",
     "upgrade": "Actualizar plano",
-    "actions": "Acções"
+    "actions": "Acções",
+    "chooseFile": "Escolher ficheiro",
+    "noFileChosen": "Nenhum ficheiro selecionado"
   },
   "validation": {
     "required": "Obrigatório",
