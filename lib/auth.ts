@@ -76,7 +76,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ],
   callbacks: {
     // 1. O JWT recebe os dados do 'user' vindo do authorize e guarda no token
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
       // Login inicial — popula o token
       if (user) {
         token.role = user.role as UserRole;
@@ -87,6 +87,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         return token;
       }
+
 
       // Verifica se precisa re-validar
       const lastRefresh = typeof token.refreshedAt === "number" ? token.refreshedAt : 0;

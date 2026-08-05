@@ -1,12 +1,13 @@
 "use client";
 
 import { authenticate } from "@/app/actions/auth";
-import { Church, Loader2 } from "lucide-react";
+import { Church, Loader2, Eye, EyeOff } from "lucide-react";
 import { Link, useRouter as useLocaleRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { useRouter as useNextRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect, Suspense } from "react";
 import Image from "next/image";
+
 
 
 // 2. 👈 cria este subcomponente ANTES do LoginPage
@@ -40,6 +41,7 @@ function RegistrationAlert() {
 export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const t = useTranslations("auth");
 
   const router = useNextRouter();
@@ -125,14 +127,24 @@ export default function LoginPage() {
             <label className="text-sm font-medium" htmlFor="password">
               {t("password")}
             </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              autoComplete="current-password" // 👈
-              required
-              className="w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:ring-primary outline-none transition-all"
-            />
+            <div className="relative">
+              <input
+                id="password"
+                name="password"
+                type={showPassword ? "text" : "password"}
+                autoComplete="current-password"
+                required
+                className="w-full rounded-md border px-3 py-2 pr-10 text-sm focus:ring-2 focus:ring-primary outline-none transition-all"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                aria-label={showPassword ? t("hidePassword") : t("showPassword")}
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
           </div>
 
           <div className="flex justify-end">

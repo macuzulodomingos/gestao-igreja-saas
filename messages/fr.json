@@ -402,6 +402,8 @@
     "login": "Connexion",
     "email": "E-mail",
     "password": "Mot de passe",
+    "showPassword": "Afficher le mot de passe",
+    "hidePassword": "Masquer le mot de passe",
     "loginButton": "Se connecter",
     "noAccount": "Pas de compte?",
     "register": "S'inscrire",
@@ -879,5 +881,29 @@
     "description": "Une erreur inattendue s'est produite. Veuillez réessayer.",
     "retry": "Réessayer",
     "trying": "En cours..."
+  },
+  "profile": {
+    "title": "Profil",
+    "subtitle": "Gérez vos informations personnelles et votre sécurité.",
+    "personalInfo": "Informations Personnelles",
+    "personalInfoDesc": "Mettez à jour votre nom d'affichage.",
+    "email": "E-mail",
+    "emailImmutable": "L'e-mail ne peut pas être modifié.",
+    "name": "Nom",
+    "saveName": "Enregistrer le nom",
+    "nameUpdated": "Nom mis à jour.",
+    "changePassword": "Changer le mot de passe",
+    "changePasswordDesc": "Choisissez un nouveau mot de passe pour votre compte.",
+    "currentPassword": "Mot de passe actuel",
+    "newPassword": "Nouveau mot de passe",
+    "confirmPassword": "Confirmer le nouveau mot de passe",
+    "savePassword": "Changer le mot de passe",
+    "passwordUpdated": "Mot de passe modifié avec succès.",
+    "showPassword": "Afficher le mot de passe",
+    "hidePassword": "Masquer le mot de passe",
+    "errorSave": "Erreur lors de l'enregistrement.",
+    "errors": {
+      "wrongCurrentPassword": "Mot de passe actuel incorrect."
+    }
   }
 }

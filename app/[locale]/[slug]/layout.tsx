@@ -9,6 +9,7 @@ import { setRequestLocale } from "next-intl/server";
 import { ImpersonationService } from "@/services/impersonationService";
 import { endImpersonationAction } from "@/app/actions/impersonation-actions";
 import * as Sentry from "@sentry/nextjs";
+import prisma from "@/lib/prisma"
 
 export const dynamic = "force-dynamic";
 
@@ -56,13 +57,23 @@ export default async function TenantLayout({
   let impersonation = null;
   if (isSuperAdmin) {
     impersonation = await ImpersonationService.isImpersonating(session.user.id, slug);
-    
+
 
     if (!impersonation || impersonation.churchId !== church.id) {
       redirect({ href: "/admin", locale });
       return;
     }
   }
+
+  const currentUser = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { name: true },
+  });
+
+  const displayUser = {
+    ...session.user,
+    name: currentUser?.name ?? session.user.name,
+  };
 
   return (
     <>
@@ -84,7 +95,7 @@ export default async function TenantLayout({
         <div className="min-h-screen flex w-full bg-background" suppressHydrationWarning>
           <AppSidebar slug={slug} initialRole={session.user.role} />
           <div className="flex-1 flex flex-col min-w-0">
-            <DashboardHeaderClient church={church} user={session.user} />
+            <DashboardHeaderClient church={church} user={displayUser} />
             <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-auto">
               {children}
             </main>

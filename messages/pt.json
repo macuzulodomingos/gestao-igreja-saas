@@ -402,6 +402,8 @@
     "login": "Entrar",
     "email": "E-mail",
     "password": "Palavra-passe",
+    "showPassword": "Mostrar palavra-passe",
+    "hidePassword": "Ocultar palavra-passe",
     "loginButton": "Entrar",
     "noAccount": "Não tem conta?",
     "register": "Registar",
@@ -879,5 +881,29 @@
     "description": "Ocorreu um erro inesperado. Tente novamente.",
     "retry": "Tentar novamente",
     "trying": "A tentar..."
+  },
+  "profile": {
+    "title": "Perfil",
+    "subtitle": "Gere as suas informações pessoais e segurança.",
+    "personalInfo": "Informações Pessoais",
+    "personalInfoDesc": "Atualize o seu nome de exibição.",
+    "email": "E-mail",
+    "emailImmutable": "O e-mail não pode ser alterado.",
+    "name": "Nome",
+    "saveName": "Guardar nome",
+    "nameUpdated": "Nome atualizado.",
+    "changePassword": "Alterar Palavra-passe",
+    "changePasswordDesc": "Escolha uma nova palavra-passe para a sua conta.",
+    "currentPassword": "Palavra-passe atual",
+    "newPassword": "Nova palavra-passe",
+    "confirmPassword": "Confirmar nova palavra-passe",
+    "savePassword": "Alterar palavra-passe",
+    "passwordUpdated": "Palavra-passe alterada com sucesso.",
+    "showPassword": "Mostrar palavra-passe",
+    "hidePassword": "Ocultar palavra-passe",
+    "errorSave": "Erro ao guardar.",
+    "errors": {
+      "wrongCurrentPassword": "Palavra-passe atual incorreta."
+    }
   }
 }
