@@ -106,19 +106,19 @@ export function DashboardHeader({ church, user }: DashboardHeaderProps) {
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                onClick={() => router.push(`/${locale}/${church.slug}/configuracoes/perfil`)}
+                onClick={() => router.push(`/${church.slug}/configuracoes/perfil`)}
                 className="cursor-pointer gap-2"
               >
                 <UserIcon className="h-4 w-4" /> {t("profileSettings")}
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={() => router.push(`/${locale}/${church.slug}/configuracoes`)}
+                onClick={() => router.push(`/${church.slug}/configuracoes`)}
                 className="cursor-pointer gap-2"
               >
                 <Settings className="h-4 w-4" /> {t("churchSettings")}
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={() => router.push(`/${locale}/${church.slug}/billing`)}
+                onClick={() => router.push(`/${church.slug}/billing`)}
                 className="cursor-pointer gap-2"
               >
                 <CreditCard className="h-4 w-4" /> {t("billing")}
