@@ -3,8 +3,10 @@
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
+import { headers } from "next/headers";
 import { requestResetSchema, resetPasswordSchema } from "@/lib/validations/password-reset";
 import { sendPasswordResetEmail } from "@/lib/email";
+import { passwordResetIpLimit, passwordResetEmailLimit } from "@/lib/rate-limit";
 import { ActionResult } from "@/types/action-result";
 
 const TOKEN_TTL_MS = 60 * 60 * 1000; // 1 hora
@@ -28,6 +30,27 @@ export async function requestPasswordResetAction(
     }
 
     const email = result.data.email;
+
+    // Identifica o IP do pedido, para o limite por IP
+    const headersList = await headers();
+    const ip = headersList.get("x-forwarded-for")?.split(",")[0]?.trim()
+      ?? headersList.get("x-real-ip")
+      ?? "unknown";
+
+    // Verifica os dois limites em paralelo — se qualquer um estourar,
+    // recusa o pedido. A resposta continua genérica (sempre "sucesso"
+    // do ponto de vista do utilizador) para não revelar que existe
+    // limitação, seguindo o mesmo princípio de anti-enumeração já usado.
+    const [ipResult, emailResult] = await Promise.all([
+      passwordResetIpLimit.limit(ip),
+      passwordResetEmailLimit.limit(email),
+    ]);
+
+    if (!ipResult.success || !emailResult.success) {
+      console.warn("[PASSWORD_RESET_RATE_LIMITED]:", { ip, email, ipResult, emailResult });
+      // Resposta idêntica ao caso de sucesso — não revela que foi bloqueado
+      return { success: true };
+    }
 
     const user = await prisma.user.findUnique({
       where: { email },

@@ -129,6 +129,8 @@
     "totalIncome": "Total des entrées",
     "totalExpenses": "Total des sorties",
     "incomeMinusExpenses": "Revenus moins dépenses",
+    "previousMonth": "Mois précédent",
+    "nextMonth": "Mois suivant",
     "incomeList": {
       "title": "Registres de revenus",
       "empty": "Aucun revenu enregistré.",

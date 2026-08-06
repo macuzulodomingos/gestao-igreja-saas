@@ -229,7 +229,7 @@ export default function FinanceClientPage({
             stats={stats}
             canExportPdf={canExportPdf}
           />
-          <Button variant="outline" size="icon" onClick={handlePrevMonth} disabled={isPendingNav}>
+          <Button variant="outline" size="icon" onClick={handlePrevMonth} disabled={isPendingNav} aria-label={t("previousMonth")}>
             <ChevronLeft className="h-4 w-4" />
           </Button>
 
@@ -238,7 +238,7 @@ export default function FinanceClientPage({
             onValueChange={(val) => navigateToMonth(Number(val), currentYear)}
             disabled={isPendingNav}
           >
-            <SelectTrigger className="w-[130px]">
+            <SelectTrigger className="w-32.5">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -255,7 +255,7 @@ export default function FinanceClientPage({
             onValueChange={(val) => navigateToMonth(currentMonth, Number(val))}
             disabled={isPendingNav}
           >
-            <SelectTrigger className="w-[90px]">
+            <SelectTrigger className="w-22.5">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -265,7 +265,7 @@ export default function FinanceClientPage({
             </SelectContent>
           </Select>
 
-          <Button variant="outline" size="icon" onClick={handleNextMonth} disabled={isCurrentMonth || isPendingNav}>
+          <Button variant="outline" size="icon" onClick={handleNextMonth} disabled={isCurrentMonth || isPendingNav} aria-label={t("nextMonth")}>
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>

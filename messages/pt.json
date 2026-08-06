@@ -129,6 +129,8 @@
     "totalIncome": "Total de entradas",
     "totalExpenses": "Total de saídas",
     "incomeMinusExpenses": "Receitas menos despesas",
+    "previousMonth": "Mês anterior",
+    "nextMonth": "Próximo mês",
     "incomeList": {
       "title": "Registos de Receitas",
       "empty": "Nenhuma receita registada.",
