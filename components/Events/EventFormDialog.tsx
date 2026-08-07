@@ -77,7 +77,7 @@ export function EventFormDialog({ open, onOpenChange, event, departments, catego
         description: "",
         categoryId: categories[0]?.id ?? "",
         date: formatInTimeZone(now, timezone, "yyyy-MM-dd"),
-        time: "09:00",
+        time: formatInTimeZone(now, timezone, "HH:mm"),
         departmentId: "none",
       });
     }
