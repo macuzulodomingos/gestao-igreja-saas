@@ -19,6 +19,7 @@ import { useTranslations } from "next-intl";
 import { TranslatedFormMessage } from "@/components/ui/TranslatedFormMessage";
 import { parseISO } from "date-fns";
 import { useRouter } from "@/i18n/navigation";
+import { formatInTimeZone } from "date-fns-tz";
 
 type EventFormValues = z.infer<typeof eventSchema>;
 
@@ -30,9 +31,10 @@ interface Props {
   categories: EventCategory[];
   onUpgrade?: (message: string) => void;
   churchId: string;
+  timezone: string;
 }
 
-export function EventFormDialog({ open, onOpenChange, event, departments, categories, onUpgrade, churchId }: Props) {
+export function EventFormDialog({ open, onOpenChange, event, departments, categories, onUpgrade, churchId, timezone }: Props) {
   const [isPending, startTransition] = useTransition();
   const t = useTranslations("events.form");
   const tc = useTranslations("common");
@@ -58,12 +60,8 @@ export function EventFormDialog({ open, onOpenChange, event, departments, catego
 
     if (event) {
       const startAt = typeof event.startAt === "string" ? parseISO(event.startAt) : event.startAt;
-      const date = startAt.toLocaleDateString("en-CA");
-      const time = startAt.toLocaleTimeString("en-GB", {
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: false,
-      });
+      const date = formatInTimeZone(startAt, timezone, "yyyy-MM-dd");
+      const time = formatInTimeZone(startAt, timezone, "HH:mm");
       reset({
         name: event.name,
         description: event.description ?? "",
@@ -73,16 +71,17 @@ export function EventFormDialog({ open, onOpenChange, event, departments, catego
         departmentId: event.departmentId ?? "none",
       });
     } else {
+      const now = new Date();
       reset({
         name: "",
         description: "",
         categoryId: categories[0]?.id ?? "",
-        date: new Date().toLocaleDateString("en-CA"),
+        date: formatInTimeZone(now, timezone, "yyyy-MM-dd"),
         time: "09:00",
         departmentId: "none",
       });
     }
-  }, [open, event?.id, reset]);
+  }, [open, event?.id, reset, timezone]);
 
   const handleSubmit = (data: EventFormValues) => {
     startTransition(async () => {

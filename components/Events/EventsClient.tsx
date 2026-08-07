@@ -122,6 +122,7 @@ export default function EventsClient({
         departments={departments}
         categories={categories}
         churchId={churchId}
+        timezone={timezone}
         onUpgrade={(message) => upgrade.showUpgrade(message)}
       />
 
