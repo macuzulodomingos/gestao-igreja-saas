@@ -5,10 +5,8 @@ import { usePathname } from "next/navigation";
 import { forwardRef } from "react";
 import { cn } from "@/lib/utils";
 
-interface NavLinkProps {
+interface NavLinkProps extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
   href: string;
-  children: React.ReactNode;
-  className?: string;
   activeClassName?: string;
 }
 

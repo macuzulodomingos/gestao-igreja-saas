@@ -31,19 +31,27 @@ import { useLocale } from "next-intl";
 
 
 
+
 interface AppSidebarProps {
   slug: string;
   initialRole?: string;
 }
 
 export function AppSidebar({ slug, initialRole }: AppSidebarProps) {
-  const { state } = useSidebar();
+  const { state, isMobile, setOpenMobile } = useSidebar();
   const { data: session } = useSession();
   const isCollapsed = state === "collapsed";
   const t = useTranslations("nav"); // 👈 NOVO
 
   const userRole = session?.user?.role || initialRole;
   const locale = useLocale();
+
+  const handleNavClick = () => {
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  };
+
 
   const navigationItems = [
     {
@@ -138,6 +146,7 @@ export function AppSidebar({ slug, initialRole }: AppSidebarProps) {
                   <SidebarMenuButton asChild tooltip={item.title}>
                     <NavLink
                       href={item.url}
+                      onClick={handleNavClick}
                       className="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors hover:bg-sidebar-accent"
                       activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
                     >

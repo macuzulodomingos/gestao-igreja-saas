@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { EventsList } from "./EventsList";
 import { EventFormDialog } from "./EventFormDialog";
 import { EventAttendanceDialog } from "./EventAttendanceDialog";
@@ -12,11 +12,14 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ChurchEvent, EventCategory, EventListMember, EventListDepartment } from "@/types/event";
 import { UpgradeModal } from "@/components/UpgradeModal";
 import { useUpgradeModal } from "@/hooks/useUpgradeModal";
 import { useTranslations } from "next-intl";
-import { useRouter } from "@/i18n/navigation";
+import { useRouter, usePathname } from "@/i18n/navigation";
+import { getMonthNames } from "@/lib/date";
+import { useLocale } from "next-intl";
 
 interface EventsClientProps {
   initialEvents: ChurchEvent[];
@@ -24,6 +27,8 @@ interface EventsClientProps {
   categories: EventCategory[];
   timezone: string;
   churchId: string;
+  currentMonth,
+  currentYear: number;
 }
 
 export default function EventsClient({
@@ -32,8 +37,11 @@ export default function EventsClient({
   categories,
   timezone,
   churchId,
+  currentMonth,
+  currentYear,
 }: EventsClientProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isAttendanceOpen, setIsAttendanceOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<ChurchEvent | null>(null);
@@ -41,6 +49,7 @@ export default function EventsClient({
   const [eventToDelete, setEventToDelete] = useState<ChurchEvent | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [events, setEvents] = useState(initialEvents);
+  const [isPendingNav, startNavTransition] = useTransition();
   const upgrade = useUpgradeModal();
   const t = useTranslations("events");
   const te = useTranslations("events.errors");
@@ -48,6 +57,16 @@ export default function EventsClient({
   useEffect(() => {
     setEvents(initialEvents);
   }, [initialEvents]);
+
+  const navigateToMonth = (month: number, year: number) => {
+    startNavTransition(() => {
+      router.push(`${pathname}?month=${month}&year=${year}`, { scroll: false });
+    });
+  };
+
+  const nowYear = new Date().getFullYear();
+  const years = Array.from({ length: 6 }, (_, i) => nowYear - 5 + i);
+  const monthNames = getMonthNames(useLocale()); // 👈 reutiliza o utilitário que já criamos em @/lib/date
 
   const handleAdd = () => {
     setEditingEvent(null);
@@ -98,10 +117,42 @@ export default function EventsClient({
           <h1 className="text-2xl md:text-3xl font-bold text-foreground">{t("title")}</h1>
           <p className="text-muted-foreground mt-1">{t("subtitle")}</p>
         </div>
-        <Button onClick={handleAdd} className="gap-2">
-          <Plus className="h-4 w-4" />
-          {t("addEvent")}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Select
+            value={String(currentMonth)}
+            onValueChange={(val) => navigateToMonth(Number(val), currentYear)}
+            disabled={isPendingNav}
+          >
+            <SelectTrigger className="w-[130px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {monthNames.map((name, i) => (
+                <SelectItem key={i + 1} value={String(i + 1)}>{name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={String(currentYear)}
+            onValueChange={(val) => navigateToMonth(currentMonth, Number(val))}
+            disabled={isPendingNav}
+          >
+            <SelectTrigger className="w-22.5">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {years.map(y => (
+                <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Button onClick={handleAdd} className="gap-2">
+            <Plus className="h-4 w-4" />
+            {t("addEvent")}
+          </Button>
+        </div>
       </div>
 
       <EventsList

@@ -10,13 +10,15 @@ import { getChurchBySlug } from "@/lib/tenant";
 import { getLocale } from "next-intl/server";
 
 interface EventosPageProps {
-  params: Promise<{ slug: string }>; // 👈 adiciona
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ month?: string; year?: string }>;
 }
 
-export default async function EventosPage({ params }: EventosPageProps) {
+export default async function EventosPage({ params, searchParams }: EventosPageProps) {
 
   const session = await auth();
   const { slug } = await params; // 👈 adiciona
+  const sParams = await searchParams;
 
   if (!session?.user) {
     const locale = await getLocale();
@@ -37,8 +39,17 @@ export default async function EventosPage({ params }: EventosPageProps) {
 
   const timezone = church.timezone || "Africa/Luanda";
 
+  const now = new Date();
+  const currentYear = now.getFullYear();
+
+  const parsedMonth = Number(sParams.month) || now.getMonth() + 1;
+  const month = parsedMonth < 1 || parsedMonth > 12 ? now.getMonth() + 1 : parsedMonth;
+
+  const parsedYear = Number(sParams.year) || currentYear;
+  const year = parsedYear < 2000 || parsedYear > currentYear + 1 ? currentYear : parsedYear;
+
   const [events, departments, categories] = await Promise.all([
-    EventService.getEvents(churchId, timezone),
+    EventService.getEvents(churchId, timezone, month, year),
     DepartmentService.getDepartments(churchId),
     EventCategoryService.getCategories(churchId),
   ]);
@@ -52,6 +63,8 @@ export default async function EventosPage({ params }: EventosPageProps) {
       categories={categories}
       timezone={timezone}
       churchId={churchId}
+      currentMonth={month}
+      currentYear={year}
     />
   );
 }

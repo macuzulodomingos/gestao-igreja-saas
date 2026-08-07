@@ -11,20 +11,30 @@ export interface CreateEventDTO {
 
 export const EventService = {
 
-  async getEvents(churchId: string, timezone = "Africa/Luanda") {
-    const nowInTimezone = toZonedTime(new Date(), timezone); // 👈
-    const currentYear = nowInTimezone.getFullYear();         // 👈
-    const startOfYear = fromZonedTime(`${currentYear}-01-01T00:00:00`, timezone);
+  async getEvents(churchId: string, timezone: string, month: number, year: number) {
+    const startOfMonth = fromZonedTime(
+      `${year}-${String(month).padStart(2, "0")}-01T00:00:00`,
+      timezone
+    );
+    const nextMonth = month === 12 ? 1 : month + 1;
+    const nextMonthYear = month === 12 ? year + 1 : year;
+    const endOfMonth = fromZonedTime(
+      `${nextMonthYear}-${String(nextMonth).padStart(2, "0")}-01T00:00:00`,
+      timezone
+    );
 
     return prisma.event.findMany({
-      where: { churchId, startAt: { gte: startOfYear } },
+      where: {
+        churchId,
+        startAt: { gte: startOfMonth, lt: endOfMonth },
+      },
       select: {
         id: true,
         name: true,
         description: true,
-        categoryId: true,           // 👈
-        category: { select: { id: true, name: true } }, // 👈
-        startAt: true,  // 👈
+        categoryId: true,
+        category: { select: { id: true, name: true } },
+        startAt: true,
         departmentId: true,
         department: { select: { id: true, name: true } },
         _count: { select: { attendees: true } },

@@ -243,6 +243,7 @@
     "cancel": "Annuler",
     "confirm": "Confirmer la suppression",
     "successDeleted": "Événement supprimé avec succès!",
+    "selectYear": "Sélectionner l'année",
     "errorDelete": "Erreur lors de la suppression de l'événement.",
     "table": {
       "name": "Événement",

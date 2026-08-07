@@ -244,6 +244,7 @@
     "confirm": "Confirmar Eliminação",
     "successDeleted": "Evento eliminado com sucesso!",
     "errorDelete": "Erro ao eliminar o evento.",
+    "selectYear": "Selecionar ano",
     "table": {
       "name": "Evento",
       "category": "Categoria",
