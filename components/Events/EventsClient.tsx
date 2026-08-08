@@ -27,7 +27,7 @@ interface EventsClientProps {
   categories: EventCategory[];
   timezone: string;
   churchId: string;
-  currentMonth,
+  currentMonth: number;
   currentYear: number;
 }
 
@@ -123,7 +123,7 @@ export default function EventsClient({
             onValueChange={(val) => navigateToMonth(Number(val), currentYear)}
             disabled={isPendingNav}
           >
-            <SelectTrigger className="w-[130px]">
+            <SelectTrigger className="w-32.5">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
