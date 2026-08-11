@@ -13,7 +13,7 @@ const submitProofSchema = z.object({
     message: "validation.invalidPlan",
   }),
   billingCycle: z.nativeEnum(BillingCycle),
-  proofOfPayment: z.string().url("validation.invalidUrl"),
+  proofOfPayment: z.string().min(1, "validation.required"),
 });
 
 const rejectPaymentSchema = z.object({

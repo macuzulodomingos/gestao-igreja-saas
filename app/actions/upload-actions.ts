@@ -19,7 +19,7 @@ export async function uploadPaymentProofAction(
       return { success: false, errorCode: "invalidFileType" };
 
     if (file.size > 5 * 1024 * 1024)
-      return { success: false, errorCode: "errorFileSize" }; // 👈 código mais descritivo
+      return { success: false, errorCode: "errorFileSize" };
 
     const fileExt = file.name.split(".").pop();
     const fileName = `${session.user.id}-${Date.now()}.${fileExt}`;
@@ -36,17 +36,9 @@ export async function uploadPaymentProofAction(
       return { success: false, errorCode: "errorUpload" };
     }
 
-    const { data: signedUrlData, error: signedUrlError } =
-      await supabaseServer.storage
-        .from("payment-proofs")
-        .createSignedUrl(data.path, 60 * 60 * 24 * 7);
-
-    if (signedUrlError || !signedUrlData?.signedUrl) {
-      console.error("[SIGNED_URL_ERROR]:", signedUrlError);
-      return { success: false, errorCode: "errorUpload" };
-    }
-
-    return { success: true, url: signedUrlData.signedUrl };
+    // Salva só o caminho do arquivo — não uma URL assinada, que expira.
+    // A URL é gerada sob demanda, no momento de exibir o comprovativo.
+    return { success: true, url: data.path };
 
   } catch (error: unknown) {
     console.error("[UPLOAD_PAYMENT_PROOF_ERROR]:", error);

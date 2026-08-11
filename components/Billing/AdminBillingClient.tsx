@@ -5,8 +5,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { CheckCircle2, XCircle, ExternalLink, Clock } from "lucide-react";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
+import { CheckCircle2, XCircle, ExternalLink, Clock, Loader2 } from "lucide-react";
 import { confirmPaymentAction, rejectPaymentAction } from "@/app/actions/billing-actions";
+import { getPaymentProofUrlAction } from "@/app/actions/billing-proof-actions";
 import { toast } from "sonner";
 import { useRouter } from "@/i18n/navigation";
 import { format, parseISO, isValid } from "date-fns";
@@ -25,6 +29,8 @@ export function AdminBillingClient({ pendingPayments }: { pendingPayments: Pendi
   const router = useRouter();
   const [rejectionReasons, setRejectionReasons] = useState<Record<string, string>>({});
   const [processing, setProcessing] = useState<string | null>(null);
+  const [loadingProof, setLoadingProof] = useState<string | null>(null);
+  const [proofPreview, setProofPreview] = useState<{ url: string; isPdf: boolean } | null>(null);
 
   const handleConfirm = async (churchId: string) => {
     setProcessing(churchId);
@@ -43,7 +49,6 @@ export function AdminBillingClient({ pendingPayments }: { pendingPayments: Pendi
       setProcessing(null);
     }
   };
-
 
   const handleReject = async (churchId: string) => {
     const reason = rejectionReasons[churchId];
@@ -69,8 +74,23 @@ export function AdminBillingClient({ pendingPayments }: { pendingPayments: Pendi
     }
   };
 
-
-
+  const handleViewProof = async (path: string, paymentId: string) => {
+    setLoadingProof(paymentId);
+    try {
+      const result = await getPaymentProofUrlAction(path);
+      if (result.success && result.url) {
+        const isPdf = path.toLowerCase().endsWith(".pdf");
+        setProofPreview({ url: result.url, isPdf });
+      } else {
+        toast.error("Erro ao carregar comprovativo.");
+      }
+    } catch (error) {
+      console.error("[VIEW_PROOF_ERROR]:", error);
+      toast.error("Erro ao carregar comprovativo.");
+    } finally {
+      setLoadingProof(null);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -133,14 +153,20 @@ export function AdminBillingClient({ pendingPayments }: { pendingPayments: Pendi
                     <div>
                       <p className="text-muted-foreground">Comprovativo</p>
                       {payment.proofOfPayment ? (
-                        <a  
-                          href={payment.proofOfPayment}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-1 text-primary hover:underline font-medium"
+                        <button
+                          type="button"
+                          onClick={() => handleViewProof(payment.proofOfPayment!, payment.id)}
+                          disabled={loadingProof === payment.id}
+                          className="flex items-center gap-1 text-primary hover:underline font-medium disabled:opacity-50"
                         >
-                          Ver <ExternalLink className="h-3 w-3" />
-                        </a>
+                          {loadingProof === payment.id ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <>
+                              Ver <ExternalLink className="h-3 w-3" />
+                            </>
+                          )}
+                        </button>
                       ) : (
                         <p className="text-muted-foreground">Sem comprovativo</p>
                       )}
@@ -181,10 +207,33 @@ export function AdminBillingClient({ pendingPayments }: { pendingPayments: Pendi
                   </div>
                 </CardContent>
               </Card>
-            ); 
-          })} 
+            );
+          })}
         </div>
       )}
+
+      <Dialog open={!!proofPreview} onOpenChange={(open) => !open && setProofPreview(null)}>
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-auto">
+          <DialogHeader>
+            <DialogTitle>Comprovativo de Pagamento</DialogTitle>
+          </DialogHeader>
+          {proofPreview && (
+            proofPreview.isPdf ? (
+              <iframe
+                src={proofPreview.url}
+                className="w-full h-[70vh] rounded-md border"
+                title="Comprovativo de pagamento"
+              />
+            ) : (
+              <img
+                src={proofPreview.url}
+                alt="Comprovativo de pagamento"
+                className="w-full h-auto rounded-md border"
+              />
+            )
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
