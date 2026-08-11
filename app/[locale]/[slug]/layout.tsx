@@ -10,6 +10,7 @@ import { ImpersonationService } from "@/services/impersonationService";
 import { endImpersonationAction } from "@/app/actions/impersonation-actions";
 import * as Sentry from "@sentry/nextjs";
 import prisma from "@/lib/prisma"
+import { WhatsAppSupportButton } from "@/components/Layout/WhatsAppSupportButton";
 
 export const dynamic = "force-dynamic";
 
@@ -101,6 +102,7 @@ export default async function TenantLayout({
             </main>
           </div>
         </div>
+        <WhatsAppSupportButton />
       </TenantClientWrapper>
     </>
   );

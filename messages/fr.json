@@ -910,5 +910,9 @@
     "errors": {
       "wrongCurrentPassword": "Mot de passe actuel incorrect."
     }
+  },
+  "support": {
+    "whatsappMessage": "Bonjour! J'ai besoin d'aide avec Ngunga.",
+    "whatsappAriaLabel": "Nous contacter sur WhatsApp"
   }
 }
