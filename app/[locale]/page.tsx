@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Church, Users, Wallet, Calendar, Building2, ShieldCheck, ArrowRight, CheckCircle, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import Image from "next/image";
 
 export default function LandingPage() {
   return (
@@ -11,10 +12,16 @@ export default function LandingPage() {
       <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <Church className="h-5 w-5" />
+            <div className="flex items-center gap-3">
+              <Image
+                src="/icon.png"
+                alt="Logo Ngunga"
+                width={36}
+                height={36}
+                className="h-9 w-auto object-contain"
+              />
             </div>
-            <span className="font-bold text-lg">ChurchOS</span>
+            <span className="font-bold text-lg">Ngunga</span>
           </div>
           <nav className="hidden md:flex items-center gap-8">
             <a href="#funcionalidades" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
@@ -221,11 +228,10 @@ export default function LandingPage() {
             ].map((plan) => (
               <div
                 key={plan.plan}
-                className={`rounded-xl border p-8 space-y-6 relative ${
-                  plan.highlight
+                className={`rounded-xl border p-8 space-y-6 relative ${plan.highlight
                     ? "border-primary bg-primary/5 shadow-lg"
                     : "border-border bg-card"
-                }`}
+                  }`}
               >
                 {plan.highlight && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
