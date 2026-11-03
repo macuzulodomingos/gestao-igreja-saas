@@ -1,94 +1,111 @@
 # Ngunga — Church Management SaaS
 
-**A Full-Stack SaaS platform designed to simplify church administration, member management, events, and financial operations.**
+A multi-tenant SaaS platform designed to help churches manage members, events, departments, finances, and administrative operations through a centralized platform.
 
-[Live Demo](https://www.ngunga.com/pt/)
+**Live Application:** https://www.ngunga.com/pt/  
+**Repository:** https://github.com/macuzulodomingos/gestao-igreja-saas
+
+---
 
 ## Overview
 
-Ngunga is a multi-tenant church management platform built to help churches organize their daily operations through a centralized digital system.
+Ngunga is a full-stack church management platform built to simplify administrative and operational processes for churches.
 
-The platform provides tools for managing church members, organizing events, tracking financial activities, managing departments, and controlling access based on user roles.
+The platform provides an integrated environment where each church can manage its members, organize events, track financial transactions, manage departments, and control access based on user roles.
 
-The project was designed with scalability, maintainability, and a structured multi-tenant architecture in mind.
+Designed with a multi-tenant architecture, Ngunga supports multiple churches within a shared application while associating organizational records with their respective church.
 
-## Application Screenshots
-
-### Dashboard
-
-The main dashboard provides an overview of church activities and key operational indicators.
-
-![Ngunga Dashboard](screenshots/dashboard.png)
-
-### Member Management
-
-Manage church member records through a centralized interface.
-
-![Ngunga Member Management](screenshots/members.png)
-
-### Financial Management
-
-Track church revenues and expenses through the financial management module.
-
-![Ngunga Financial Management](screenshots/finances.png)
+The project also includes a subscription management system with different pricing plans and administrative payment verification.
 
 ## Key Features
 
-- **Member Management:** Organize and manage church member records.
-- **Event Management:** Create and manage church events.
-- **Financial Management:** Track financial transactions, including revenues and expenses.
-- **Department Management:** Organize church departments.
-- **Role-Based Access Control:** Different permissions for administrators, treasurers, secretaries, and operators.
-- **Multi-Tenant Architecture:** Support multiple churches within the same platform, with separated organizational data.
-- **Subscription Management:** Free, Pro, and Enterprise subscription plans.
-- **Internationalization:** Multilingual application support.
-- **Dashboard and Analytics:** Visualize important operational and financial information.
-- **Audit Logging:** Maintain records of relevant administrative actions.
+### Church Management
+- Centralized church administration.
+- Church-specific organizational data.
+- Configurable church settings and timezone.
 
-## Tech Stack
+### Member Management
+- Register, update, search, and manage church members.
+- Assign members to organizational roles.
+- Track member status and joining dates.
+- Soft deletion to preserve historical records.
+- Member history and audit tracking.
 
-| Category | Technologies |
-|---|---|
-| Frontend | Next.js, React, TypeScript |
-| Styling | Tailwind CSS, Radix UI |
-| Backend | Next.js App Router |
-| Database | PostgreSQL |
-| ORM | Prisma |
-| Authentication | Auth.js |
-| Internationalization | next-intl |
-| Charts | Recharts |
-| Monitoring | Sentry |
-| Email | Resend |
+### Event Management
+- Create and manage church events.
+- Organize events using categories.
+- Manage event attendance and member participation.
 
-## System Architecture
+### Financial Management
+- Record church revenues and expenses.
+- Organize transactions using financial categories.
+- Track financial activity through a centralized interface.
 
-Ngunga follows a modular Full-Stack architecture built around Next.js App Router.
+### Department Management
+- Create and manage church departments.
+- Assign department leaders.
+- Organize members within departments.
 
-The application combines authentication, role-based access control, business logic, and relational data management to support multiple churches within a single SaaS platform.
+### Authentication and Access Control
+- Email and password authentication.
+- Password verification using bcrypt.
+- Role-based access control.
+- JWT-based session management.
+- Periodic session data refresh.
 
-### Authentication and Session Management
-
-Ngunga uses Auth.js with JWT-based sessions and Prisma integration.
-
-Key implementation details:
-
-- **Credentials Authentication:** Users authenticate using their email and password.
-- **Password Verification:** bcryptjs is used to verify password hashes.
-- **JWT Sessions:** Session strategy configured with an eight-hour maximum lifetime.
-- **User Context:** The JWT stores relevant user information, including role, church ID, church slug, and locale.
-- **Session Revalidation:** User information is periodically refreshed from the database to reflect account and organizational changes.
-- **Account Protection:** Deleted or inactive accounts are rejected during authentication and session revalidation.
-- **Super Admin Support:** Platform administrators can authenticate without being assigned to a specific church.
-
-### User Roles
-
-The application supports role-based access control through the following roles:
-
+Supported roles:
 - `SUPER_ADMIN`
 - `ADMIN`
 - `TREASURER`
 - `SECRETARY`
 - `OPERATOR`
+
+### Subscription and Billing Management
+- FREE, PRO, and ENTERPRISE plans.
+- Monthly and annual billing cycles.
+- Payment proof submission.
+- Manual payment verification by administrators.
+- Subscription activation and expiration management.
+- Plan-based usage limits.
+- Subscription activity tracking.
+
+### Administration and Auditing
+- Administrative audit logs.
+- Tracking of relevant user actions.
+- Recording of changes to business entities.
+- Super administrator functionality.
+- Church context selection for administrative operations.
+
+---
+
+## Technology Stack
+
+| Category | Technologies |
+|---|---|
+| Framework | Next.js 16 |
+| Frontend | React 19, TypeScript |
+| Styling | Tailwind CSS 4 |
+| UI Components | shadcn/ui, Radix UI |
+| Authentication | Auth.js |
+| ORM | Prisma 7 |
+| Database | PostgreSQL |
+| Database Hosting | Supabase |
+| Internationalization | next-intl |
+| Charts | Recharts |
+| Validation | Zod |
+| Password Hashing | bcryptjs |
+| Notifications | Sonner |
+| Monitoring | Sentry |
+| Email | Resend |
+| Rate Limiting | Upstash Redis |
+
+---
+
+## System Architecture
+
+Ngunga follows a modular full-stack architecture using the Next.js App Router.
+
+The application separates authentication, access control, business logic, and database operations into dedicated layers.
 
 ### High-Level Architecture
 
@@ -98,32 +115,116 @@ flowchart TD
     B --> C[Auth.js Authentication]
     C --> D[Role-Based Access Control]
     D --> E[Application Modules]
-    E --> F[Prisma ORM]
-    F --> G[(PostgreSQL Database)]
 
-    E --> H[Members]
-    E --> I[Events]
-    E --> J[Financial Management]
-    E --> K[Departments]
-    E --> L[Subscription Management]
+    E --> F[Member Management]
+    E --> G[Event Management]
+    E --> H[Financial Management]
+    E --> I[Department Management]
+    E --> J[Subscription Management]
+
+    F --> K[Prisma ORM]
+    G --> K
+    H --> K
+    I --> K
+    J --> K
+
+    K --> L[(PostgreSQL Database)]
 ```
 
-### Architectural Principles
+### Multi-Tenant Data Model
 
-- **Multi-Tenancy:** The platform supports multiple churches within a shared application, with organizational data separation.
-- **Authentication:** Auth.js manages user authentication and sessions.
-- **Authorization:** Role-based access control determines which operations users can perform.
-- **Data Management:** Prisma provides structured database access to PostgreSQL.
-- **Modularity:** Application features are organized into separate functional modules.
+Churches act as the central organizational entities within the application.
 
-## Architecture Highlights
+Each church has associated users, members, departments, events, financial records, and subscription information.
 
-- Multi-tenant application architecture.
-- Role-based authorization and access control.
-- Relational database management with PostgreSQL and Prisma.
-- Server-side functionality using Next.js App Router.
-- Reusable and modular components.
-- Subscription-based SaaS structure.
+The database uses church relationships and tenant-scoped queries to associate organizational data with the corresponding church.
+
+### Authentication and Authorization
+
+Authentication is implemented using Auth.js with a credentials-based provider.
+
+Key implementation details:
+
+- Password verification using bcrypt.
+- JWT-based session strategy.
+- Eight-hour session lifetime.
+- Periodic user data refresh from the database.
+- Role and church context included in the session.
+- Access restrictions for users without a valid church association, except for the global super administrator.
+
+### Database Architecture
+
+Ngunga uses PostgreSQL with Prisma ORM to manage a relational data model.
+
+Important design decisions include:
+
+- Relational models connected through foreign keys.
+- Church-level data relationships.
+- Composite indexes for frequently queried member records.
+- Soft deletion using `deletedAt` on selected entities.
+- Audit records containing action, actor, entity, and change information.
+- A partial unique index to enforce email uniqueness among active members within the same church.
+
+### Transactional Operations
+
+Prisma transactions are used for related database operations that need to succeed or fail together.
+
+Examples include:
+
+- Creating members and their corresponding audit records.
+- Updating member information and recording changes.
+- Confirming subscription payments.
+- Updating church subscription plans and recording administrative actions.
+
+---
+
+## Subscription Plans
+
+Ngunga includes three subscription tiers.
+
+| Feature | FREE | PRO | ENTERPRISE |
+|---|---:|---:|---:|
+| Monthly price | Free | 5,000 Kz | 15,000 Kz |
+| Annual price | — | 55,000 Kz | 165,000 Kz |
+| Member limit | 50 | 500 | Configured limit |
+| Events | Usage limit | Usage limit | Configured limit |
+| Transactions | Usage limit | Usage limit | Configured limit |
+
+The application includes backend checks for member, user, department, event, and financial transaction limits.
+
+---
+
+## Application Screenshots
+
+### Dashboard
+
+The main dashboard provides an overview of church activities and operational indicators.
+
+![Ngunga Dashboard](screenshots/dashboard.png)
+
+### Member Management
+
+A centralized interface for managing church member records.
+
+![Ngunga Member Management](screenshots/members.png)
+
+### Financial Management
+
+The financial module provides tools for recording and managing church revenues and expenses.
+
+![Ngunga Financial Management](screenshots/finances.png)
+
+---
+
+## Internationalization
+
+Ngunga includes internationalization support using `next-intl`.
+
+The application currently includes Portuguese and French language configuration.
+
+Church timezone configuration is also supported, with `Africa/Luanda` as the default timezone.
+
+---
 
 ## Getting Started
 
@@ -132,6 +233,7 @@ flowchart TD
 - Node.js
 - npm
 - PostgreSQL database
+- Git
 
 ### Installation
 
@@ -141,7 +243,7 @@ Clone the repository:
 git clone https://github.com/macuzulodomingos/gestao-igreja-saas.git
 ```
 
-Navigate to the project directory:
+Navigate into the project:
 
 ```bash
 cd gestao-igreja-saas
@@ -153,9 +255,9 @@ Install dependencies:
 npm install
 ```
 
-Configure the environment variables using the project's environment configuration.
+Configure the environment variables required by the application using the provided environment example or project configuration.
 
-Run database migrations and generate the Prisma Client according to the project's Prisma configuration.
+Generate the Prisma Client and apply the required database migrations according to the project's Prisma configuration.
 
 Start the development server:
 
@@ -163,22 +265,22 @@ Start the development server:
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open http://localhost:3000 in your browser.
+
+---
 
 ## Project Status
 
-Ngunga is an actively developed project.
+Ngunga is deployed and accessible through its live application.
 
-## Live Application
+The platform includes church administration, member management, event management, financial operations, access control, and subscription management.
 
-Explore the application:
-
-**https://www.ngunga.com/pt/**
+---
 
 ## Author
 
-**Manasses Domingos**
+**Developed by [Macuzulo Domingos](https://github.com/macuzulodomingos/)**
 
-Full-Stack Developer focused on building web applications and SaaS platforms.
+Full-Stack Developer focused on building web applications and practical software solutions.
 
-- GitHub: [@macuzulodomingos](https://github.com/macuzulodomingos)
+GitHub: https://github.com/macuzulodomingos/
