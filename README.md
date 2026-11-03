@@ -60,6 +60,38 @@ Track church revenues and expenses through the financial management module.
 | Monitoring | Sentry |
 | Email | Resend |
 
+## System Architecture
+
+Ngunga follows a modular Full-Stack architecture built around Next.js App Router.
+
+The application combines authentication, role-based access control, business logic, and relational data management to support multiple churches within a single SaaS platform.
+
+### High-Level Architecture
+
+```mermaid
+flowchart TD
+    A[Church Users] --> B[Next.js App Router]
+    B --> C[Auth.js Authentication]
+    C --> D[Role-Based Access Control]
+    D --> E[Application Modules]
+    E --> F[Prisma ORM]
+    F --> G[(PostgreSQL Database)]
+
+    E --> H[Members]
+    E --> I[Events]
+    E --> J[Financial Management]
+    E --> K[Departments]
+    E --> L[Subscription Management]
+```
+
+### Architectural Principles
+
+- **Multi-Tenancy:** The platform supports multiple churches within a shared application, with organizational data separation.
+- **Authentication:** Auth.js manages user authentication and sessions.
+- **Authorization:** Role-based access control determines which operations users can perform.
+- **Data Management:** Prisma provides structured database access to PostgreSQL.
+- **Modularity:** Application features are organized into separate functional modules.
+
 ## Architecture Highlights
 
 - Multi-tenant application architecture.
