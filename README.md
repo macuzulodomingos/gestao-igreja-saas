@@ -12,6 +12,26 @@ The platform provides tools for managing church members, organizing events, trac
 
 The project was designed with scalability, maintainability, and a structured multi-tenant architecture in mind.
 
+## Application Screenshots
+
+### Dashboard
+
+The main dashboard provides an overview of church activities and key operational indicators.
+
+![Ngunga Dashboard](screenshots/dashboard.png)
+
+### Member Management
+
+Manage church member records through a centralized interface.
+
+![Ngunga Member Management](screenshots/members.png)
+
+### Financial Management
+
+Track church revenues and expenses through the financial management module.
+
+![Ngunga Financial Management](screenshots/finances.png)
+
 ## Key Features
 
 - **Member Management:** Organize and manage church member records.
