@@ -66,6 +66,30 @@ Ngunga follows a modular Full-Stack architecture built around Next.js App Router
 
 The application combines authentication, role-based access control, business logic, and relational data management to support multiple churches within a single SaaS platform.
 
+### Authentication and Session Management
+
+Ngunga uses Auth.js with JWT-based sessions and Prisma integration.
+
+Key implementation details:
+
+- **Credentials Authentication:** Users authenticate using their email and password.
+- **Password Verification:** bcryptjs is used to verify password hashes.
+- **JWT Sessions:** Session strategy configured with an eight-hour maximum lifetime.
+- **User Context:** The JWT stores relevant user information, including role, church ID, church slug, and locale.
+- **Session Revalidation:** User information is periodically refreshed from the database to reflect account and organizational changes.
+- **Account Protection:** Deleted or inactive accounts are rejected during authentication and session revalidation.
+- **Super Admin Support:** Platform administrators can authenticate without being assigned to a specific church.
+
+### User Roles
+
+The application supports role-based access control through the following roles:
+
+- `SUPER_ADMIN`
+- `ADMIN`
+- `TREASURER`
+- `SECRETARY`
+- `OPERATOR`
+
 ### High-Level Architecture
 
 ```mermaid
