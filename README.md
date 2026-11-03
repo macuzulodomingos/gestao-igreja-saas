@@ -1,41 +1,108 @@
-# gestao-igreja-saas
+# Ngunga — Church Management SaaS
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+**A Full-Stack SaaS platform designed to simplify church administration, member management, events, and financial operations.**
 
-A SaaS project to help churches manage members, departments, and events efficiently.
+[Live Demo](https://www.ngunga.com/pt/)
+
+## Overview
+
+Ngunga is a multi-tenant church management platform built to help churches organize their daily operations through a centralized digital system.
+
+The platform provides tools for managing church members, organizing events, tracking financial activities, managing departments, and controlling access based on user roles.
+
+The project was designed with scalability, maintainability, and a structured multi-tenant architecture in mind.
+
+## Key Features
+
+- **Member Management:** Organize and manage church member records.
+- **Event Management:** Create and manage church events.
+- **Financial Management:** Track financial transactions, including revenues and expenses.
+- **Department Management:** Organize church departments.
+- **Role-Based Access Control:** Different permissions for administrators, treasurers, secretaries, and operators.
+- **Multi-Tenant Architecture:** Support multiple churches within the same platform, with separated organizational data.
+- **Subscription Management:** Free, Pro, and Enterprise subscription plans.
+- **Internationalization:** Multilingual application support.
+- **Dashboard and Analytics:** Visualize important operational and financial information.
+- **Audit Logging:** Maintain records of relevant administrative actions.
+
+## Tech Stack
+
+| Category | Technologies |
+|---|---|
+| Frontend | Next.js, React, TypeScript |
+| Styling | Tailwind CSS, Radix UI |
+| Backend | Next.js App Router |
+| Database | PostgreSQL |
+| ORM | Prisma |
+| Authentication | Auth.js |
+| Internationalization | next-intl |
+| Charts | Recharts |
+| Monitoring | Sentry |
+| Email | Resend |
+
+## Architecture Highlights
+
+- Multi-tenant application architecture.
+- Role-based authorization and access control.
+- Relational database management with PostgreSQL and Prisma.
+- Server-side functionality using Next.js App Router.
+- Reusable and modular components.
+- Subscription-based SaaS structure.
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js
+- npm
+- PostgreSQL database
+
+### Installation
+
+Clone the repository:
+
+```bash
+git clone https://github.com/macuzulodomingos/gestao-igreja-saas.git
+```
+
+Navigate to the project directory:
+
+```bash
+cd gestao-igreja-saas
+```
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Configure the environment variables using the project's environment configuration.
+
+Run database migrations and generate the Prisma Client according to the project's Prisma configuration.
+
+Start the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Project Status
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Ngunga is an actively developed project.
 
-## Learn More
+## Live Application
 
-To learn more about Next.js, take a look at the following resources:
+Explore the application:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+**https://www.ngunga.com/pt/**
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Author
 
-## Deploy on Vercel
+**Manasses Domingos**
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Full-Stack Developer focused on building web applications and SaaS platforms.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-
+- GitHub: [@macuzulodomingos](https://github.com/macuzulodomingos)
